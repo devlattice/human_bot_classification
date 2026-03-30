@@ -223,3 +223,8 @@ poker_hands_combined.json
 poker_hands_test.json
 poker_hands_train.json
 
+# core files
+workspace/dataset/unpreprocessed/original_train/*
+workspace/dataset/unpreprocessed/original_test/*
+workspace/dataset/unpreprocessed/original_test/*
+*.meta.json

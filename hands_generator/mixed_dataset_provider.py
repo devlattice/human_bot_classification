@@ -6,18 +6,15 @@ import json
 import math
 import random
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import bittensor as bt
 
-from hands_generator.bot_hands.diverse_bot_generator import merged_mixed_profiles
-from hands_generator.bot_hands.extra_bot_profiles import PROFILE_POOLS, get_profile_pool
 from hands_generator.bot_hands.generate_poker_data import BotProfile
 from hands_generator.data_generator import _default_bot_profiles, generate_bot_chunk
-from hands_generator.human_hands.corpus_paths import resolve_default_human_corpus_path
 from poker44.core.hand_json import from_standard_json
 from poker44.core.models import LabeledHandBatch
 from poker44.validator.sanitization import (
@@ -25,21 +22,14 @@ from poker44.validator.sanitization import (
     sanitized_chunk_signature,
 )
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_HUMAN_JSON_PATH = REPO_ROOT / "hands_generator" / "human_hands" / "poker_hands_combined.json.gz"
 DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data" / "validator_mixed_chunks.json"
 UTC = timezone.utc
 
 
-def _default_human_json_path() -> Path:
-    """Prefer `poker_hands_combined.json.gz`, then `.json` (matches `corpus_paths` / shipped repo)."""
-    resolved = resolve_default_human_corpus_path()
-    if resolved is not None:
-        return resolved
-    return REPO_ROOT / "hands_generator" / "human_hands" / "poker_hands_combined.json.gz"
-
-
 @dataclass
 class MixedDatasetConfig:
-    human_json_path: Path = field(default_factory=_default_human_json_path)
+    human_json_path: Path = DEFAULT_HUMAN_JSON_PATH
     output_path: Path = DEFAULT_OUTPUT_PATH
     chunk_count: int = 80
     min_hands_per_chunk: int = 60
@@ -51,17 +41,6 @@ class MixedDatasetConfig:
     bot_candidate_attempts_per_chunk: int = 8
     max_bot_generation_rounds: int = 4
     max_shortcut_rule_accuracy: float = 0.70
-    # Bot *behavior* diversity (same PokerHandGenerator engine, different BotProfile pools).
-    # "default" = five mid-range profiles only (legacy).
-    # "mixed" = default + extra_bot_profiles (single pool; broader behavior).
-    # "rotate" = cycle per bot chunk: default → extremes → sizing → tilty → mixed (best anti–single-family overfit).
-    # Or one of: "extremes", "sizing", "tilty" (single specialized pool).
-    bot_profile_mode: str = "mixed"
-
-
-def all_bot_profile_modes() -> List[str]:
-    """Valid `MixedDatasetConfig.bot_profile_mode` strings (for CLI / env)."""
-    return ["default", "mixed", "rotate", *sorted(PROFILE_POOLS)]
 
 
 def _current_window_id(refresh_seconds: int, now: Optional[float] = None) -> int:
@@ -110,6 +89,14 @@ def _window_human_sizes(
 
 def _iter_top_level_array_objects(path: Path, chunk_size: int = 1024 * 1024) -> Iterator[str]:
     """Yield object JSON strings from a top-level JSON array without loading the whole file."""
+    if path.suffix != ".gz":
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, list):
+            raise ValueError(f"Expected top-level JSON array in {path}")
+        for item in payload:
+            yield json.dumps(item, ensure_ascii=False)
+        return
+
     if path.suffix == ".gz":
         handle = gzip.open(path, "rt", encoding="utf-8")
     else:
@@ -212,12 +199,12 @@ def _deterministic_human_selection(
     cfg: MixedDatasetConfig,
     window_id: int,
 ) -> List[Dict[str, Any]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise ValueError(f"Expected top-level JSON array in {path}")
+
     valid_hands: List[Dict[str, Any]] = []
-    for raw in _iter_top_level_array_objects(path):
-        try:
-            raw_hand = json.loads(raw)
-        except Exception:
-            continue
+    for raw_hand in payload:
         if not isinstance(raw_hand, dict) or not _is_valid_human_hand(raw_hand):
             continue
         hand = dict(raw_hand)
@@ -496,7 +483,6 @@ def _profiles_for_target_signature(
         continue_bias = _clamp_profile_value((-1.0 * street_early_bias) + fold_bias - (0.40 * call_bias), -0.35, 0.28)
         defend_bias = _clamp_profile_value((-0.55 * street_early_bias) + (0.80 * call_bias) - (0.30 * fold_bias), -0.28, 0.28)
         trap_bias = _clamp_profile_value((target_streets - 1.12) * 0.55, -0.22, 0.16)
-
         tuned_profiles.append(
             BotProfile(
                 name=f"{profile.name}_targeted",
@@ -679,31 +665,10 @@ def _best_single_rule_accuracy(
     return best_acc, best_rule
 
 
-def bot_profile_pools_for_mode(mode: str) -> List[List[BotProfile]]:
-    """Resolve config string to one or more profile lists (for rotation across bot chunks)."""
-    m = (mode or "mixed").strip().lower()
-    if m == "default":
-        return [_default_bot_profiles()]
-    if m == "mixed":
-        return [merged_mixed_profiles()]
-    if m == "rotate":
-        return [
-            _default_bot_profiles(),
-            get_profile_pool("extremes"),
-            get_profile_pool("sizing"),
-            get_profile_pool("tilty"),
-            merged_mixed_profiles(),
-        ]
-    if m in PROFILE_POOLS:
-        return [get_profile_pool(m)]
-    valid = all_bot_profile_modes()
-    raise ValueError(f"Unknown bot_profile_mode {mode!r}. Use one of: {valid}")
-
-
 def _build_bot_chunks(
     *,
     bot_sizes: List[int],
-    bot_profile_pools: List[List[BotProfile]],
+    bot_profiles: List[BotProfile],
     human_pool: List[Dict[str, Any]],
     human_signatures: List[
         Tuple[float, float, float, float, float, float, float, float, float]
@@ -716,12 +681,10 @@ def _build_bot_chunks(
 ) -> List[Dict[str, Any]]:
     bot_chunks: List[Dict[str, Any]] = []
     base_candidate_attempts = max(1, int(candidate_attempts))
-    n_pools = max(1, len(bot_profile_pools))
     for idx, size in enumerate(bot_sizes):
         target_signature = human_signatures[idx % len(human_signatures)]
         target_structure = human_structures[idx % len(human_structures)]
-        pool = bot_profile_pools[idx % n_pools]
-        target_profiles = _profiles_for_target_signature(pool, target_signature)
+        target_profiles = _profiles_for_target_signature(bot_profiles, target_signature)
         per_chunk_candidates = base_candidate_attempts
         if target_signature[5] >= 0.9 or target_signature[3] <= 4.9:
             per_chunk_candidates += 4
@@ -756,6 +719,7 @@ def _build_bot_chunks(
         bot_chunks.append({"hands": best_hands, "is_bot": True})
     return bot_chunks
 
+
 def _compute_chunk_depth_summary(
     labeled_chunks: List[Dict[str, Any]]
 ) -> Dict[str, float]:
@@ -786,6 +750,7 @@ def _compute_chunk_depth_summary(
         "bot_avg_streets_max": max(bot_depths),
         "avg_streets_gap": abs(sum(bot_depths) / len(bot_depths) - (sum(human_depths) / len(human_depths))),
     }
+
 
 def build_mixed_labeled_chunks(
     cfg: MixedDatasetConfig, *, window_id: Optional[int] = None
@@ -841,7 +806,7 @@ def build_mixed_labeled_chunks(
     ]
     human_structures = [_chunk_structure_signature(chunk["hands"]) for chunk in human_chunks]
 
-    bot_profile_pools = bot_profile_pools_for_mode(cfg.bot_profile_mode)
+    bot_profiles: List[BotProfile] = _default_bot_profiles()
     rounds = max(1, int(cfg.max_bot_generation_rounds))
     best_labeled_chunks: List[Dict[str, Any]] = []
     best_shortcut_acc = math.inf
@@ -851,7 +816,7 @@ def build_mixed_labeled_chunks(
     for round_idx in range(1, rounds + 1):
         bot_chunks = _build_bot_chunks(
             bot_sizes=bot_sizes,
-            bot_profile_pools=bot_profile_pools,
+            bot_profiles=bot_profiles,
             human_pool=human_pool,
             human_signatures=human_signatures,
             human_structures=human_structures,
@@ -897,8 +862,6 @@ def build_mixed_labeled_chunks(
         "shortcut_rule": best_shortcut_rule,
         "bot_generation_rounds": rounds,
         "selected_bot_generation_round": selected_round,
-        "bot_profile_mode": cfg.bot_profile_mode,
-        "bot_profile_pools": len(bot_profile_pools),
     }
     stats.update(_compute_chunk_depth_summary(labeled_chunks))
     return labeled_chunks, dataset_hash, stats

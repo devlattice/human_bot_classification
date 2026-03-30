@@ -100,8 +100,11 @@ from dataset_presets import PRESETS, PresetName
 
 from hands_generator.mixed_dataset_provider import (
     MixedDatasetConfig,
-    all_bot_profile_modes,
     build_mixed_labeled_chunks,
+)
+from mixed_dataset_compat import (
+    all_bot_profile_modes,
+    filter_mixed_dataset_config_kwargs,
 )
 from poker44.validator.chunk_features import aggregate_chunk_from_hands, miner_servable_feature_names
 from poker44.validator.sanitization import sanitize_hand_for_miner
@@ -736,7 +739,7 @@ def build_sharded_training_dataset(
         }
         if human_json is not None:
             cfg_kw["human_json_path"] = human_json
-        cfg = MixedDatasetConfig(**cfg_kw)
+        cfg = MixedDatasetConfig(**filter_mixed_dataset_config_kwargs(cfg_kw))
 
         print(
             f"[shard {shard_idx + 1}/{n_shards}] building mixed labeled chunks "
@@ -893,7 +896,7 @@ def build_training_dataset(
     }
     if human_json is not None:
         cfg_kw["human_json_path"] = human_json
-    cfg = MixedDatasetConfig(**cfg_kw)
+    cfg = MixedDatasetConfig(**filter_mixed_dataset_config_kwargs(cfg_kw))
 
     print("[stage] building mixed labeled chunks ...", flush=True)
     labeled_chunks, ds_hash, stats = build_mixed_labeled_chunks(cfg, window_id=window_id)

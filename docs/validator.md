@@ -66,6 +66,11 @@ Optional tuning:
 - `POKER44_MINERS_PER_CYCLE` (default `16`; set `0` or a negative value to query all eligible miners)
 - `POKER44_TARGET_MINER_UIDS` (comma-separated UIDs, useful for controlled local tests)
 - `--neuron.timeout` (default `60s`, validator -> miner query timeout)
+- `--wandb.off` (disable Weights & Biases logging)
+- `--wandb.offline` (log to local offline Weights & Biases files only)
+- `--wandb.project_name` (default `poker44-validators`)
+- `--wandb.entity` (optional W&B entity/team)
+- `--wandb.notes` (optional run notes)
 
 ---
 
@@ -81,7 +86,7 @@ POKER44_POLL_INTERVAL_SECONDS=300 \
 POKER44_MINERS_PER_CYCLE=16 \
 pm2 start python --name poker44_validator -- \
   ./neurons/validator.py \
-  --netuid 126 \ 
+  --netuid 126 \
   --wallet.name p44_cold \
   --wallet.hotkey p44_validator \
   --subtensor.network finney \
@@ -129,6 +134,82 @@ pm2 delete poker44_validator
 
 ---
 
+## Auto-Update
+
+Poker44 supports optional validator auto-update through a separate PM2 watcher process.
+
+How it works:
+
+- The watcher checks `origin/main` periodically.
+- It reads `VALIDATOR_DEPLOY_VERSION` from `poker44/__init__.py`.
+- It updates only when the remote deploy version is newer than the local one.
+- On update, it pulls the repo, reinstalls dependencies, and restarts the validator PM2 process.
+
+Files:
+
+- `scripts/validator/update/auto_update_validator.sh`
+- `scripts/validator/update/update_validator.sh`
+- `scripts/validator/update/update_full.sh`
+
+Recommended environment for the watcher:
+
+- `PROCESS_NAME` (default `poker44_validator`)
+- `WALLET_NAME`
+- `WALLET_HOTKEY`
+- `SUBTENSOR_PARAM` (default `--subtensor.network finney`)
+- `VALIDATOR_ENV_DIR` (default `validator_env`)
+- `VALIDATOR_EXTRA_ARGS`
+- `SLEEP_INTERVAL` (default `600`)
+- `TARGET_BRANCH` (default `main`)
+
+Start the watcher:
+
+```bash
+chmod +x scripts/validator/update/auto_update_validator.sh
+pm2 start --name poker44_auto_update \
+  --interpreter /bin/bash \
+  scripts/validator/update/auto_update_validator.sh
+pm2 save
+```
+
+Typical one-time setup:
+
+```bash
+PROCESS_NAME=poker44_validator \
+WALLET_NAME=p44_cold \
+WALLET_HOTKEY=p44_validator \
+SUBTENSOR_PARAM="--subtensor.network finney" \
+VALIDATOR_ENV_DIR=validator_env \
+SLEEP_INTERVAL=600 \
+pm2 start --name poker44_auto_update \
+  --interpreter /bin/bash \
+  scripts/validator/update/auto_update_validator.sh
+```
+
+Manual update:
+
+```bash
+chmod +x scripts/validator/update/update_validator.sh
+./scripts/validator/update/update_validator.sh
+```
+
+Stop or inspect:
+
+```bash
+pm2 logs poker44_auto_update
+pm2 restart poker44_auto_update --update-env
+pm2 stop poker44_auto_update
+pm2 delete poker44_auto_update
+```
+
+Notes:
+
+- Auto-update is optional.
+- Validators still control whether they enable the watcher.
+- Deploys are gated by `VALIDATOR_DEPLOY_VERSION`, not by every commit on `main`.
+
+---
+
 ## Runtime Behavior
 
 Per cycle, validator:
@@ -137,6 +218,13 @@ Per cycle, validator:
 2. Sanitizes payloads before sending to miners.
 3. Queries miners and scores returned `risk_scores`.
 4. Updates internal scores and attempts `set_weights` on-chain.
+
+Optional W&B integration:
+
+- Logs only aggregated validator telemetry.
+- Includes dataset hash, dataset statistics, forward-cycle summaries, reward summaries, and `set_weights` status.
+- Does not publish live chunks, private human data, or the validator's mixed evaluation dataset contents.
+- Public benchmark publication for miners is documented separately in [Public benchmark + W&B](./public-benchmark.md).
 
 Default production cadence:
 

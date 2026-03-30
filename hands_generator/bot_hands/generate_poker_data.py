@@ -7,20 +7,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from hands_generator.bot_hands.default_bot_profiles import default_bot_profiles
 from hands_generator.bot_hands.sandbox_poker_bot import SandboxPokerBot, BotProfile, GameState, LegalActions, Street, ActionType, BotDecision
-from hands_generator.human_hands.corpus_paths import resolve_default_human_corpus_path
 from poker44.core.hand_json import V0_JSON_HAND
 
 # Fixed base seed for reproducibility across validators.
 BOT_RNG_SEED = 424242
 HERO_UID = f"p_{hashlib.sha256('hero_player_fixed_2025_secret'.encode()).hexdigest()}"
-_resolved_human = resolve_default_human_corpus_path()
-PUBLIC_HUMAN_HANDS_PATH = (
-    _resolved_human
-    if _resolved_human is not None
-    else Path(__file__).resolve().parents[1] / "human_hands" / "poker_hands_combined.json.gz"
-)
+PUBLIC_HUMAN_HANDS_PATH = Path(__file__).resolve().parents[1] / "human_hands" / "poker_hands_combined.json.gz"
 DEFAULT_STAKE_DISTRIBUTION: List[Tuple[float, float, int]] = [
     (0.02, 0.05, 4660),
     (0.05, 0.10, 337),
@@ -107,7 +100,6 @@ def _mutate_profile(profile: BotProfile, rng: random.Random) -> BotProfile:
         bet_pot_fraction_large=_clamp_float(
             profile.bet_pot_fraction_large + rng.uniform(-0.12, 0.12), 0.50, 1.28
         ),
-
         preflop_defend_bias=_clamp_float(
             profile.preflop_defend_bias + rng.uniform(-0.25, 0.25), -1.0, 1.0
         ),
@@ -925,39 +917,15 @@ class PokerHandGenerator:
 
         return hand
 
-
-def generate_one_bot_hand(
-    seed: int = 42,
-    profiles: Optional[List[BotProfile]] = None,
-) -> Dict[str, Any]:
-    """Generate a single bot-played hand (same pipeline as batch generation)."""
-    if profiles is None:
-        profiles = default_bot_profiles()
-    generator = PokerHandGenerator(seed=seed)
-    sb, bb, target_players = generator._sample_table_config()
-    session = TableSession(
-        table_id="Example",
-        sb=sb,
-        bb=bb,
-        max_seats=generator.max_seats,
-        rake_rate=generator.rake_rate,
-        bot_profiles=profiles,
-        target_player_count=target_players,
-        rng=generator.rng,
-    )
-    session.initialize_table()
-    for _ in range(2000):
-        hand = generator._generate_single_hand(session)
-        if hand:
-            return hand
-        session.rotate_button()
-        session.handle_player_changes()
-    raise RuntimeError("Could not generate a bot hand (try a different --seed)")
-
-
 def main():
-    profiles = default_bot_profiles()
-
+    profiles = [
+        BotProfile(name="tight_aggressive", tightness=0.70, aggression=0.75, bluff_freq=0.05),
+        BotProfile(name="loose_aggressive", tightness=0.40, aggression=0.80, bluff_freq=0.12),
+        BotProfile(name="tight_passive", tightness=0.68, aggression=0.35, bluff_freq=0.03),
+        BotProfile(name="loose_passive", tightness=0.42, aggression=0.30, bluff_freq=0.08),
+        BotProfile(name="balanced", tightness=0.55, aggression=0.55, bluff_freq=0.08),
+    ]
+    
     generator = PokerHandGenerator()
     output_path = Path(__file__).with_name("bot_hands.json")
 
@@ -971,20 +939,5 @@ def main():
     
     print("\n✓ Generation complete!")
 
-
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Generate bot poker hand JSON.")
-    parser.add_argument(
-        "--one",
-        action="store_true",
-        help="Print one generated bot hand to stdout and exit",
-    )
-    parser.add_argument("--seed", type=int, default=42, help="RNG seed for --one")
-    args = parser.parse_args()
-    if args.one:
-        example = generate_one_bot_hand(seed=args.seed)
-        print(json.dumps(example, indent=2, default=str))
-    else:
-        main()
+    main()

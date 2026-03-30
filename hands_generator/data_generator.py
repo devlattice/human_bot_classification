@@ -15,23 +15,22 @@ No external caller (validator/miner) can control these parameters.
 from __future__ import annotations
 
 import argparse
-import gzip
 import json
 import random
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
-from hands_generator.bot_hands.default_bot_profiles import default_bot_profiles
 from hands_generator.bot_hands.generate_poker_data import (
     PokerHandGenerator,
     TableSession,
     BotProfile,
 )
-from hands_generator.human_hands.corpus_paths import resolve_default_human_corpus_path
 
 # ---------------------------------------------------------------------
 # Constants (fixed, not controllable by validator)
 # ---------------------------------------------------------------------
+
+HUMAN_HANDS_PATH = Path(__file__).parent / "human_hands" / "human_hands.json"
 
 CHUNK_COUNT_RANGE: Tuple[int, int] = (40, 60)
 HANDS_PER_CHUNK_RANGE: Tuple[int, int] = (60, 100)
@@ -42,24 +41,59 @@ HUMAN_RATIO_RANGE: Tuple[float, float] = (0.40, 0.60)
 # Helpers
 # ---------------------------------------------------------------------
 
-def load_human_hands(path: Optional[Path] = None) -> List[Dict[str, Any]]:
-    if path is None:
-        path = resolve_default_human_corpus_path()
-        if path is None:
-            raise FileNotFoundError(
-                "No human corpus in hands_generator/human_hands/. "
-                "Add poker_hands_combined.json.gz or poker_hands_combined.json (see README)."
-            )
-    if path.suffix == ".gz":
-        with gzip.open(path, "rt", encoding="utf-8") as f:
-            return json.load(f)
-    with path.open(encoding="utf-8") as f:
+def load_human_hands(path: Path = HUMAN_HANDS_PATH) -> List[Dict[str, Any]]:
+    with path.open() as f:
         return json.load(f)
 
 
 def _default_bot_profiles() -> List[BotProfile]:
-    """Re-export for callers that imported from `data_generator` historically."""
-    return default_bot_profiles()
+    return [
+        BotProfile(
+            name="balanced",
+            tightness=0.58,
+            aggression=0.58,
+            bluff_freq=0.04,
+            preflop_defend_bias=-0.10,
+            postflop_continue_bias=-0.08,
+            trap_frequency=-0.10,
+        ),
+        BotProfile(
+            name="tight_aggressive",
+            tightness=0.66,
+            aggression=0.74,
+            bluff_freq=0.04,
+            preflop_defend_bias=-0.18,
+            postflop_continue_bias=-0.14,
+            trap_frequency=-0.06,
+        ),
+        BotProfile(
+            name="loose_aggressive",
+            tightness=0.48,
+            aggression=0.74,
+            bluff_freq=0.07,
+            preflop_defend_bias=0.10,
+            postflop_continue_bias=0.02,
+            trap_frequency=0.00,
+        ),
+        BotProfile(
+            name="tight_passive",
+            tightness=0.64,
+            aggression=0.42,
+            bluff_freq=0.02,
+            preflop_defend_bias=-0.24,
+            postflop_continue_bias=-0.20,
+            trap_frequency=-0.18,
+        ),
+        BotProfile(
+            name="loose_passive",
+            tightness=0.50,
+            aggression=0.40,
+            bluff_freq=0.04,
+            preflop_defend_bias=-0.06,
+            postflop_continue_bias=-0.10,
+            trap_frequency=-0.12,
+        ),
+    ]
 
 
 def sample_human_chunk(

@@ -27,7 +27,7 @@ Miners compete by returning robust bot-risk predictions that generalize to evolv
 
 Poker44 is security infrastructure, not a poker room.
 
----
+---+
 
 ## Vision
 
