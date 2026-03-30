@@ -1,0 +1,17 @@
+all_in_ratio_max
+all_in_ratio_mean
+all_in_ratio_std
+chunk_n_hands
+end_flop_max
+end_preflop_max
+end_river_max
+end_turn_max
+fold_ratio_max
+n_actions_slot_max
+n_actions_slot_mean
+n_actions_slot_std
+n_players_std
+n_streets_max
+other_ratio_max
+other_ratio_mean
+other_ratio_std

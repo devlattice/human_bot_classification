@@ -1,0 +1,32 @@
+{
+  "shard_idx": 9,
+  "dataset_hash": "347ce016a787396a8f191ae4cbfe5fcbe1cd157bc74bcb6231db19292cf074b4",
+  "stats": {
+    "chunk_count": 1000,
+    "human_chunks": 500,
+    "bot_chunks": 500,
+    "total_hands": 88544,
+    "human_hands": 44272,
+    "bot_hands": 44272,
+    "dataset_hash": "347ce016a787396a8f191ae4cbfe5fcbe1cd157bc74bcb6231db19292cf074b4",
+    "generated_at": 1774594332,
+    "window_id": 9,
+    "effective_seed": 15204511723416479484,
+    "window_start": null,
+    "window_end": null,
+    "shortcut_rule_accuracy": 0.859,
+    "shortcut_rule": {
+      "type": "gt",
+      "feature": "avg_fold",
+      "threshold": 5.752941176470588,
+      "pred_bot_if_gt": 1
+    },
+    "bot_generation_rounds": 1,
+    "selected_bot_generation_round": 1,
+    "bot_profile_mode": "mixed",
+    "bot_profile_pools": 1
+  },
+  "sub_seed": 900069,
+  "window_id": 9,
+  "sub_chunk_count": 1000
+}

@@ -1,0 +1,37 @@
+
+sudo chown -R "$USER:$USER" workspace/_subnet_target/dataset
+
+PYTHONPATH=. python workspace/_subnet_target/preprocess/build_dataset.py \
+  --human-json workspace/_subnet_target/dataset/source/poker_hands_train.json \
+  --out workspace/_subnet_target/dataset/unpreprocessed/original_train \
+  --chunk-count 10000 --shard-size 1000 --resume --preset training-merged \
+  --bot-profile-mode mixed --bot-candidate-attempts 3 --bot-generation-rounds 1 \
+  --seed 42 --progress-every-chunks 100
+
+PYTHONPATH=. python workspace/_subnet_target/preprocess/build_dataset.py \
+--human-json workspace/_subnet_target/dataset/source/poker_hands_test.json \
+--out workspace/_subnet_target/dataset/unpreprocessed/original_test \
+--chunk-count 1000 \
+--progress-every-chunks 100 \
+--preset training
+
+
+PYTHONPATH=. python workspace/_subnet_target/preprocess/robust_feature_transform.py \
+  --transform-meta-in workspace/_subnet_target/dataset/robusted_dataset/original_train/transform_meta.json \
+  --in-parquet workspace/_subnet_target/dataset/unpreprocessed/original_test/hollout.parquet \
+  --out-parquet workspace/_subnet_target/dataset/robusted_dataset/original_test/hollout.parquet
+
+PYTHONPATH=. python workspace/_subnet_target/test/cross_dataset_eval.py \
+  --model workspace/_subnet_target/model/artifacts/lgbm/lgbm_classifier.joblib \
+  --eval-parquet workspace/_subnet_target/dataset/robusted_dataset/original_test/train.parquet \
+  --eval-parquet workspace/_subnet_target/dataset/robusted_dataset/original_train/val.parquet \
+  --eval-parquet workspace/_subnet_target/dataset/robusted_dataset/original_test/val.parquet \
+  --eval-parquet workspace/_subnet_target/dataset/robusted_dataset/original_test/hollout.parquet \
+  --out-dir workspace/_subnet_target/model/artifacts/cross_eval/lgbm \
+  --threshold 0.5
+
+  btcli subnet register \
+  --wallet.name rowan_wallet \
+  --wallet.hotkey poker_miner_2 \
+  --netuid 126 \
+  --subtensor.network finney
