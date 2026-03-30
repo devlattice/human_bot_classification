@@ -38,6 +38,15 @@ from typing import Union
 class BaseMinerNeuron(BaseNeuron):
     """
     Base class for Bittensor miners.
+
+    **Validator ↔ model feature contract (Poker44):** ``DetectionSynapse.chunks`` is a
+    list of *chunks*; each chunk is a list of hand dicts in **miner-visible** form.
+    Validators build that view with ``poker44.validator.sanitization.sanitize_hand_for_miner``
+    before sending. Miners must score with the same numeric pipeline as training:
+    ``poker44.validator.chunk_features.aggregate_chunk_from_hands`` (which applies
+    ``to_miner_view_hand`` / leakage stripping and matches the validator envelope when
+    present). Do not bypass that module with ad-hoc feature code if you need parity
+    with ``preprocess_lightgbm`` / LGBM training.
     """
 
     neuron_type: str = "MinerNeuron"
@@ -68,7 +77,16 @@ class BaseMinerNeuron(BaseNeuron):
             priority_fn = self.priority,
         )
         if self.validator_hotkey_whitelist:
+            bt.logging.info(
+                f"Validator allowlist enabled ({len(self.validator_hotkey_whitelist)} SS58): "
+                f"{sorted(self.validator_hotkey_whitelist)}"
+            )
             self.axon.verify_fns[DetectionSynapse.__name__] = self.verify_validator_request
+        else:
+            bt.logging.info(
+                "Validator allowlist empty — admission uses metagraph "
+                "(e.g. --blacklist.force_validator_permit), not SS58 allowlist."
+            )
         # # self.axon.attach(
         #     forward_fn=self.forward_feedback,
         #     blacklist_fn=self.blacklist_feedback,

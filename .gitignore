@@ -213,6 +213,12 @@ poker_hands_combined.json
 poker_hands_test.json
 poker_hands_train.json
 *.parquet
+*.jsonl
+train.csv
+val.csv
+score_high.json
+score_medium.json
+score_low.json
 
 # Local human hands
 hands_generator/human_hands/poker_hands_combined.json

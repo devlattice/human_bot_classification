@@ -1,0 +1,17 @@
+chunk_hash: 998ee0c2f8c494166ffefd0aa7fd10673812965f73b668f936d15e0e9938c536
+
+=== CHUNK_SUMMARY (derived from raw hands; not labels) ===
+- Game: Hold'em No Limit, 6-max, bb=0.02
+- Hands in chunk: 79
+- Total actions (all hands): 948
+- Action mix (counts): fold=461, big_blind=117, bet=101, raise=80, small_blind=79, check=57, call=53
+- Street mix (counts): preflop=800, flop=90, turn=35, river=23
+- Note: most action volume is preflop; postflop depth is limited on average.
+
+Teacher score (informational only — do NOT treat as ground truth): risk_score≈0.3442
+
+=== ACTION SHORTHAND (chunk index 0 of 79; shorthand 1/1; seat:street:action) ===
+s2:pr:small_blind | s3:pr:big_blind | s4:pr:fold | s5:pr:fold | s1:pr:fold | s2:pr:raise | s3:pr:call | s2:fl:bet | s3:fl:call | s2:tu:bet | s3:tu:fold | s2:tu:bet
+
+=== TASK ===
+Return JSON only: {"label":0} or {"label":1} per the system definitions.
