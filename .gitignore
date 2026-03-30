@@ -209,6 +209,13 @@ prueba.dem.zst:Zone.Identifier
 
 # Local large dataset for validator API (do not commit)
 hands_for_validator/poker_hands_from_rar.json
+poker_hands_combined.json
+poker_hands_test.json
+poker_hands_train.json
+*.parquet
 
+# Local human hands
+hands_generator/human_hands/poker_hands_combined.json
+hands_generator/human_hands/poker_hands_combined.json.gz
 # Local Weights & Biases runs/artifacts
 wandb/
