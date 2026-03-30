@@ -1,5 +1,5 @@
 #Environments
-
+.env
 .envDev
 .envProd
 
@@ -146,7 +146,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-miner_env/
+.env
 .venv
 .venv312/
 env/
@@ -194,18 +194,12 @@ hands_generator/human_hands/poker_data/
 hands_generator/human_hands/separate_json/
 hands_generator/human_hands/human_hands_old_small.json
 hands_generator/human_hands/human_hands_old.json
-hands_generator/human_hands/poker_hands_combined.json
-hands_generator/human_hands/poker_hands_combined.json.gz
 hands_generator/bot_hands/bot_hands.json
 
-scripts/validator/update/
 scripts/miner/install_dependencies.sh
 scripts/validator/main/install_dependencies.sh
 testing/
 data/mongodb_data/
-data/lgbm/
-workspace/datasets/zenodo/zenodo_human_hands.json
-workspace/model/artifacts/
 data/validator_mixed_chunks.json
 openClutch_venv/
 prueba.dem.zst
@@ -216,15 +210,5 @@ prueba.dem.zst:Zone.Identifier
 # Local large dataset for validator API (do not commit)
 hands_for_validator/poker_hands_from_rar.json
 
-
-#dataset
-*.parquet
-poker_hands_combined.json
-poker_hands_test.json
-poker_hands_train.json
-
-# core files
-workspace/dataset/unpreprocessed/original_train/*
-workspace/dataset/unpreprocessed/original_test/*
-workspace/dataset/unpreprocessed/original_test/*
-*.meta.json
+# Local Weights & Biases runs/artifacts
+wandb/

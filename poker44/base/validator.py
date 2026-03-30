@@ -58,6 +58,7 @@ class BaseValidatorNeuron(BaseNeuron):
         # Set up initial scoring weights for validation
         bt.logging.info("Building validation weights.")
         self.scores = np.zeros(self.metagraph.n, dtype=np.float32)
+        self.axon = None
 
         # Init sync with the network. Updates the metagraph.
         self.sync()
@@ -313,6 +314,14 @@ class BaseValidatorNeuron(BaseNeuron):
             bt.logging.info(f"set_weights submitted to chain without confirmation: {msg}")
         else:
             bt.logging.error("set_weights failed", msg)
+        wandb_helper = getattr(self, "wandb_helper", None)
+        if wandb_helper is not None:
+            wandb_helper.log_set_weights_result(
+                success=bool(result),
+                message=str(msg),
+                wait_for_inclusion=wait_for_inclusion,
+                wait_for_finalization=wait_for_finalization,
+            )
 
     def _set_weights_commit_reveal_fallback(
         self,

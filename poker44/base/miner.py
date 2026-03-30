@@ -68,16 +68,7 @@ class BaseMinerNeuron(BaseNeuron):
             priority_fn = self.priority,
         )
         if self.validator_hotkey_whitelist:
-            bt.logging.info(
-                f"Validator allowlist enabled ({len(self.validator_hotkey_whitelist)} SS58): "
-                f"{sorted(self.validator_hotkey_whitelist)}"
-            )
             self.axon.verify_fns[DetectionSynapse.__name__] = self.verify_validator_request
-        else:
-            bt.logging.info(
-                "Validator allowlist empty — admission uses metagraph "
-                "(e.g. --blacklist.force_validator_permit), not SS58 allowlist."
-            )
         # # self.axon.attach(
         #     forward_fn=self.forward_feedback,
         #     blacklist_fn=self.blacklist_feedback,
