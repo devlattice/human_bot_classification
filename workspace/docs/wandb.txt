@@ -1,0 +1,7 @@
+API key:
+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
+
+export WANDB_API_KEY=your_key_herewandb_v1_A5VANPzzfXMdw90L7fnLtaNdxdH_T01WeNhnus3bcgi2TPhjYPTEV1r77o9siKRBZ7KydTb12yLGI 
+python scripts/publish/publish_public_benchmark.py \
+  --wandb-project poker44-miner \
+  --wandb-entity michaeledward0509-aigrow
