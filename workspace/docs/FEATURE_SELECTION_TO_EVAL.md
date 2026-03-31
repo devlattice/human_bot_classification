@@ -6,7 +6,7 @@ This document is the **subnet** workflow for:
 2) robust feature transforms,  
 3) LGBM-B training on subnet data.
 
-It is aligned with current scripts under `workspace/_subnet_target/preprocess`.
+It is aligned with current scripts under `workspace/preprocess`.
 
 ---
 
@@ -14,14 +14,14 @@ It is aligned with current scripts under `workspace/_subnet_target/preprocess`.
 
 Expected unprocessed dataset:
 
-- `workspace/_subnet_target/dataset/unpreprocessed/original_train/train.parquet`
-- `workspace/_subnet_target/dataset/unpreprocessed/original_train/val.parquet`
+- `workspace/dataset/unpreprocessed/original_train/train.parquet`
+- `workspace/dataset/unpreprocessed/original_train/val.parquet`
 
 Feature lists used by transform (default):
 
-- `workspace/_subnet_target/preprocess/features/keep_features.txt`
-- `workspace/_subnet_target/preprocess/features/heavy_transform_features.txt`
-- `workspace/_subnet_target/preprocess/features/regularize_features.txt`
+- `workspace/preprocess/features/keep_features.txt`
+- `workspace/preprocess/features/heavy_transform_features.txt`
+- `workspace/preprocess/features/regularize_features.txt`
 
 ---
 
@@ -30,10 +30,10 @@ Feature lists used by transform (default):
 Run on train+val of your subnet dataset:
 
 ```bash
-PYTHONPATH=. python workspace/_subnet_target/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
-  --data-dir workspace/_subnet_target/dataset/unpreprocessed/original_train \
+PYTHONPATH=. python workspace/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
+  --data-dir workspace/dataset/unpreprocessed/original_train \
   --disable-domain-shift-merge \
-  --out-csv workspace/_subnet_target/preprocess/statistical_test/original_train_anova.csv
+  --out-csv workspace/preprocess/statistical_test/original_train_anova.csv
 ```
 
 Read these columns:
@@ -56,17 +56,17 @@ Notes:
 Generate feature lists directly from the ANOVA CSV:
 
 ```bash
-PYTHONPATH=. python workspace/_subnet_target/preprocess/statistical_test/select_features.py \
-  --anova-csv workspace/_subnet_target/preprocess/statistical_test/original_train_anova.csv \
-  --out-dir workspace/_subnet_target/preprocess/feature_selection
+PYTHONPATH=. python workspace/preprocess/statistical_test/select_features.py \
+  --anova-csv workspace/preprocess/statistical_test/original_train_anova.csv \
+  --out-dir workspace/preprocess/feature_selection
 ```
 
 Generated files:
 
-- `workspace/_subnet_target/preprocess/feature_selection/keep_features.txt`
-- `workspace/_subnet_target/preprocess/feature_selection/watch_features.txt`
-- `workspace/_subnet_target/preprocess/feature_selection/drop_features.txt`
-- `workspace/_subnet_target/preprocess/feature_selection/selection_summary.csv`
+- `workspace/preprocess/feature_selection/keep_features.txt`
+- `workspace/preprocess/feature_selection/watch_features.txt`
+- `workspace/preprocess/feature_selection/drop_features.txt`
+- `workspace/preprocess/feature_selection/selection_summary.csv`
 
 Robustness policy used by this script:
 
@@ -81,11 +81,11 @@ Robustness policy used by this script:
 Use robust transform with stats fit from a reference parquet (recommended):
 
 ```bash
-PYTHONPATH=. python workspace/_subnet_target/preprocess/robust_feature_transform.py \
-  --data-dir workspace/_subnet_target/dataset/unpreprocessed/original_train \
-  --out-dir workspace/_subnet_target/dataset/robusted_dataset/original_train \
-  --fit-stats-from workspace/_subnet_target/dataset/unpreprocessed/original_train/train.parquet \
-  --keep-features-file workspace/_subnet_target/preprocess/feature_selection/keep_features.txt \
+PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
+  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --out-dir workspace/dataset/robusted_dataset/original_train \
+  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --keep-features-file workspace/preprocess/feature_selection/keep_features.txt \
   --restrict-to-keep-features \
   --q-low 0.01 \
   --q-high 0.99 \
@@ -106,9 +106,9 @@ Why:
 ## 4) Train LGBM
 
 ```bash
-PYTHONPATH=. python workspace/_subnet_target/model/scripts/lgbm.py \
-  --data-dir workspace/_subnet_target/dataset/robusted_dataset/original_train \
-  --out-dir workspace/_subnet_target/model/artifacts/lgbm
+PYTHONPATH=. python workspace/model/scripts/lgbm.py \
+  --data-dir workspace/dataset/robusted_dataset/original_train \
+  --out-dir workspace/model/artifacts/lgbm
 ```
 
 ---
@@ -118,10 +118,10 @@ PYTHONPATH=. python workspace/_subnet_target/model/scripts/lgbm.py \
 If you want a hard drop stage before robust transform:
 
 ```bash
-PYTHONPATH=. python workspace/_subnet_target/preprocess/drop_aggressive_features.py \
-  --data-dir workspace/_subnet_target/dataset/unpreprocessed/original_train \
-  --out-dir workspace/_subnet_target/dataset/unpreprocessed/original_train_drop \
-  --features-file workspace/_subnet_target/preprocess/features/heavy_transform_features.txt
+PYTHONPATH=. python workspace/preprocess/drop_aggressive_features.py \
+  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --out-dir workspace/dataset/unpreprocessed/original_train_drop \
+  --features-file workspace/preprocess/features/heavy_transform_features.txt
 ```
 
 Then run robust transform on `original_train_drop`.
@@ -132,22 +132,22 @@ Then run robust transform on `original_train_drop`.
 
 ```bash
 # 1) stats
-PYTHONPATH=. python workspace/_subnet_target/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
-  --data-dir workspace/_subnet_target/dataset/unpreprocessed/original_train \
+PYTHONPATH=. python workspace/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
+  --data-dir workspace/dataset/unpreprocessed/original_train \
   --disable-domain-shift-merge \
-  --out-csv workspace/_subnet_target/preprocess/statistical_test/original_train_anova.csv
+  --out-csv workspace/preprocess/statistical_test/original_train_anova.csv
 
 # 2) auto-select keep/watch/drop
-PYTHONPATH=. python workspace/_subnet_target/preprocess/statistical_test/select_features.py \
-  --anova-csv workspace/_subnet_target/preprocess/statistical_test/original_train_anova.csv \
-  --out-dir workspace/_subnet_target/preprocess/feature_selection
+PYTHONPATH=. python workspace/preprocess/statistical_test/select_features.py \
+  --anova-csv workspace/preprocess/statistical_test/original_train_anova.csv \
+  --out-dir workspace/preprocess/feature_selection
 
 # 3) robust transform
-PYTHONPATH=. python workspace/_subnet_target/preprocess/robust_feature_transform.py \
-  --data-dir workspace/_subnet_target/dataset/unpreprocessed/original_train \
-  --out-dir workspace/_subnet_target/dataset/robusted_dataset/original_train_selected \
-  --fit-stats-from workspace/_subnet_target/dataset/unpreprocessed/original_train/train.parquet \
-  --keep-features-file workspace/_subnet_target/preprocess/feature_selection/keep_features.txt \
+PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
+  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --out-dir workspace/dataset/robusted_dataset/original_train_selected \
+  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --keep-features-file workspace/preprocess/feature_selection/keep_features.txt \
   --restrict-to-keep-features \
   --q-low 0.01 --q-high 0.99 \
   --enable-log1p --enable-robust-scale --scaled-clip-abs 8.0 \
@@ -155,7 +155,7 @@ PYTHONPATH=. python workspace/_subnet_target/preprocess/robust_feature_transform
 
 # 4) train
 PYTHONPATH=. python workspace/model/LGBM.py \
-  --data-dir workspace/_subnet_target/dataset/robusted_dataset/original_train_selected \
+  --data-dir workspace/dataset/robusted_dataset/original_train_selected \
   --out-dir workspace/model/artifacts/lgbm_b_subnet_selected
 ```
 
