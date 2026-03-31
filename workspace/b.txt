@@ -4,6 +4,10 @@ sudo chown -R "$USER:$USER" workspace/dataset
 git pull --tags upstream main --no-rebase
 git push origin main
 
+
+scp  -P 41389 -r root@77.104.167.149:/root/Workspace/miner_1/workspace/real_distribution  /home/dr/Workspace
+
+
 ## hands_geneartor_syn
 
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \

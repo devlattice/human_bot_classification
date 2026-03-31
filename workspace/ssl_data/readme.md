@@ -7,7 +7,9 @@ Tools for building extra training data from miner-logged chunks scored by the li
 | Path | Role |
 |------|------|
 | `json/` | Drop **`*.jsonl`** (and optionally `*.json`) inputs: one JSON object per line. |
+| `raw_data/` | Output of **`build_raw_dataset_for_domain.py`**: unlabeled chunk parquet for **statistical / domain** work (optional). |
 | `split_by_score.py` | Pipeline script: dedup + split by score → three JSON array files. |
+| `build_raw_dataset_for_domain.py` | JSONL → raw aggregate parquet (**no** `transform_meta`; **`label` = null**). See below. |
 
 ## Input format
 
@@ -18,6 +20,54 @@ Each line should be a JSON object with at least:
 - `risk_score` — float in `[0, 1]` (e.g. from `POKER44_MINER_LOG_CHUNK_NDJSON`)
 
 Files are read in **sorted filename order**. Duplicate `chunk_hash` values after the first are skipped when dedup is on.
+
+## Statistical domain help dataset — `build_raw_dataset_for_domain.py`
+
+Use this when you need a **validator-shaped, chunk-level table** for **domain / drift / feature sanity**, not for SSL labels from `risk_score`.
+
+**What it does**
+
+- Streams all **`*.jsonl`** under `--input-source-dir` (default: `ssl_data/json/`).
+- Each line: `chunk` (hand list), `chunk_hash` (dedup key), `risk_score` (**read only if present; never written**).
+- One row per accepted chunk: **`aggregate_chunk_from_hands`** only — same raw feature names as e.g. `workspace/dataset/unpreprocessed/original_train/train.parquet` (use **`--sample`** for schema only). **One output file** (default `validator_request.parquet`), not train/val.
+- **`label` is always null** (ground-truth human/bot is not in miner logs). No `keep_features` / `transform_meta` step here — this is **unpooled raw aggregates** for statistics.
+- Default **dedupe** on `chunk_hash` (use **`--no-dedupe`** to keep repeats). Rows with missing `chunk_hash` are skipped when dedupe is on.
+
+**Typical uses**
+
+- Compare feature marginals **train (labeled) vs this table** (KS, PSI, train-vs-log domain classifiers).
+- Feed side-by-side sources into **`domain_shift_probe`-style** analysis or merge with ANOVA reports that need a “validator traffic” column.
+- Keep SSL / pseudo-label workflows separate: use **`build_dataset.py`** when you intentionally use `risk_score` and robust transforms.
+
+**CLI (high level)**
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--input-source-dir` | `ssl_data/json` | Directory of `*.jsonl` |
+| `--sample` | `workspace/dataset/unpreprocessed/original_train/train.parquet` | Schema reference (`label` forced nullable in output) |
+| `--outdir` | `ssl_data/raw_data` | Output directory |
+| `--output-name` | `validator_request.parquet` | Single output file (no train/val split) |
+| `--batch-size` | `2048` | Rows per Parquet row group |
+| `--log-every` | `5000` | Progress every N accepted rows (`0` = quieter) |
+| `--no-dedupe` | off | Disable `chunk_hash` deduplication |
+
+**Example (repo root)**
+
+```bash
+python3 workspace/ssl_data/build_raw_dataset_for_domain.py
+```
+
+Explicit paths:
+
+```bash
+python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
+  --input-source-dir workspace/ssl_data/json \
+  --sample workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --outdir workspace/ssl_data/raw_data \
+  --output-name validator_request.parquet
+```
+
+Requires **`pyarrow`**. If `--sample` is missing in your clone, pass any parquet whose **feature columns** match raw `aggregate_chunk_from_hands` output.
 
 ## `split_by_score.py`
 

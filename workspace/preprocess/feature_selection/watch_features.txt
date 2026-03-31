@@ -1,4 +1,0 @@
-call_ratio_max
-n_players_max
-p4_mean
-p6p_max

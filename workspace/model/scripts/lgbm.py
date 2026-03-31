@@ -18,17 +18,132 @@ from pathlib import Path
 from typing import Any, Dict
 
 import numpy as np
+import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    roc_curve,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from workspace.model.LGBM import (  # noqa: E402
-    evaluate,
-    load_parquet_pair,
-    plot_roc,
-    plot_train_valid_loss,
-)
+
+def load_parquet_pair(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+    data_dir = Path(data_dir).expanduser().resolve()
+    train_path = data_dir / "train.parquet"
+    val_path = data_dir / "val.parquet"
+    if not train_path.is_file() or not val_path.is_file():
+        raise FileNotFoundError(f"{data_dir}: expected train.parquet and val.parquet")
+    train_df = pd.read_parquet(train_path)
+    val_df = pd.read_parquet(val_path)
+    if "label" not in train_df.columns or "label" not in val_df.columns:
+        raise ValueError("Both train and val must contain `label` column")
+    feature_cols = [c for c in train_df.columns if c != "label"]
+    if set(feature_cols) != set(c for c in val_df.columns if c != "label"):
+        raise ValueError("Train/val feature columns differ")
+    return train_df, val_df, feature_cols
+
+
+def evaluate(model, X, y_true, threshold: float = 0.5) -> Dict[str, Any]:
+    y_true = np.asarray(y_true, dtype=int)
+    y_score = np.asarray(model.predict_proba(X)[:, 1], dtype=float)
+    y_pred = (y_score >= float(threshold)).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
+    out: Dict[str, Any] = {
+        "threshold": float(threshold),
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "precision": float(precision_score(y_true, y_pred, zero_division=0)),
+        "recall": float(recall_score(y_true, y_pred, zero_division=0)),
+        "f1": float(f1_score(y_true, y_pred, zero_division=0)),
+        "human_fpr": float(fp / (fp + tn)) if (fp + tn) > 0 else float("nan"),
+        "bot_tpr": float(tp / (tp + fn)) if (tp + fn) > 0 else float("nan"),
+        "confusion_matrix": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
+    }
+    if len(np.unique(y_true)) >= 2:
+        out["roc_auc"] = float(roc_auc_score(y_true, y_score))
+    else:
+        out["roc_auc"] = float("nan")
+    return out
+
+
+def plot_train_valid_loss(evals_result: Dict[str, Any], out_base: Path, extensions: list[str]) -> list[str]:
+    try:
+        import matplotlib.pyplot as plt
+    except Exception:
+        return []
+    train_vals = (((evals_result or {}).get("train") or {}).get("binary_logloss")) or []
+    valid_vals = (((evals_result or {}).get("valid") or {}).get("binary_logloss")) or []
+    if not train_vals and not valid_vals:
+        return []
+    fig, ax = plt.subplots(figsize=(8, 5))
+    if train_vals:
+        ax.plot(np.arange(1, len(train_vals) + 1), train_vals, label="train")
+    if valid_vals:
+        ax.plot(np.arange(1, len(valid_vals) + 1), valid_vals, label="valid")
+    ax.set_title("Train/Valid Binary Logloss")
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Logloss")
+    ax.legend()
+    fig.tight_layout()
+    out_files: list[str] = []
+    out_base = Path(out_base)
+    out_base.parent.mkdir(parents=True, exist_ok=True)
+    for ext in extensions:
+        p = out_base.with_suffix(f".{ext}")
+        fig.savefig(p, dpi=170)
+        out_files.append(str(p))
+    plt.close(fig)
+    return out_files
+
+
+def plot_roc(
+    *,
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    out_base: Path,
+    extensions: list[str],
+    selected_threshold: float | None = None,
+) -> list[str]:
+    try:
+        import matplotlib.pyplot as plt
+    except Exception:
+        return []
+    y_true = np.asarray(y_true, dtype=int)
+    y_score = np.asarray(y_score, dtype=float)
+    if len(np.unique(y_true)) < 2:
+        return []
+    fpr, tpr, _ = roc_curve(y_true, y_score)
+    auc = roc_auc_score(y_true, y_score)
+    fig, ax = plt.subplots(figsize=(6.2, 6.2))
+    ax.plot(fpr, tpr, label=f"ROC AUC={auc:.4f}")
+    ax.plot([0, 1], [0, 1], "k--", alpha=0.5)
+    if selected_threshold is not None:
+        pred = (y_score >= float(selected_threshold)).astype(int)
+        tn, fp, fn, tp = confusion_matrix(y_true, pred, labels=[0, 1]).ravel()
+        th_fpr = float(fp / (fp + tn)) if (fp + tn) > 0 else float("nan")
+        th_tpr = float(tp / (tp + fn)) if (tp + fn) > 0 else float("nan")
+        if np.isfinite(th_fpr) and np.isfinite(th_tpr):
+            ax.scatter([th_fpr], [th_tpr], color="red", s=36, label=f"threshold={selected_threshold:.3f}")
+    ax.set_xlabel("False Positive Rate")
+    ax.set_ylabel("True Positive Rate")
+    ax.set_title("ROC Curve")
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    out_files: list[str] = []
+    out_base = Path(out_base)
+    out_base.parent.mkdir(parents=True, exist_ok=True)
+    for ext in extensions:
+        p = out_base.with_suffix(f".{ext}")
+        fig.savefig(p, dpi=170)
+        out_files.append(str(p))
+    plt.close(fig)
+    return out_files
 
 
 def _threshold_sweep(

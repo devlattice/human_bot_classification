@@ -10,7 +10,6 @@ fold_ratio_max
 n_actions_slot_max
 n_actions_slot_mean
 n_actions_slot_std
-n_players_std
 n_streets_max
 other_ratio_max
 other_ratio_mean

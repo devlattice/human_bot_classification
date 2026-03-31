@@ -1,0 +1,246 @@
+#!/usr/bin/env python3
+"""
+Stream JSONL miner logs → chunk-level Parquet (raw aggregates, no robust transforms).
+
+- Reads all ``*.jsonl`` under ``--input-source-dir`` (one JSON object per line).
+- Expected fields per line: ``chunk`` (list of hands), ``chunk_hash`` (dedup key),
+  ``risk_score`` (ignored, not written).
+- Deduplicates by ``chunk_hash`` by default (``--no-dedupe`` to keep duplicates).
+- Output schema matches ``--sample`` Parquet (column names/order for raw aggregates).
+- ``label`` is always null (validator labels are unknown here).
+- Writes **one** Parquet file under ``--outdir`` (no train/val split).
+
+CPU-friendly: line-by-line read + batched Parquet row groups (``--batch-size``).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Set
+
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _schema_with_nullable_label(sample_path: Path) -> pa.Schema:
+    base = pq.read_schema(sample_path)
+    fields: List[pa.Field] = []
+    for f in base:
+        if f.name == "label":
+            fields.append(pa.field("label", f.type, nullable=True))
+        else:
+            fields.append(f)
+    return pa.schema(fields)
+
+
+def _feature_column_names(schema: pa.Schema) -> tuple[str, ...]:
+    return tuple(n for n in schema.names if n != "label")
+
+
+def _iter_jsonl_lines(path: Path):
+    with path.open("r", encoding="utf-8") as f:
+        for lineno, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            yield lineno, line
+
+
+def main() -> int:
+    default_json = REPO_ROOT / "workspace" / "ssl_data" / "json"
+    default_sample = (
+        REPO_ROOT
+        / "workspace"
+        / "dataset"
+        / "unpreprocessed"
+        / "original_train"
+        / "train.parquet"
+    )
+    default_out = REPO_ROOT / "workspace" / "ssl_data" / "raw_data"
+
+    ap = argparse.ArgumentParser(
+        description="JSONL miner logs → raw chunk-level Parquet (validator-domain features, unlabeled)."
+    )
+    ap.add_argument(
+        "--input-source-dir",
+        type=Path,
+        default=default_json,
+        help=f"Directory of *.jsonl (default: {default_json})",
+    )
+    ap.add_argument(
+        "--sample",
+        type=Path,
+        default=default_sample,
+        help=f"Reference Parquet for schema (default: {default_sample})",
+    )
+    ap.add_argument(
+        "--outdir",
+        type=Path,
+        default=default_out,
+        help=f"Output directory (default: {default_out})",
+    )
+    ap.add_argument(
+        "--output-name",
+        default="validator_request.parquet",
+        help="Output parquet filename under outdir (default: validator_request.parquet)",
+    )
+    ap.add_argument(
+        "--batch-size",
+        type=int,
+        default=2048,
+        help="Rows per Parquet row group (default: 2048)",
+    )
+    ap.add_argument(
+        "--log-every",
+        type=int,
+        default=5000,
+        help="Print progress every N accepted rows (0 = quiet except file boundaries)",
+    )
+    ap.add_argument(
+        "--no-dedupe",
+        action="store_true",
+        help="Do not deduplicate by chunk_hash (default: dedupe on chunk_hash)",
+    )
+    args = ap.parse_args()
+
+    input_dir = args.input_source_dir.expanduser().resolve()
+    sample_path = args.sample.expanduser().resolve()
+    outdir = args.outdir.expanduser().resolve()
+
+    if not input_dir.is_dir():
+        print(f"[build_raw_domain] error: not a directory: {input_dir}", file=sys.stderr)
+        return 1
+    if not sample_path.is_file():
+        print(f"[build_raw_domain] error: sample parquet missing: {sample_path}", file=sys.stderr)
+        return 1
+
+    schema = _schema_with_nullable_label(sample_path)
+    feature_names = _feature_column_names(schema)
+    feature_set = set(feature_names)
+
+    sys.path.insert(0, str(REPO_ROOT))
+    from poker44.validator.chunk_features import aggregate_chunk_from_hands
+
+    outdir.mkdir(parents=True, exist_ok=True)
+    out_path = outdir / args.output_name
+
+    jsonl_files = sorted(input_dir.glob("*.jsonl"))
+    if not jsonl_files:
+        print(f"[build_raw_domain] error: no *.jsonl under {input_dir}", file=sys.stderr)
+        return 1
+
+    seen_hash: Set[str] = set()
+    batch: List[Dict[str, Any]] = []
+    writer: pq.ParquetWriter | None = None
+
+    total_lines = 0
+    total_skipped_empty = 0
+    n_dup = 0
+    n_bad_json = 0
+    n_bad_chunk = 0
+    n_missing_hash = 0
+    n_feat_mismatch = 0
+    accepted = 0
+
+    def flush() -> None:
+        nonlocal writer, batch
+        if not batch:
+            return
+        table = pa.Table.from_pylist(batch, schema=schema)
+        if writer is None:
+            writer = pq.ParquetWriter(out_path, schema, compression="snappy")
+        writer.write_table(table)
+        batch.clear()
+
+    print(f"[build_raw_domain] sample_schema={sample_path}")
+    print(f"[build_raw_domain] features={len(feature_names)} + label(null)")
+    print(f"[build_raw_domain] dedupe_chunk_hash={not args.no_dedupe}")
+    print(f"[build_raw_domain] input_dir={input_dir} files={len(jsonl_files)}")
+    print(f"[build_raw_domain] out={out_path} batch_size={args.batch_size}")
+
+    for jpath in jsonl_files:
+        print(f"[build_raw_domain] file {jpath.name} ...")
+        for lineno, line in _iter_jsonl_lines(jpath):
+            total_lines += 1
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                n_bad_json += 1
+                continue
+            if not isinstance(rec, dict):
+                n_bad_chunk += 1
+                continue
+
+            ch = rec.get("chunk")
+            if not isinstance(ch, list) or not ch:
+                total_skipped_empty += 1
+                continue
+
+            h_raw = rec.get("chunk_hash")
+            if not args.no_dedupe:
+                if h_raw is None or (isinstance(h_raw, str) and not h_raw.strip()):
+                    n_missing_hash += 1
+                    continue
+                h = str(h_raw)
+                if h in seen_hash:
+                    n_dup += 1
+                    continue
+                seen_hash.add(h)
+
+            feat = aggregate_chunk_from_hands(ch)
+            if not feat:
+                n_bad_chunk += 1
+                continue
+            if set(feat.keys()) != feature_set:
+                n_feat_mismatch += 1
+                if n_feat_mismatch <= 3:
+                    missing = feature_set - set(feat.keys())
+                    extra = set(feat.keys()) - feature_set
+                    print(
+                        f"[build_raw_domain] feature mismatch (line {lineno} {jpath.name}): "
+                        f"missing={sorted(missing)[:8]!s} extra={sorted(extra)[:8]!s}",
+                        file=sys.stderr,
+                    )
+                continue
+
+            row: Dict[str, Any] = {k: float(feat[k]) for k in feature_names}
+            row["label"] = None
+            batch.append(row)
+            accepted += 1
+
+            if args.log_every and accepted % args.log_every == 0:
+                print(f"[build_raw_domain] accepted_rows={accepted} (streaming...)")
+
+            if len(batch) >= args.batch_size:
+                flush()
+
+        print(f"[build_raw_domain] done {jpath.name} accepted_total={accepted}")
+
+    flush()
+    if writer is not None:
+        writer.close()
+        writer = None
+
+    if accepted == 0:
+        print("[build_raw_domain] error: no rows written", file=sys.stderr)
+        if out_path.is_file():
+            out_path.unlink()
+        return 1
+
+    print(
+        "[build_raw_domain] summary: "
+        f"lines={total_lines} accepted={accepted} dup_hash={n_dup} "
+        f"bad_json={n_bad_json} empty_chunk={total_skipped_empty} bad_agg={n_bad_chunk} "
+        f"missing_hash_skipped={n_missing_hash} feat_mismatch={n_feat_mismatch}"
+    )
+    print(f"[build_raw_domain] wrote {out_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

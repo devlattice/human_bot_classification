@@ -7,7 +7,8 @@ This script:
 2) Runs one-way ANOVA by label (human=0 vs bot=1) for each feature,
 3) Computes Bonferroni and Benjamini-Hochberg FDR significance,
 4) Optionally merges domain-shift metrics from domain_shift_probe output,
-5) Writes a comprehensive CSV.
+5) Writes a comprehensive CSV and PNG plots under --plots-dir (volcano, domain vs
+   task signal, keep_score, task vs domain_shift scores).
 """
 
 from __future__ import annotations
@@ -131,6 +132,163 @@ def _add_composite_scores(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _safe_neg_log10_p(p: np.ndarray) -> np.ndarray:
+    p = np.asarray(p, dtype=float)
+    p = np.clip(p, 1e-300, 1.0)
+    return -np.log10(p)
+
+
+def render_anova_domain_plots(
+    df: pd.DataFrame,
+    plots_dir: Path,
+    *,
+    top_k_bars: int = 35,
+    point_label_max: int = 18,
+) -> List[str]:
+    """
+    Write PNGs under plots_dir: volcano, domain-vs-task scatter, keep_score bars.
+    Domain-aware plots require columns from domain_shift merge.
+    """
+    try:
+        import matplotlib.pyplot as plt
+    except Exception as e:
+        raise RuntimeError(
+            "Plotting requires matplotlib. Install with: python -m pip install matplotlib"
+        ) from e
+
+    plots_dir = plots_dir.expanduser().resolve()
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    emitted: List[str] = []
+
+    work = df.copy()
+    work["mean_diff_bot_minus_human"] = work["mean_bot"] - work["mean_human"]
+    work["neg_log10_p"] = _safe_neg_log10_p(work["p_value"].to_numpy(dtype=float))
+    has_domain = "domain_auc_macro_abs" in work.columns and work["domain_auc_macro_abs"].notna().any()
+
+    # 1) Volcano: effect vs significance, colored by domain leakage when available
+    fig, ax = plt.subplots(figsize=(9, 6))
+    x = work["mean_diff_bot_minus_human"].to_numpy(dtype=float)
+    y = work["neg_log10_p"].to_numpy(dtype=float)
+    if has_domain:
+        c = work["domain_auc_macro_abs"].to_numpy(dtype=float)
+        sc = ax.scatter(x, y, c=c, cmap="coolwarm", vmin=0.5, vmax=1.0, alpha=0.75, s=22, edgecolors="none")
+        cb = fig.colorbar(sc, ax=ax, fraction=0.035, pad=0.02)
+        cb.set_label("domain AUC (macro |ovr|)")
+    else:
+        ax.scatter(x, y, c="0.35", alpha=0.6, s=22, edgecolors="none")
+    ax.axhline(-np.log10(0.05), color="0.5", linestyle="--", linewidth=1, label="p=0.05")
+    ax.set_xlabel("mean(bot) − mean(human)")
+    ax.set_ylabel("−log10(p-value)")
+    ax.set_title("ANOVA volcano (color = domain shift when merged)")
+    ax.legend(loc="upper right")
+    fig.tight_layout()
+    p_volcano = plots_dir / "anova_volcano.png"
+    fig.savefig(p_volcano, dpi=160)
+    plt.close(fig)
+    emitted.append(str(p_volcano))
+
+    # 2) Domain vs task: x = domain fingerprint strength, y = separation signal
+    if has_domain:
+        fig2, ax2 = plt.subplots(figsize=(8.5, 6))
+        xd = work["domain_auc_macro_abs"].to_numpy(dtype=float)
+        yd = work["neg_log10_p"].to_numpy(dtype=float)
+        sig = work["sig_fdr_0_05"].to_numpy()
+        colors = np.where(sig, "tab:orange", "0.55")
+        ax2.scatter(xd, yd, c=colors, alpha=0.72, s=26, edgecolors="white", linewidths=0.35)
+        ax2.axvline(0.75, color="0.45", linestyle=":", linewidth=1)
+        ax2.axvline(0.9, color="0.25", linestyle=":", linewidth=1)
+        ax2.set_xlabel("domain_auc_macro_abs (higher ⇒ easier to classify source)")
+        ax2.set_ylabel("−log10(p-value) (ANOVA human vs bot)")
+        ax2.set_title("Task signal vs domain fingerprint (orange = FDR sig)")
+        ax2.set_xlim(0.48, 1.02)
+        fig2.tight_layout()
+        p_domain = plots_dir / "domain_vs_task_signal.png"
+        fig2.savefig(p_domain, dpi=160)
+        plt.close(fig2)
+        emitted.append(str(p_domain))
+
+        # 3) Composite keep_score bars
+        top = work.sort_values("keep_score", ascending=False).head(max(1, top_k_bars))
+        fig3, ax3 = plt.subplots(figsize=(9, max(4.0, 0.28 * len(top))))
+        y_pos = np.arange(len(top))
+        ax3.barh(y_pos, top["keep_score"].to_numpy(dtype=float), color="seagreen", alpha=0.85)
+        ax3.set_yticks(y_pos)
+        ax3.set_yticklabels(top["feature"].tolist(), fontsize=8)
+        ax3.invert_yaxis()
+        ax3.set_xlabel("keep_score (higher = more task, less domain leak)")
+        ax3.set_title(f"Top {len(top)} features by keep_score")
+        fig3.tight_layout()
+        p_keep = plots_dir / "top_keep_score.png"
+        fig3.savefig(p_keep, dpi=160)
+        plt.close(fig3)
+        emitted.append(str(p_keep))
+
+        # 4) domain_shift_score vs task_importance_score
+        fig4, ax4 = plt.subplots(figsize=(7.5, 6))
+        xs = work["domain_shift_score"].to_numpy(dtype=float)
+        ys = work["task_importance_score"].to_numpy(dtype=float)
+        ax4.scatter(xs, ys, c="steelblue", alpha=0.65, s=24, edgecolors="none")
+        ax4.set_xlabel("domain_shift_score (0=low leak, 1=strong source separability)")
+        ax4.set_ylabel("task_importance_score (normalized ANOVA F)")
+        ax4.set_title("Prefer upper-left: strong label signal, weak domain fingerprint")
+        fig4.tight_layout()
+        p_quad = plots_dir / "task_vs_domain_shift_scores.png"
+        fig4.savefig(p_quad, dpi=160)
+        plt.close(fig4)
+        emitted.append(str(p_quad))
+    else:
+        # Without domain merge: bar top by ANOVA F
+        topf = work.sort_values(["anova_f", "p_value"], ascending=[False, True]).head(max(1, top_k_bars))
+        fig3, ax3 = plt.subplots(figsize=(9, max(4.0, 0.28 * len(topf))))
+        y_pos = np.arange(len(topf))
+        ax3.barh(y_pos, topf["anova_f"].fillna(0).to_numpy(dtype=float), color="darkslateblue", alpha=0.85)
+        ax3.set_yticks(y_pos)
+        ax3.set_yticklabels(topf["feature"].tolist(), fontsize=8)
+        ax3.invert_yaxis()
+        ax3.set_xlabel("ANOVA F (human vs bot)")
+        ax3.set_title(f"Top {len(topf)} features by F (no domain merge — run with --domain-shift-csv)")
+        fig3.tight_layout()
+        p_f = plots_dir / "top_anova_F.png"
+        fig3.savefig(p_f, dpi=160)
+        plt.close(fig3)
+        emitted.append(str(p_f))
+
+    # Optional: label a few extreme points on volcano
+    if point_label_max > 0 and len(work):
+        fig5, ax5 = plt.subplots(figsize=(9, 6))
+        if has_domain:
+            c = work["domain_auc_macro_abs"].to_numpy(dtype=float)
+            ax5.scatter(x, y, c=c, cmap="coolwarm", vmin=0.5, vmax=1.0, alpha=0.55, s=18, edgecolors="none")
+        else:
+            ax5.scatter(x, y, c="0.35", alpha=0.55, s=18, edgecolors="none")
+        ax5.axhline(-np.log10(0.05), color="0.5", linestyle="--", linewidth=1)
+        abs_diff = np.abs(work["mean_diff_bot_minus_human"].to_numpy(dtype=float))
+        scale = float(np.nanmax(abs_diff)) if np.any(np.isfinite(abs_diff)) else 1.0
+        if not np.isfinite(scale) or scale <= 0:
+            scale = 1.0
+        ranked = work.assign(_score=work["neg_log10_p"] * scale + abs_diff).sort_values("_score", ascending=False)
+        pick = ranked.head(min(point_label_max, len(ranked)))
+        for _, r in pick.iterrows():
+            ax5.annotate(
+                str(r["feature"]),
+                (float(r["mean_diff_bot_minus_human"]), float(r["neg_log10_p"])),
+                fontsize=7,
+                alpha=0.9,
+                xytext=(5, 2),
+                textcoords="offset points",
+            )
+        ax5.set_xlabel("mean(bot) − mean(human)")
+        ax5.set_ylabel("−log10(p-value)")
+        ax5.set_title("Volcano with labels (top combined extremes)")
+        fig5.tight_layout()
+        p_lab = plots_dir / "anova_volcano_labeled.png"
+        fig5.savefig(p_lab, dpi=160)
+        plt.close(fig5)
+        emitted.append(str(p_lab))
+
+    return emitted
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="ANOVA + Bonferroni + FDR + optional domain-shift merge")
     ap.add_argument("--data-dir", help="Directory containing train.parquet and val.parquet")
@@ -150,6 +308,14 @@ def main() -> None:
         default="workspace/test/anova_bonferroni_FDR_combined.csv",
         help="Output CSV path",
     )
+    ap.add_argument(
+        "--plots-dir",
+        default="workspace/preprocess/statistical_test/plots",
+        help="Directory for PNG plots (volcano, domain vs task, keep_score, ...)",
+    )
+    ap.add_argument("--no-plots", action="store_true", help="Skip writing plots")
+    ap.add_argument("--plot-top-k", type=int, default=35, help="Features in horizontal bar charts")
+    ap.add_argument("--plot-label-max", type=int, default=18, help="Labeled points on volcano_labeled PNG")
     args = ap.parse_args()
 
     df = _load_labeled_tables(args.data_dir, args.parquet)
@@ -163,10 +329,25 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(out_path, index=False)
 
+    plot_paths: List[str] = []
+    if not args.no_plots:
+        plot_dir = Path(args.plots_dir).expanduser().resolve()
+        try:
+            plot_paths = render_anova_domain_plots(
+                out,
+                plot_dir,
+                top_k_bars=args.plot_top_k,
+                point_label_max=args.plot_label_max,
+            )
+        except RuntimeError as e:
+            print(f"[anova] plots skipped: {e}")
+
     n_sig = int((out["sig_p_lt_0_05"] == True).sum())
     n_bonf = int((out["sig_bonferroni"] == True).sum())
     n_fdr = int((out["sig_fdr_0_05"] == True).sum())
     print(f"[anova] rows={len(out)} wrote={out_path}")
+    for pp in plot_paths:
+        print(f"[anova] plot: {pp}")
     print(f"[anova] significant p<0.05={n_sig} bonferroni={n_bonf} fdr={n_fdr}")
     print("[anova] top10 by p-value:")
     for _, r in out.head(10).iterrows():

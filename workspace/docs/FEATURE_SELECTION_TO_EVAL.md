@@ -33,7 +33,9 @@ Run on train+val of your subnet dataset:
 PYTHONPATH=. python workspace/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
   --data-dir workspace/dataset/unpreprocessed/original_train \
   --disable-domain-shift-merge \
-  --out-csv workspace/preprocess/statistical_test/original_train_anova.csv
+  --out-csv workspace/preprocess/statistical_test/result
+  --plots-dir workspace/preprocess/statistical_test/result
+  original_train_anova.csv
 ```
 
 Read these columns:
@@ -103,6 +105,19 @@ Why:
 
 ---
 
+or (version0.1 for top method - auto feature extraction)
+```bash
+python3 workspace/preprocess/robust_feature_transform.py \
+  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --out-dir workspace/dataset/robusted_dataset/original_train \
+  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --keep-features-file workspace/preprocess/statistical_test/artifacts/feature_selection/keep_features.txt \
+  --restrict-to-keep-features \
+  --enable-log1p \
+  --enable-robust-scale
+
+```
+
 ## 4) Train LGBM
 
 ```bash
@@ -154,8 +169,35 @@ PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
   --drop-row-nan-frac-over -1
 
 # 4) train
-PYTHONPATH=. python workspace/model/LGBM.py \
-  --data-dir workspace/dataset/robusted_dataset/original_train_selected \
-  --out-dir workspace/model/artifacts/lgbm_b_subnet_selected
+PYTHONPATH=. python workspace/model/scripts/lgbm.py \
+  --data-dir workspace/dataset/robusted_dataset/original_train \
+  --out-dir workspace/model/artifacts/lgbm_2_v1
+
+# 5) evaluation
+PYTHONPATH=. python workspace/test/cross_dataset_eval.py \
+  --model workspace/model/artifacts/lgbm_2_v1/lgbm_classifier.joblib \
+  --eval-parquet workspace/dataset/robusted_dataset/original_test/train.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/original_test/val.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout.parquet \
+  --out-dir workspace/model/artifacts/cross_eval/lgbm_2_v1 \
+  --threshold 0.5
 ```
 
+### Preparing test dataset
+```bash
+python3 workspace/preprocess/robust_feature_transform.py \
+  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
+  --in-parquet workspace/dataset/unpreprocessed/original_test/train.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/original_test/train.parquet && \
+
+python3 workspace/preprocess/robust_feature_transform.py \
+  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
+  --in-parquet workspace/dataset/unpreprocessed/original_test/val.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/original_test/val.parquet && \
+
+python3 workspace/preprocess/robust_feature_transform.py \
+  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
+  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout.parquet
+
+```

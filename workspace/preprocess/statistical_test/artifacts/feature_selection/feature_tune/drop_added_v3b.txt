@@ -1,0 +1,8 @@
+bet_ratio_mean
+max_norm_bb_mean
+end_flop_mean
+check_ratio_mean
+mean_norm_bb_mean
+std_norm_bb_mean
+p6p_mean
+n_players_mean

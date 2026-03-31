@@ -1,0 +1,8 @@
+bet_ratio_std
+call_ratio_std
+call_ratio_mean
+check_ratio_std
+std_pot_after_mean
+mean_pot_after_mean
+n_players_std
+end_flop_std
