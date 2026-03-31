@@ -20,8 +20,13 @@ import pandas as pd
 
 from poker44.base.miner import BaseMinerNeuron
 from poker44.validator.chunk_features import aggregate_chunk_from_hands
-from poker44.utils.model_manifest import build_local_model_manifest
+from poker44.utils.model_manifest import (
+    build_local_model_manifest,
+    evaluate_manifest_compliance,
+    manifest_digest,
+)
 from poker44.validator.synapse import DetectionSynapse
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -245,13 +250,10 @@ class Miner(BaseMinerNeuron):
                 ),
             },
         )
-        if not str(self.model_manifest.get("repo_commit", "")).strip():
-            bt.logging.warning(
-                "model_manifest has empty repo_commit after normalize — set POKER44_MODEL_REPO_COMMIT "
-                "or run from a git checkout so validators get MIN_REQUIRED_MANIFEST_FIELDS."
-            )
-        bt.logging.info(f"Published model manifest: {self.model_manifest}")
-
+        self.manifest_compliance = evaluate_manifest_compliance(self.model_manifest)
+        self.manifest_digest = manifest_digest(self.model_manifest)
+        self._log_manifest_startup(REPO_ROOT)
+        
         # # Attach handlers after initialization
         # self.axon.attach(
         #     forward_fn = self.forward,
@@ -261,6 +263,38 @@ class Miner(BaseMinerNeuron):
         # bt.logging.info("Attaching forward function to miner axon.")
 
         bt.logging.info(f"Axon created: {self.axon}")
+
+    def _log_manifest_startup(self, repo_root: Path) -> None:
+        bt.logging.info("Open-sourced miner manifest standard active for this miner.")
+        bt.logging.info(
+            f"Miner transparency status: {self.manifest_compliance['status']} "
+            f"(missing_fields={self.manifest_compliance['missing_fields']})"
+        )
+        bt.logging.info(
+            f"Manifest summary | model={self.model_manifest.get('model_name', '')} "
+            f"version={self.model_manifest.get('model_version', '')} "
+            f"repo={self.model_manifest.get('repo_url', '')} "
+            f"commit={self.model_manifest.get('repo_commit', '')} "
+            f"open_source={self.model_manifest.get('open_source')}"
+        )
+        bt.logging.info(
+            f"Manifest digest={self.manifest_digest} "
+            f"inference_mode={self.model_manifest.get('inference_mode', '')}"
+        )
+        bt.logging.info(
+            "Miner prep tooling available | "
+            f"benchmark_doc={repo_root / 'docs' / 'public-benchmark.md'} "
+            f"miner_doc={repo_root / 'docs' / 'miner.md'} "
+            f"anti_leakage_doc={repo_root / 'docs' / 'anti-leakage.md'}"
+        )
+        bt.logging.info(
+            "Public benchmark command: "
+            "python scripts/publish/publish_public_benchmark.py --skip-wandb"
+        )
+        bt.logging.info(
+            "Purpose: train, validate and refine miner models against the public benchmark "
+            "while Poker44 moves toward more dynamic evaluation."
+        )
 
     async def forward(self, synapse: DetectionSynapse) -> DetectionSynapse:
         """Assign one deterministic bot-risk score per chunk."""
