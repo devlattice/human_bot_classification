@@ -23,6 +23,14 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 --chunk-count 1000 \
 --progress-every-chunks 100 \
 --preset training
+
+PYTHONPATH=. python workspace/preprocess/build_dataset.py \
+--human-json workspace/dataset/source/zenodo_holdout.json \
+--out workspace/dataset/unpreprocessed/original_test \
+--chunk-count 1000 \
+--progress-every-chunks 100 \
+--preset training
+
 ###
 
 ## For hands_generator
