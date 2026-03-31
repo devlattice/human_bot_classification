@@ -264,8 +264,53 @@ def _youden_columns_for_split(
     }
 
 
-def _metrics(model: Any, X: pd.DataFrame, y: pd.Series, threshold: float) -> Dict[str, float]:
-    proba = model.predict_proba(X)[:, 1]
+def _smooth_uncertain_score(s: float, a: float, b: float, gamma: float) -> float:
+    """Same uncertain-band transform as neurons/miner.py."""
+    if s <= a or s >= b:
+        return s
+    z = (s - a) / (b - a)
+    z_soft = z ** gamma
+    return a + (b - a) * z_soft
+
+
+def _maybe_apply_uncertain_smoothing(
+    proba: np.ndarray,
+    *,
+    uncertain_a: float,
+    uncertain_b: float,
+    uncertain_gamma: float,
+) -> np.ndarray:
+    """Apply miner-style uncertain-band smoothing iff params are valid."""
+    p = np.asarray(proba, dtype=np.float64)
+    if not (0.0 <= uncertain_a < uncertain_b <= 1.0) or uncertain_gamma <= 0.0:
+        return p
+    out = np.array(
+        [
+            _smooth_uncertain_score(float(s), uncertain_a, uncertain_b, uncertain_gamma)
+            for s in p
+        ],
+        dtype=np.float64,
+    )
+    return np.clip(out, 0.0, 1.0)
+
+
+def _metrics(
+    model: Any,
+    X: pd.DataFrame,
+    y: pd.Series,
+    threshold: float,
+    *,
+    uncertain_a: float,
+    uncertain_b: float,
+    uncertain_gamma: float,
+) -> Dict[str, float]:
+    raw_proba = model.predict_proba(X)[:, 1]
+    proba = _maybe_apply_uncertain_smoothing(
+        raw_proba,
+        uncertain_a=uncertain_a,
+        uncertain_b=uncertain_b,
+        uncertain_gamma=uncertain_gamma,
+    )
     pred = (proba >= threshold).astype(int)
     out: Dict[str, float] = {
         "accuracy": float((pred == y.to_numpy()).mean()),
@@ -284,9 +329,23 @@ def _metrics(model: Any, X: pd.DataFrame, y: pd.Series, threshold: float) -> Dic
     return out
 
 
-def _validator_style_reward(model: Any, X: pd.DataFrame, y: pd.Series) -> Dict[str, float]:
+def _validator_style_reward(
+    model: Any,
+    X: pd.DataFrame,
+    y: pd.Series,
+    *,
+    uncertain_a: float,
+    uncertain_b: float,
+    uncertain_gamma: float,
+) -> Dict[str, float]:
     """Match ``poker44.score.scoring.reward`` inputs: float scores, int labels 0/1."""
-    proba = model.predict_proba(X)[:, 1].astype(np.float64)
+    raw_proba = model.predict_proba(X)[:, 1].astype(np.float64)
+    proba = _maybe_apply_uncertain_smoothing(
+        raw_proba,
+        uncertain_a=uncertain_a,
+        uncertain_b=uncertain_b,
+        uncertain_gamma=uncertain_gamma,
+    )
     y_arr = y.to_numpy(dtype=np.int64)
     rew, res = subnet_reward(proba, y_arr)
     return {
@@ -299,9 +358,23 @@ def _validator_style_reward(model: Any, X: pd.DataFrame, y: pd.Series) -> Dict[s
     }
 
 
-def _score_quantiles(model: Any, X: pd.DataFrame, y: pd.Series) -> Dict[str, float]:
+def _score_quantiles(
+    model: Any,
+    X: pd.DataFrame,
+    y: pd.Series,
+    *,
+    uncertain_a: float,
+    uncertain_b: float,
+    uncertain_gamma: float,
+) -> Dict[str, float]:
     """Quantiles of predicted bot-probability, overall and per class."""
-    p = model.predict_proba(X)[:, 1].astype(np.float64)
+    raw_p = model.predict_proba(X)[:, 1].astype(np.float64)
+    p = _maybe_apply_uncertain_smoothing(
+        raw_p,
+        uncertain_a=uncertain_a,
+        uncertain_b=uncertain_b,
+        uncertain_gamma=uncertain_gamma,
+    )
     y_arr = y.to_numpy(dtype=np.int64)
     human = p[y_arr == 0]
     bot = p[y_arr == 1]
@@ -453,6 +526,24 @@ def main() -> None:
         default=1001,
         help="Grid points in [0,1] for Youden threshold search.",
     )
+    parser.add_argument(
+        "--uncertain-a",
+        type=float,
+        default=-1.0,
+        help="Miner-style uncertain band start `a` (enable only when 0<=a<b<=1 and gamma>0).",
+    )
+    parser.add_argument(
+        "--uncertain-b",
+        type=float,
+        default=-1.0,
+        help="Miner-style uncertain band end `b` (enable only when 0<=a<b<=1 and gamma>0).",
+    )
+    parser.add_argument(
+        "--uncertain-gamma",
+        type=float,
+        default=1.0,
+        help="Miner-style uncertain band power `gamma`.",
+    )
     args = parser.parse_args()
     threshold_was_set = "--threshold" in sys.argv
     selected_was_set = "--selected-threshold" in sys.argv
@@ -546,6 +637,9 @@ def main() -> None:
 
     do_youden = not bool(args.no_youden)
     youden_grid = max(2, int(args.youden_grid_size))
+    uncertain_a = float(args.uncertain_a)
+    uncertain_b = float(args.uncertain_b)
+    uncertain_gamma = float(args.uncertain_gamma)
 
     rows: List[Dict[str, Any]] = []
     for d in dataset_dirs:
@@ -569,9 +663,31 @@ def main() -> None:
         if eval_train:
             X_train = _align_X(train_df, model_feats)
             y_train = train_df["label"]
-            train_m = _metrics(model, X_train, y_train, threshold=threshold)
-            train_r = _validator_style_reward(model, X_train, y_train)
-            train_q = _score_quantiles(model, X_train, y_train)
+            train_m = _metrics(
+                model,
+                X_train,
+                y_train,
+                threshold=threshold,
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
+            train_r = _validator_style_reward(
+                model,
+                X_train,
+                y_train,
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
+            train_q = _score_quantiles(
+                model,
+                X_train,
+                y_train,
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
         else:
             train_m = {
                 "n": math.nan,
@@ -606,9 +722,31 @@ def main() -> None:
         if eval_val:
             X_val = _align_X(val_df, model_feats)
             y_val = val_df["label"]
-            val_m = _metrics(model, X_val, y_val, threshold=threshold)
-            val_r = _validator_style_reward(model, X_val, y_val)
-            val_q = _score_quantiles(model, X_val, y_val)
+            val_m = _metrics(
+                model,
+                X_val,
+                y_val,
+                threshold=threshold,
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
+            val_r = _validator_style_reward(
+                model,
+                X_val,
+                y_val,
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
+            val_q = _score_quantiles(
+                model,
+                X_val,
+                y_val,
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
         else:
             val_m = {
                 "n": math.nan,
@@ -642,7 +780,12 @@ def main() -> None:
             }
         if eval_train:
             if do_youden and X_train is not None and y_train is not None:
-                proba_tr = model.predict_proba(X_train)[:, 1]
+                proba_tr = _maybe_apply_uncertain_smoothing(
+                    model.predict_proba(X_train)[:, 1],
+                    uncertain_a=uncertain_a,
+                    uncertain_b=uncertain_b,
+                    uncertain_gamma=uncertain_gamma,
+                )
                 train_youden_cols = _youden_columns_for_split(
                     "train", y_train.to_numpy(), proba_tr, do_youden=True, grid_size=youden_grid
                 )
@@ -656,7 +799,12 @@ def main() -> None:
             )
         if eval_val:
             if do_youden and X_val is not None and y_val is not None:
-                proba_va = model.predict_proba(X_val)[:, 1]
+                proba_va = _maybe_apply_uncertain_smoothing(
+                    model.predict_proba(X_val)[:, 1],
+                    uncertain_a=uncertain_a,
+                    uncertain_b=uncertain_b,
+                    uncertain_gamma=uncertain_gamma,
+                )
                 val_youden_cols = _youden_columns_for_split(
                     "val", y_val.to_numpy(), proba_va, do_youden=True, grid_size=youden_grid
                 )
@@ -671,6 +819,9 @@ def main() -> None:
         row: Dict[str, Any] = {
             "dataset_dir": str(data_dir),
             "threshold_used": float(threshold),
+            "uncertain_a": uncertain_a,
+            "uncertain_b": uncertain_b,
+            "uncertain_gamma": uncertain_gamma,
             "n_features": len(model_feats),
             "n_features_parquet": len(feat),
             "train_n": int(train_m["n"]) if not math.isnan(train_m["n"]) else math.nan,
@@ -726,12 +877,28 @@ def main() -> None:
         }
         if selected_threshold is not None:
             train_sel = (
-                _metrics(model, X_train, y_train, threshold=float(selected_threshold))
+                _metrics(
+                    model,
+                    X_train,
+                    y_train,
+                    threshold=float(selected_threshold),
+                    uncertain_a=uncertain_a,
+                    uncertain_b=uncertain_b,
+                    uncertain_gamma=uncertain_gamma,
+                )
                 if eval_train and X_train is not None and y_train is not None
                 else {"accuracy": math.nan, "human_fpr": math.nan, "bot_recall": math.nan}
             )
             val_sel = (
-                _metrics(model, X_val, y_val, threshold=float(selected_threshold))
+                _metrics(
+                    model,
+                    X_val,
+                    y_val,
+                    threshold=float(selected_threshold),
+                    uncertain_a=uncertain_a,
+                    uncertain_b=uncertain_b,
+                    uncertain_gamma=uncertain_gamma,
+                )
                 if eval_val and X_val is not None and y_val is not None
                 else {"accuracy": math.nan, "human_fpr": math.nan, "bot_recall": math.nan}
             )
@@ -761,14 +928,41 @@ def main() -> None:
             )
         X = _align_X(df, model_feats)
         y = df["label"]
-        val_m = _metrics(model, X, y, threshold=threshold)
-        val_r = _validator_style_reward(model, X, y)
-        val_q = _score_quantiles(model, X, y)
+        val_m = _metrics(
+            model,
+            X,
+            y,
+            threshold=threshold,
+            uncertain_a=uncertain_a,
+            uncertain_b=uncertain_b,
+            uncertain_gamma=uncertain_gamma,
+        )
+        val_r = _validator_style_reward(
+            model,
+            X,
+            y,
+            uncertain_a=uncertain_a,
+            uncertain_b=uncertain_b,
+            uncertain_gamma=uncertain_gamma,
+        )
+        val_q = _score_quantiles(
+            model,
+            X,
+            y,
+            uncertain_a=uncertain_a,
+            uncertain_b=uncertain_b,
+            uncertain_gamma=uncertain_gamma,
+        )
         train_youden_cols = _youden_columns_for_split(
             "train", np.zeros(0), np.zeros(0), do_youden=False, grid_size=0
         )
         if do_youden:
-            proba_eval = model.predict_proba(X)[:, 1]
+            proba_eval = _maybe_apply_uncertain_smoothing(
+                model.predict_proba(X)[:, 1],
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
             val_youden_cols = _youden_columns_for_split(
                 "val", y.to_numpy(), proba_eval, do_youden=True, grid_size=youden_grid
             )
@@ -779,6 +973,9 @@ def main() -> None:
         row = {
             "dataset_dir": str(path),
             "threshold_used": float(threshold),
+            "uncertain_a": uncertain_a,
+            "uncertain_b": uncertain_b,
+            "uncertain_gamma": uncertain_gamma,
             "n_features": len(model_feats),
             "n_features_parquet": len(feat),
             **_nan_train_row_stub(),
@@ -810,7 +1007,15 @@ def main() -> None:
             **val_youden_cols,
         }
         if selected_threshold is not None:
-            val_sel = _metrics(model, X, y, threshold=float(selected_threshold))
+            val_sel = _metrics(
+                model,
+                X,
+                y,
+                threshold=float(selected_threshold),
+                uncertain_a=uncertain_a,
+                uncertain_b=uncertain_b,
+                uncertain_gamma=uncertain_gamma,
+            )
             row.update(
                 {
                     "selected_threshold": float(selected_threshold),

@@ -45,6 +45,9 @@ run_one() {
     --eval-parquet "$EVAL_3" \
     --threshold "$THRESHOLD" \
     --selected-threshold "$SELECTED_THRESHOLD" \
+    --uncertain-a "$a" \
+    --uncertain-b "$b" \
+    --uncertain-gamma "$g" \
     --out-dir "$out_dir"
 }
 
