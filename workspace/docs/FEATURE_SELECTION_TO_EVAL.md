@@ -176,28 +176,28 @@ PYTHONPATH=. python workspace/model/scripts/lgbm.py \
 # 5) evaluation
 PYTHONPATH=. python workspace/test/cross_dataset_eval.py \
   --model workspace/model/artifacts/lgbm_2_v1/lgbm_classifier.joblib \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/train.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/val.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_train.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_test.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_human_mix.parquet \
   --out-dir workspace/model/artifacts/cross_eval/lgbm_2_v1 \
-  --threshold 0.5
+  --threshold 0.6
 ```
 
 ### Preparing test dataset
 ```bash
 python3 workspace/preprocess/robust_feature_transform.py \
   --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
-  --in-parquet workspace/dataset/unpreprocessed/original_test/train.parquet \
-  --out-parquet workspace/dataset/robusted_dataset/original_test/train.parquet && \
+  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout_train.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout_train.parquet && \
 
 python3 workspace/preprocess/robust_feature_transform.py \
   --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
-  --in-parquet workspace/dataset/unpreprocessed/original_test/val.parquet \
-  --out-parquet workspace/dataset/robusted_dataset/original_test/val.parquet && \
+  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout_test.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout_test.parquet && \
 
 python3 workspace/preprocess/robust_feature_transform.py \
   --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
-  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout.parquet \
-  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout.parquet
+  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout_human_mix.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout_human_mix.parquet
 
 ```

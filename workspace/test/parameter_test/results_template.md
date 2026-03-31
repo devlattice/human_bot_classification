@@ -1,0 +1,21 @@
+# a/b/gamma mini-grid results
+
+Fill one row per config after each run.
+
+| run_id | a | b | gamma | smoothing_on | threshold_used | dataset | val_human_fpr | val_bot_recall | val_accuracy | val_human_fpr_at_selected | val_bot_recall_at_selected | notes |
+|---|---:|---:|---:|---|---:|---|---:|---:|---:|---:|---:|---|
+| A | 0.3 | 0.7 | 1.4 | yes | 0.6 | hollout_human_mix |  |  |  |  |  |  |
+| A | 0.3 | 0.7 | 1.4 | yes | 0.6 | hollout_train |  |  |  |  |  |  |
+| A | 0.3 | 0.7 | 1.4 | yes | 0.6 | hollout_test |  |  |  |  |  |  |
+| B | 0.4 | 0.6 | 1.4 | yes | 0.6 | hollout_human_mix |  |  |  |  |  |  |
+| B | 0.4 | 0.6 | 1.4 | yes | 0.6 | hollout_train |  |  |  |  |  |  |
+| B | 0.4 | 0.6 | 1.4 | yes | 0.6 | hollout_test |  |  |  |  |  |  |
+| C | -1 | -1 | 1.0 | no | 0.6 | hollout_human_mix |  |  |  |  |  |  |
+| C | -1 | -1 | 1.0 | no | 0.6 | hollout_train |  |  |  |  |  |  |
+| C | -1 | -1 | 1.0 | no | 0.6 | hollout_test |  |  |  |  |  |  |
+
+## Final choice
+
+- Winner run_id:
+- Reason:
+- Safety note:

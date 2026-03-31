@@ -1,5 +1,5 @@
 {
-  "dataset_hash": "d8bba89ab3d4bb4d1bcc5b4315c1d1b07c125cf6eb3efe60519f330f9ffab482",
+  "dataset_hash": "24afb8ee3df082f10c9883f9e6e3ab5c884d1e646f2cd8965963cebf2d740b5d",
   "stats": {
     "chunk_count": 1000,
     "human_chunks": 500,
@@ -7,23 +7,26 @@
     "total_hands": 90894,
     "human_hands": 45447,
     "bot_hands": 45447,
-    "dataset_hash": "d8bba89ab3d4bb4d1bcc5b4315c1d1b07c125cf6eb3efe60519f330f9ffab482",
-    "generated_at": 1774616286,
+    "dataset_hash": "24afb8ee3df082f10c9883f9e6e3ab5c884d1e646f2cd8965963cebf2d740b5d",
+    "generated_at": 1774966615,
     "window_id": 0,
     "effective_seed": 6085284259181818738,
     "window_start": null,
     "window_end": null,
-    "shortcut_rule_accuracy": 0.847,
+    "shortcut_rule_accuracy": 0.998,
     "shortcut_rule": {
       "type": "gt",
-      "feature": "avg_fold",
-      "threshold": 5.743362831858407,
-      "pred_bot_if_gt": 1
+      "feature": "avg_raise",
+      "threshold": 1.1166666666666667,
+      "pred_bot_if_gt": 0
     },
     "bot_generation_rounds": 4,
-    "selected_bot_generation_round": 1,
-    "bot_profile_mode": "mixed",
-    "bot_profile_pools": 1
+    "selected_bot_generation_round": 2,
+    "human_avg_streets_min": 0.6885245901639344,
+    "human_avg_streets_max": 1.4736842105263157,
+    "bot_avg_streets_min": 0.4084507042253521,
+    "bot_avg_streets_max": 1.219298245614035,
+    "avg_streets_gap": 0.26269362324630696
   },
   "preset": "training",
   "miner_feature_schema": "strict",
@@ -116,7 +119,7 @@
     "bot_profile_mode": "mixed",
     "bot_candidate_attempts_per_chunk": 8,
     "max_bot_generation_rounds": 4,
-    "human_json_path": "/home/dr/Workspace/Poker44/workspace/_subnet_target/dataset/source/poker_hands_test.json"
+    "human_json_path": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/source/zenodo_holdout.json"
   },
   "feature_cols": [
     "chunk_n_hands",
