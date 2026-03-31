@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import subprocess
 import time
 import atexit
 import importlib
@@ -12,9 +13,6 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, Tuple
-from collections import Counter
-from pathlib import Path
-from typing import Tuple
 
 import bittensor as bt
 import numpy as np
@@ -26,6 +24,20 @@ from poker44.utils.model_manifest import build_local_model_manifest
 from poker44.validator.synapse import DetectionSynapse
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _git_head_sha() -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    except Exception:
+        return ""
+
 
 def _parse_rotate_seconds(spec: str) -> Optional[float]:
     """
@@ -135,7 +147,27 @@ class Miner(BaseMinerNeuron):
         self._uncertain_a = float(os.getenv("POKER44_MINER_UNCERTAIN_A", "-1"))
         self._uncertain_b = float(os.getenv("POKER44_MINER_UNCERTAIN_B", "-1"))
         self._uncertain_gamma = float(os.getenv("POKER44_MINER_UNCERTAIN_GAMMA", "1.0"))
-        self._model_path = os.getenv("POKER44_MINER_MODEL_PATH", "/home/dr/Workspace/Poker44/workspace/model/artifacts/lgbm_keep/lgbm_classifier.joblib").strip()
+        _ua, _ub, _ug = self._uncertain_a, self._uncertain_b, self._uncertain_gamma
+        if 0.0 <= _ua < _ub <= 1.0 and _ug > 0.0:
+            bt.logging.info(
+                f"Uncertain-band smoothing ON: POKER44_MINER_UNCERTAIN_A/B/GAMMA={_ua}/{_ub}/{_ug}"
+            )
+        else:
+            bt.logging.info(
+                "Uncertain-band smoothing OFF (need 0<=a<b<=1 and gamma>0); "
+                f"POKER44_MINER_UNCERTAIN_A/B/GAMMA={_ua}/{_ub}/{_ug}"
+            )
+        self._model_path = os.getenv(
+            "POKER44_MINER_MODEL_PATH",
+            str(
+                REPO_ROOT
+                / "workspace"
+                / "model"
+                / "artifacts"
+                / "lgbm_keep"
+                / "lgbm_classifier.joblib"
+            ),
+        ).strip()
         self._transform_meta_path = os.getenv("POKER44_MINER_TRANSFORM_META_PATH", "").strip()
         # If true: refuse to start without a loaded model, and never fall back to heuristics
         # on a chunk (inference errors propagate; fix model or restart).
@@ -165,6 +197,14 @@ class Miner(BaseMinerNeuron):
                 self._start_async_log_worker()
         self._maybe_load_model()
         self._maybe_load_transform_meta()
+        _tm_path = self._resolve_transform_meta_path()
+        bt.logging.info(
+            "Miner scoring stack: model_path=%r loaded=%s | transform_meta_path=%r loaded=%s",
+            self._model_path or "",
+            bool(self._model),
+            str(_tm_path) if _tm_path else "",
+            bool(self._transform_meta),
+        )
         if self._miner_require_model and self._model is None:
             raise RuntimeError(
                 "POKER44_MINER_REQUIRE_MODEL is enabled but no estimator loaded. "
@@ -174,9 +214,17 @@ class Miner(BaseMinerNeuron):
             bt.logging.info("POKER44_MINER_REQUIRE_MODEL=1 — heuristic fallback disabled.")
         atexit.register(self._shutdown_log_worker)
 
-        repo_root = Path(__file__).resolve().parents[1]
+        _repo_commit_default = _git_head_sha()
+        if not _repo_commit_default.strip() and not (
+            os.getenv("POKER44_MODEL_REPO_COMMIT") or ""
+        ).strip():
+            bt.logging.warning(
+                "No git HEAD and POKER44_MODEL_REPO_COMMIT unset — subnet validators require "
+                "repo_commit in model_manifest (integrity: manifest_missing_repo_commit)."
+            )
+
         self.model_manifest = build_local_model_manifest(
-            repo_root=repo_root,
+            repo_root=REPO_ROOT,
             implementation_files=[Path(__file__).resolve()],
             defaults={
                 "model_name": "poker44-reference-heuristic",
@@ -184,6 +232,7 @@ class Miner(BaseMinerNeuron):
                 "framework": "python-heuristic",
                 "license": "MIT",
                 "repo_url": "https://github.com/Poker44/Poker44-subnet",
+                "repo_commit": _repo_commit_default,
                 "notes": "Reference heuristic miner shipped with the Poker44 subnet.",
                 "open_source": True,
                 "inference_mode": "remote",
@@ -196,8 +245,13 @@ class Miner(BaseMinerNeuron):
                 ),
             },
         )
+        if not str(self.model_manifest.get("repo_commit", "")).strip():
+            bt.logging.warning(
+                "model_manifest has empty repo_commit after normalize — set POKER44_MODEL_REPO_COMMIT "
+                "or run from a git checkout so validators get MIN_REQUIRED_MANIFEST_FIELDS."
+            )
         bt.logging.info(f"Published model manifest: {self.model_manifest}")
-        
+
         # # Attach handlers after initialization
         # self.axon.attach(
         #     forward_fn = self.forward,
@@ -228,7 +282,7 @@ class Miner(BaseMinerNeuron):
             predictions=synapse.predictions,
             latency_ms=latency_ms,
         )
-        bt.logging.info(f"Miner Predctions: {synapse.predictions}")
+        bt.logging.info(f"Miner predictions: {synapse.predictions}")
         bt.logging.info(
             f"Scored {len(chunks)} chunks in {latency_ms:.2f}ms "
             f"({int(sum(len(c) for c in chunks))} hands)."
