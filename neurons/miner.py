@@ -12,6 +12,9 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, Tuple
+from collections import Counter
+from pathlib import Path
+from typing import Tuple
 
 import bittensor as bt
 import numpy as np
@@ -19,6 +22,7 @@ import pandas as pd
 
 from poker44.base.miner import BaseMinerNeuron
 from poker44.validator.chunk_features import aggregate_chunk_from_hands
+from poker44.utils.model_manifest import build_local_model_manifest
 from poker44.validator.synapse import DetectionSynapse
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -170,6 +174,30 @@ class Miner(BaseMinerNeuron):
             bt.logging.info("POKER44_MINER_REQUIRE_MODEL=1 — heuristic fallback disabled.")
         atexit.register(self._shutdown_log_worker)
 
+        repo_root = Path(__file__).resolve().parents[1]
+        self.model_manifest = build_local_model_manifest(
+            repo_root=repo_root,
+            implementation_files=[Path(__file__).resolve()],
+            defaults={
+                "model_name": "poker44-reference-heuristic",
+                "model_version": "1",
+                "framework": "python-heuristic",
+                "license": "MIT",
+                "repo_url": "https://github.com/Poker44/Poker44-subnet",
+                "notes": "Reference heuristic miner shipped with the Poker44 subnet.",
+                "open_source": True,
+                "inference_mode": "remote",
+                "training_data_statement": (
+                    "Reference heuristic miner. No training step. Uses only runtime chunk features."
+                ),
+                "training_data_sources": ["none"],
+                "private_data_attestation": (
+                    "This reference miner does not train on validator-private human data."
+                ),
+            },
+        )
+        bt.logging.info(f"Published model manifest: {self.model_manifest}")
+        
         # # Attach handlers after initialization
         # self.axon.attach(
         #     forward_fn = self.forward,
@@ -191,6 +219,7 @@ class Miner(BaseMinerNeuron):
         self._record_latency(latency_ms)
         synapse.risk_scores = smoothed_scores
         synapse.predictions = [s >= 0.5 for s in smoothed_scores]
+        synapse.model_manifest = dict(self.model_manifest)
         self._maybe_log_request(
             synapse=synapse,
             chunks=chunks,
