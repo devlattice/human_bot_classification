@@ -1,7 +1,7 @@
 {
-  "input_data_dir": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/unpreprocessed/original_train",
-  "output_data_dir": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/robusted_dataset/original_train",
-  "fit_stats_from": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/unpreprocessed/original_train/train.parquet",
+  "input_data_dir": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/unpreprocessed/train",
+  "output_data_dir": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/robusted_dataset/train",
+  "fit_stats_from": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/unpreprocessed/train/train.parquet",
   "n_features": 79,
   "clip": {
     "enabled": true,

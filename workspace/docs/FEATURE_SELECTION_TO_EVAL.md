@@ -14,8 +14,8 @@ It is aligned with current scripts under `workspace/preprocess`.
 
 Expected unprocessed dataset:
 
-- `workspace/dataset/unpreprocessed/original_train/train.parquet`
-- `workspace/dataset/unpreprocessed/original_train/val.parquet`
+- `workspace/dataset/unpreprocessed/train/train.parquet`
+- `workspace/dataset/unpreprocessed/train/val.parquet`
 
 Feature lists used by transform (default):
 
@@ -31,11 +31,11 @@ Run on train+val of your subnet dataset:
 
 ```bash
 PYTHONPATH=. python workspace/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --data-dir workspace/dataset/unpreprocessed/train \
   --disable-domain-shift-merge \
   --out-csv workspace/preprocess/statistical_test/result
   --plots-dir workspace/preprocess/statistical_test/result
-  original_train_anova.csv
+  train_anova.csv
 ```
 
 Read these columns:
@@ -59,7 +59,7 @@ Generate feature lists directly from the ANOVA CSV:
 
 ```bash
 PYTHONPATH=. python workspace/preprocess/statistical_test/select_features.py \
-  --anova-csv workspace/preprocess/statistical_test/original_train_anova.csv \
+  --anova-csv workspace/preprocess/statistical_test/train_anova.csv \
   --out-dir workspace/preprocess/feature_selection
 ```
 
@@ -84,9 +84,9 @@ Use robust transform with stats fit from a reference parquet (recommended):
 
 ```bash
 PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
-  --out-dir workspace/dataset/robusted_dataset/original_train \
-  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --data-dir workspace/dataset/unpreprocessed/train \
+  --out-dir workspace/dataset/robusted_dataset/train \
+  --fit-stats-from workspace/dataset/unpreprocessed/train/train.parquet \
   --keep-features-file workspace/preprocess/feature_selection/keep_features.txt \
   --restrict-to-keep-features \
   --q-low 0.01 \
@@ -108,9 +108,9 @@ Why:
 or (version0.1 for top method - auto feature extraction)
 ```bash
 python3 workspace/preprocess/robust_feature_transform.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
-  --out-dir workspace/dataset/robusted_dataset/original_train \
-  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --data-dir workspace/dataset/unpreprocessed/train \
+  --out-dir workspace/dataset/robusted_dataset/train \
+  --fit-stats-from workspace/dataset/unpreprocessed/train/train.parquet \
   --keep-features-file workspace/preprocess/statistical_test/artifacts/feature_selection/keep_features.txt \
   --restrict-to-keep-features \
   --enable-log1p \
@@ -122,7 +122,7 @@ python3 workspace/preprocess/robust_feature_transform.py \
 
 ```bash
 PYTHONPATH=. python workspace/model/scripts/lgbm.py \
-  --data-dir workspace/dataset/robusted_dataset/original_train \
+  --data-dir workspace/dataset/robusted_dataset/train \
   --out-dir workspace/model/artifacts/lgbm
 ```
 
@@ -134,12 +134,12 @@ If you want a hard drop stage before robust transform:
 
 ```bash
 PYTHONPATH=. python workspace/preprocess/drop_aggressive_features.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
-  --out-dir workspace/dataset/unpreprocessed/original_train_drop \
+  --data-dir workspace/dataset/unpreprocessed/train \
+  --out-dir workspace/dataset/unpreprocessed/train_drop \
   --features-file workspace/preprocess/features/heavy_transform_features.txt
 ```
 
-Then run robust transform on `original_train_drop`.
+Then run robust transform on `train_drop`.
 
 ---
 
@@ -148,20 +148,20 @@ Then run robust transform on `original_train_drop`.
 ```bash
 # 1) stats
 PYTHONPATH=. python workspace/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --data-dir workspace/dataset/unpreprocessed/train \
   --disable-domain-shift-merge \
-  --out-csv workspace/preprocess/statistical_test/original_train_anova.csv
+  --out-csv workspace/preprocess/statistical_test/train_anova.csv
 
 # 2) auto-select keep/watch/drop
 PYTHONPATH=. python workspace/preprocess/statistical_test/select_features.py \
-  --anova-csv workspace/preprocess/statistical_test/original_train_anova.csv \
+  --anova-csv workspace/preprocess/statistical_test/train_anova.csv \
   --out-dir workspace/preprocess/feature_selection
 
 # 3) robust transform
 PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
-  --out-dir workspace/dataset/robusted_dataset/original_train_selected \
-  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --data-dir workspace/dataset/unpreprocessed/train \
+  --out-dir workspace/dataset/robusted_dataset/train_selected \
+  --fit-stats-from workspace/dataset/unpreprocessed/train/train.parquet \
   --keep-features-file workspace/preprocess/feature_selection/keep_features.txt \
   --restrict-to-keep-features \
   --q-low 0.01 --q-high 0.99 \
@@ -170,15 +170,15 @@ PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
 
 # 4) train
 PYTHONPATH=. python workspace/model/scripts/lgbm.py \
-  --data-dir workspace/dataset/robusted_dataset/original_train \
+  --data-dir workspace/dataset/robusted_dataset/train \
   --out-dir workspace/model/artifacts/lgbm_2_v1
 
 # 5) evaluation
 PYTHONPATH=. python workspace/test/cross_dataset_eval.py \
   --model workspace/model/artifacts/lgbm_2_v1/lgbm_classifier.joblib \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_train.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_test.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_human_mix.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/hollout_train.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/hollout_test.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/hollout_human_mix.parquet \
   --out-dir workspace/model/artifacts/cross_eval/lgbm_2_v1 \
   --threshold 0.6
 ```
@@ -186,18 +186,18 @@ PYTHONPATH=. python workspace/test/cross_dataset_eval.py \
 ### Preparing test dataset
 ```bash
 python3 workspace/preprocess/robust_feature_transform.py \
-  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
-  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout_train.parquet \
-  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout_train.parquet && \
+  --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
+  --in-parquet workspace/dataset/unpreprocessed/test/hollout_train.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/test/hollout_train.parquet && \
 
 python3 workspace/preprocess/robust_feature_transform.py \
-  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
-  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout_test.parquet \
-  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout_test.parquet && \
+  --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
+  --in-parquet workspace/dataset/unpreprocessed/test/hollout_test.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/test/hollout_test.parquet && \
 
 python3 workspace/preprocess/robust_feature_transform.py \
-  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
-  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout_human_mix.parquet \
-  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout_human_mix.parquet
+  --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
+  --in-parquet workspace/dataset/unpreprocessed/test/hollout_human_mix.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/test/hollout_human_mix.parquet
 
 ```

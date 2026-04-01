@@ -26,7 +26,7 @@ Plots are **diagnostic**, not ground truth: combine with labeled-task stats befo
 
 ```bash
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
-  --train-parquet workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --train-parquet workspace/dataset/unpreprocessed/train/train.parquet \
   --validator-parquet workspace/ssl_data/raw_data/validator_request.parquet \
   --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator
 ```
@@ -151,7 +151,7 @@ Single entrypoint that runs, in order:
 ```bash
 cd /path/to/Poker44-subnet
 
-# Default paths; requires train+val under original_train and validator_request.parquet
+# Default paths; requires train+val under train and validator_request.parquet
 python3 workspace/preprocess/statistical_test/run_statistical_pipeline.py
 
 # Rebuild validator parquet from JSONL, then full pipeline
@@ -159,8 +159,8 @@ python3 workspace/preprocess/statistical_test/run_statistical_pipeline.py --buil
 
 # ANOVA from explicit parquets (e.g. train + val files, no --anova-data-dir)
 python3 workspace/preprocess/statistical_test/run_statistical_pipeline.py \
-  --anova-parquet workspace/dataset/unpreprocessed/original_train/train.parquet \
-  --anova-parquet workspace/dataset/unpreprocessed/original_train/val.parquet
+  --anova-parquet workspace/dataset/unpreprocessed/train/train.parquet \
+  --anova-parquet workspace/dataset/unpreprocessed/train/val.parquet
 ```
 
 Useful flags: `--skip-shift`, `--skip-anova`, `--skip-select-features`, `--skip-merge`, `--max-rows-per-source N`, `--stratify-train-label`, `--shift-no-plots`, `--anova-no-plots`, `--repo-root`.
@@ -178,7 +178,7 @@ Skip if `workspace/ssl_data/raw_data/validator_request.parquet` already exists.
 ```bash
 python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
   --input-source-dir workspace/ssl_data/json \
-  --sample workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --sample workspace/dataset/unpreprocessed/train/train.parquet \
   --outdir workspace/ssl_data/raw_data \
   --output-name validator_request.parquet
 ```
@@ -187,7 +187,7 @@ python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
 
 ```bash
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
-  --train-parquet workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --train-parquet workspace/dataset/unpreprocessed/train/train.parquet \
   --validator-parquet workspace/ssl_data/raw_data/validator_request.parquet \
   --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator \
   --max-rows-per-source 0
@@ -204,7 +204,7 @@ and the four `shift_*.png` files in that same directory.
 
 ```bash
 python3 workspace/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --data-dir workspace/dataset/unpreprocessed/train \
   --disable-domain-shift-merge \
   --out-csv workspace/preprocess/statistical_test/artifacts/anova_bonferroni_FDR_combined.csv \
   --plots-dir workspace/preprocess/statistical_test/plots
@@ -253,18 +253,18 @@ Paths below are relative to **repository root**.
 
 ### One chained command (after `validator_request.parquet` exists)
 
-Requires **`workspace/dataset/unpreprocessed/original_train/train.parquet`** and **`val.parquet`** (or change `--data-dir` / use `--parquet`).
+Requires **`workspace/dataset/unpreprocessed/train/train.parquet`** and **`val.parquet`** (or change `--data-dir` / use `--parquet`).
 
 ```bash
 cd /path/to/Poker44-subnet
 
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
-  --train-parquet workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --train-parquet workspace/dataset/unpreprocessed/train/train.parquet \
   --validator-parquet workspace/ssl_data/raw_data/validator_request.parquet \
   --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator \
   --max-rows-per-source 0 && \
 python3 workspace/preprocess/statistical_test/anova_bonferroni_FDR_test.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
+  --data-dir workspace/dataset/unpreprocessed/train \
   --disable-domain-shift-merge \
   --out-csv workspace/preprocess/statistical_test/artifacts/anova_bonferroni_FDR_combined.csv \
   --plots-dir workspace/preprocess/statistical_test/plots && \

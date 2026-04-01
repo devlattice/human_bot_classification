@@ -29,7 +29,7 @@ Use this when you need a **validator-shaped, chunk-level table** for **domain / 
 
 - Streams all **`*.jsonl`** under `--input-source-dir` (default: `ssl_data/json/`).
 - Each line: `chunk` (hand list), `chunk_hash` (dedup key), `risk_score` (**read only if present; never written**).
-- One row per accepted chunk: **`aggregate_chunk_from_hands`** only — same raw feature names as e.g. `workspace/dataset/unpreprocessed/original_train/train.parquet` (use **`--sample`** for schema only). **One output file** (default `validator_request.parquet`), not train/val.
+- One row per accepted chunk: **`aggregate_chunk_from_hands`** only — same raw feature names as e.g. `workspace/dataset/unpreprocessed/train/train.parquet` (use **`--sample`** for schema only). **One output file** (default `validator_request.parquet`), not train/val.
 - **`label` is always null** (ground-truth human/bot is not in miner logs). No `keep_features` / `transform_meta` step here — this is **unpooled raw aggregates** for statistics.
 - Default **dedupe** on `chunk_hash` (use **`--no-dedupe`** to keep repeats). Rows with missing `chunk_hash` are skipped when dedupe is on.
 
@@ -44,7 +44,7 @@ Use this when you need a **validator-shaped, chunk-level table** for **domain / 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `--input-source-dir` | `ssl_data/json` | Directory of `*.jsonl` |
-| `--sample` | `workspace/dataset/unpreprocessed/original_train/train.parquet` | Schema reference (`label` forced nullable in output) |
+| `--sample` | `workspace/dataset/unpreprocessed/train/train.parquet` | Schema reference (`label` forced nullable in output) |
 | `--outdir` | `ssl_data/raw_data` | Output directory |
 | `--output-name` | `validator_request.parquet` | Single output file (no train/val split) |
 | `--batch-size` | `2048` | Rows per Parquet row group |
@@ -62,7 +62,7 @@ Explicit paths:
 ```bash
 python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
   --input-source-dir workspace/ssl_data/json \
-  --sample workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --sample workspace/dataset/unpreprocessed/train/train.parquet \
   --outdir workspace/ssl_data/raw_data \
   --output-name validator_request.parquet
 ```

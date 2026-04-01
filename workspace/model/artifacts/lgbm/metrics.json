@@ -1,5 +1,5 @@
 {
-  "data_dir": "/home/dr/Workspace/Poker44/workspace/_subnet_target/dataset/robusted_dataset/original_train",
+  "data_dir": "/home/dr/Workspace/Poker44/workspace/_subnet_target/dataset/robusted_dataset/train",
   "model": "LGBM-B",
   "params": {
     "num_leaves": 31,

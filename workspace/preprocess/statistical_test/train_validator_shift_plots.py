@@ -273,7 +273,7 @@ def _render_plots(
 
 def main() -> int:
     repo = Path(__file__).resolve().parents[3]
-    default_train = repo / "workspace" / "dataset" / "unpreprocessed" / "original_train" / "train.parquet"
+    default_train = repo / "workspace" / "dataset" / "unpreprocessed" / "train" / "train.parquet"
     default_valreq = repo / "workspace" / "ssl_data" / "raw_data" / "validator_request.parquet"
     default_out = repo / "workspace" / "preprocess" / "statistical_test" / "plots" / "train_vs_validator"
 

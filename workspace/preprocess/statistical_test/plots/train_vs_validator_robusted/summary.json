@@ -1,5 +1,5 @@
 {
-  "train_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/robusted_dataset/original_train/train.parquet",
+  "train_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/robusted_dataset/train/train.parquet",
   "validator_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet",
   "n_features_tested": 44,
   "n_ks_finite": 44,

@@ -6,7 +6,8 @@ W[i, j] = weight validator UID i assigns to UID j (see bittensor Metagraph.W).
 
 Examples:
   python workspace/utils/weight/get_weight.py --uid 42
-  python workspace/utils/weight/get_weight.py --hotkey 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
+  python workspace/utils/weight/get_weight.py --uid 153 --validators-only
+  python workspace/utils/weight/get_weight.py --hotkey 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty --top 20
   python workspace/utils/weight/get_weight.py --block 12345678 --network archive
 """
 
@@ -51,8 +52,13 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument(
         "--top",
         type=int,
-        default=20,
-        help="Max nonzero validator rows (0 = all). Applies to text and --json.",
+        default=0,
+        help="Max rows to print (0 = all validators in scope, including zero weight). Applies to text and --json.",
+    )
+    p.add_argument(
+        "--nonzero-only",
+        action="store_true",
+        help="Only include rows with weight > 0 (legacy behavior; default is all rows in scope).",
     )
     return p.parse_args()
 
@@ -106,9 +112,16 @@ def main() -> None:
             col = W[:, target]
             mask = np.array(mg.validator_permit, dtype=bool) if args.validators_only else np.ones(n, dtype=bool)
             pairs = [
-                {"validator_uid": int(i), "weight": float(col[i]), "hotkey": mg.hotkeys[i]}
+                {
+                    "validator_uid": int(i),
+                    "weight": float(col[i]),
+                    "validator_permit": bool(mg.validator_permit[i])
+                    if hasattr(mg, "validator_permit")
+                    else None,
+                    "hotkey": mg.hotkeys[i],
+                }
                 for i in range(n)
-                if mask[i] and col[i] > 0
+                if mask[i] and (not args.nonzero_only or col[i] > 0)
             ]
             pairs.sort(key=lambda x: x["weight"], reverse=True)
             if args.top > 0:
@@ -136,11 +149,15 @@ def main() -> None:
         print(f"Incentive I[{target}] = {float(mg.I[target]):.8f}")
 
     mask = np.array(mg.validator_permit, dtype=bool) if args.validators_only else np.ones(n, dtype=bool)
-    idx = np.where(mask & (col > 0))[0]
+    if args.nonzero_only:
+        idx = np.where(mask & (col > 0))[0]
+    else:
+        idx = np.where(mask)[0]
     sorted_idx = idx[np.argsort(-col[idx])]
     order = sorted_idx if args.top <= 0 else sorted_idx[: args.top]
 
-    print(f"Top {len(order)} weights W[validator_uid, {target}] (validators_only={args.validators_only}):")
+    scope = f"validators_only={args.validators_only} nonzero_only={args.nonzero_only}"
+    print(f"{len(order)} weights W[validator_uid, {target}] ({scope}):")
     for i in order:
         hk = mg.hotkeys[i]
         hk_short = hk[:12] + "…" + hk[-6:] if len(hk) > 20 else hk

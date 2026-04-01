@@ -27,7 +27,7 @@ Produce it with `workspace/_subnet_target/dataset/source/source_split.py` from `
 | Flag | Default |
 |------|---------|
 | `--human-json` | `workspace/_subnet_target/dataset/source/poker_hands_train.json` |
-| `--out` | `workspace/_subnet_target/dataset/unpreprocessed/original_train` |
+| `--out` | `workspace/_subnet_target/dataset/unpreprocessed/train` |
 
 Override either flag as needed. Other common flags: `--preset training-merged`, `--chunk-count`, `--shard-size`, `--resume`, `--bot-profile-mode mixed`, `--seed`.
 
@@ -39,7 +39,7 @@ If `workspace/_subnet_target/dataset/` was created as **root** (e.g. Docker or `
 sudo chown -R "$USER:$USER" workspace/_subnet_target/dataset
 ```
 
-Or write somewhere you own, e.g. `--out "$HOME/poker44_subnet_output/original_train"`.
+Or write somewhere you own, e.g. `--out "$HOME/poker44_subnet_output/train"`.
 
 Note: the default path uses **`unpreprocessed`** (full spelling). If you only have a typo folder `unpreprocesed`, either rename it or pass `--out` explicitly.
 
@@ -65,7 +65,7 @@ Explicit paths (same as defaults here):
 ```bash
 PYTHONPATH=. python workspace/_subnet_target/preprocess/build_dataset.py \
   --human-json workspace/_subnet_target/dataset/source/poker_hands_train.json \
-  --out workspace/_subnet_target/dataset/unpreprocessed/original_train \
+  --out workspace/_subnet_target/dataset/unpreprocessed/train \
   --chunk-count 10000 \
   --shard-size 1000 \
   --resume \
@@ -83,7 +83,7 @@ If shards already exist under `out/shards/`:
 
 ```bash
 PYTHONPATH=. python workspace/_subnet_target/preprocess/build_dataset.py \
-  --merge-only workspace/_subnet_target/dataset/unpreprocessed/original_train \
+  --merge-only workspace/_subnet_target/dataset/unpreprocessed/train \
   --val-size 0.2 \
   --seed 42
 ```

@@ -1,0 +1,13 @@
+{
+  "source_a": "/home/dr/Workspace/Poker44/workspace/datasets/source/poker_hands_train.json",
+  "source_b": "/home/dr/Workspace/Poker44/workspace/datasets/zenodo/zenodo_for_train.json",
+  "source_a_rows": 25670,
+  "source_b_rows": 80000,
+  "selected_a": 25670,
+  "selected_b": 11001,
+  "selected_total": 36671,
+  "actual_ratio_a": 0.700008180851354,
+  "seed": 42,
+  "sample_with_replacement": false,
+  "out_path": "/home/dr/Workspace/Poker44/workspace/datasets/raw_dataset/train/system_zenodo_6.4_bot/_balanced_human_pool.json"
+}

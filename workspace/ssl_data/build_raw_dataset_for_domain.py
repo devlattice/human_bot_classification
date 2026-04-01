@@ -59,7 +59,7 @@ def main() -> int:
         / "workspace"
         / "dataset"
         / "unpreprocessed"
-        / "original_train"
+        / "train"
         / "train.parquet"
     )
     default_out = REPO_ROOT / "workspace" / "ssl_data" / "raw_data"

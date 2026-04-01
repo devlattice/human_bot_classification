@@ -54,9 +54,9 @@ Use your existing evaluator; this command is the standard one for model artifact
 ```bash
 PYTHONPATH=. python workspace/test/cross_dataset_eval.py \
   --model workspace/model/artifacts/lgbm_2_v1/lgbm_classifier.joblib \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_human_mix.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_train.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout_test.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/hollout_human_mix.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/hollout_train.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/hollout_test.parquet \
   --threshold 0.6 \
   --selected-threshold 0.952 \
   --out-dir workspace/test/parameter_test/run_A

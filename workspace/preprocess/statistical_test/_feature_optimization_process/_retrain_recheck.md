@@ -3,9 +3,9 @@
 
 ```bash
 python3 workspace/preprocess/robust_feature_transform.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
-  --out-dir workspace/dataset/robusted_dataset/original_train \
-  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --data-dir workspace/dataset/unpreprocessed/train \
+  --out-dir workspace/dataset/robusted_dataset/train \
+  --fit-stats-from workspace/dataset/unpreprocessed/train/train.parquet \
   --keep-features-file workspace/preprocess/statistical_test/artifacts/feature_selection/keep_features.txt \
   --restrict-to-keep-features \
   --enable-log1p \
@@ -14,9 +14,9 @@ python3 workspace/preprocess/robust_feature_transform.py \
 e.g.
 ```bash
 python3 workspace/preprocess/robust_feature_transform.py \
-  --data-dir workspace/dataset/unpreprocessed/original_train \
-  --out-dir workspace/dataset/robusted_dataset/original_train \
-  --fit-stats-from workspace/dataset/unpreprocessed/original_train/train.parquet \
+  --data-dir workspace/dataset/unpreprocessed/train \
+  --out-dir workspace/dataset/robusted_dataset/train \
+  --fit-stats-from workspace/dataset/unpreprocessed/train/train.parquet \
   --keep-features-file workspace/preprocess/statistical_test/artifacts/feature_selection/feature_tune/keep_features_v3b.txt \
   --restrict-to-keep-features \
   --enable-log1p \
@@ -28,7 +28,7 @@ python3 workspace/preprocess/robust_feature_transform.py \
 cd /home/dr/Workspace/Poker44-subnet
 
 python3 workspace/preprocess/robust_feature_transform.py \
-  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
+  --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
   --in-parquet workspace/ssl_data/raw_data/validator_request.parquet \
   --out-parquet workspace/ssl_data/raw_data/validator_request_robusted.parquet
 
@@ -36,7 +36,7 @@ python3 workspace/preprocess/robust_feature_transform.py \
 ## KS + plots on robust train vs robust validator (shared 60 numeric features):
 ```bash
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
-  --train-parquet workspace/dataset/robusted_dataset/original_train/train.parquet \
+  --train-parquet workspace/dataset/robusted_dataset/train/train.parquet \
   --validator-parquet workspace/ssl_data/raw_data/validator_request_robusted.parquet \
   --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator_robusted \
   --max-rows-per-source 0

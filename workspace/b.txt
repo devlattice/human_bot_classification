@@ -12,21 +12,21 @@ scp  -P 41389 -r root@77.104.167.149:/root/Workspace/miner/human_bot_classificat
 
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \
   --human-json workspace/dataset/source/poker_hands_train.json \
-  --out workspace/dataset/unpreprocessed/original_train \
+  --out workspace/dataset/unpreprocessed/train \
   --chunk-count 10000 --shard-size 1000 --resume --preset training-merged \
   --bot-profile-mode mixed --bot-candidate-attempts 3 --bot-generation-rounds 1 \
   --seed 42 --progress-every-chunks 100
 
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 --human-json workspace/dataset/source/poker_hands_test.json \
---out workspace/dataset/unpreprocessed/original_test \
+--out workspace/dataset/unpreprocessed/test \
 --chunk-count 1000 \
 --progress-every-chunks 100 \
 --preset training
 
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 --human-json workspace/dataset/source/zenodo_holdout.json \
---out workspace/dataset/unpreprocessed/original_test \
+--out workspace/dataset/unpreprocessed/test \
 --chunk-count 1000 \
 --progress-every-chunks 100 \
 --preset training
@@ -37,7 +37,7 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 
 export REPO_ROOT="${REPO_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 export HUMAN_JSON="${HUMAN_JSON:-workspace/dataset/source/poker_hands_train.json}"
-export OUT_DIR="${OUT_DIR:-workspace/dataset/unpreprocessed/original_train}"
+export OUT_DIR="${OUT_DIR:-workspace/dataset/unpreprocessed/train}"
 export CHUNK_COUNT="${CHUNK_COUNT:-10000}"
 export SHARD_SIZE="${SHARD_SIZE:-1000}"
 export SEED="${SEED:-42}"
@@ -55,16 +55,16 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 
 
 PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
-  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
-  --in-parquet workspace/dataset/unpreprocessed/original_test/hollout.parquet \
-  --out-parquet workspace/dataset/robusted_dataset/original_test/hollout.parquet
+  --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
+  --in-parquet workspace/dataset/unpreprocessed/test/hollout.parquet \
+  --out-parquet workspace/dataset/robusted_dataset/test/hollout.parquet
 
 PYTHONPATH=. python workspace/test/cross_dataset_eval.py \
   --model workspace/model/artifacts/lgbm/lgbm_classifier.joblib \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/train.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_train/val.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/val.parquet \
-  --eval-parquet workspace/dataset/robusted_dataset/original_test/hollout.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/train.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/train/val.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/val.parquet \
+  --eval-parquet workspace/dataset/robusted_dataset/test/hollout.parquet \
   --out-dir workspace/model/artifacts/cross_eval/lgbm \
   --threshold 0.5
 
@@ -76,7 +76,7 @@ PYTHONPATH=. python workspace/test/cross_dataset_eval.py \
 
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \
   --human-json workspace/dataset/source/poker_hands_train.json \
-  --out workspace/dataset/unpreprocessed/original_train \
+  --out workspace/dataset/unpreprocessed/train \
   --chunk-count 10000 --shard-size 1000 --resume --preset training-merged \
   --seed 42 --progress-every-chunks 100
 
@@ -85,17 +85,17 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 
 python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
   --input-source-dir workspace/ssl_data/json/miner_1_v2 \
-  --sample workspace/dataset/robusted_dataset/original_train/train.parquet \
+  --sample workspace/dataset/robusted_dataset/train/train.parquet \
   --outdir workspace/ssl_data/raw_data \
   --output-name validator_request_miner_1.parquet
 
 PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
-  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
+  --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
   --in-parquet workspace/ssl_data/raw_data/validator_request_miner_1.parquet \
   --out-parquet workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet
 
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
-  --train-parquet workspace/dataset/robusted_dataset/original_train/train.parquet \
+  --train-parquet workspace/dataset/robusted_dataset/train/train.parquet \
   --validator-parquet workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet \
   --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator_robusted \
   --max-rows-per-source 0

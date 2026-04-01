@@ -81,7 +81,7 @@ SUBNET_DEFAULT_OUT = (
     / "_subnet_target"
     / "dataset"
     / "unpreprocessed"
-    / "original_train"
+    / "train"
 )
 
 

@@ -59,11 +59,11 @@ def main() -> int:
     here = Path(__file__).resolve()
     default_repo = _repo_root(here)
 
-    d_train = default_repo / "workspace" / "dataset" / "unpreprocessed" / "original_train" / "train.parquet"
+    d_train = default_repo / "workspace" / "dataset" / "unpreprocessed" / "train" / "train.parquet"
     d_valreq = default_repo / "workspace" / "ssl_data" / "raw_data" / "validator_request.parquet"
     d_json = default_repo / "workspace" / "ssl_data" / "json"
-    d_sample = default_repo / "workspace" / "dataset" / "unpreprocessed" / "original_train" / "train.parquet"
-    d_data_dir = default_repo / "workspace" / "dataset" / "unpreprocessed" / "original_train"
+    d_sample = default_repo / "workspace" / "dataset" / "unpreprocessed" / "train" / "train.parquet"
+    d_data_dir = default_repo / "workspace" / "dataset" / "unpreprocessed" / "train"
     d_artifacts = default_repo / "workspace" / "preprocess" / "statistical_test" / "artifacts"
     d_plots = default_repo / "workspace" / "preprocess" / "statistical_test" / "plots"
     d_shift_plots = d_plots / "train_vs_validator"

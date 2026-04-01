@@ -12,9 +12,9 @@ THRESHOLD="${THRESHOLD:-0.5}"
 SELECTED_THRESHOLD="${SELECTED_THRESHOLD:-0.952}"
 OUT_BASE="${OUT_BASE:-workspace/test/parameter_test}"
 
-EVAL_1="${EVAL_1:-workspace/dataset/robusted_dataset/original_test/hollout_human_mix.parquet}"
-EVAL_2="${EVAL_2:-workspace/dataset/robusted_dataset/original_test/hollout_train.parquet}"
-EVAL_3="${EVAL_3:-workspace/dataset/robusted_dataset/original_test/hollout_test.parquet}"
+EVAL_1="${EVAL_1:-workspace/dataset/robusted_dataset/test/hollout_human_mix.parquet}"
+EVAL_2="${EVAL_2:-workspace/dataset/robusted_dataset/test/hollout_train.parquet}"
+EVAL_3="${EVAL_3:-workspace/dataset/robusted_dataset/test/hollout_test.parquet}"
 
 # Resolve output base: if not writable, fallback to /tmp.
 if ! mkdir -p "$OUT_BASE" 2>/dev/null || ! ( : > "$OUT_BASE/.write_test" ) 2>/dev/null; then
