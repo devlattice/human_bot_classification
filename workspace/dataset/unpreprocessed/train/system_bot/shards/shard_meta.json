@@ -9,7 +9,11 @@
       "shard_idx": 0,
       "chunk_count": 1000,
       "dataset_hash": "08c2fca645bdb5dbaff0eeb6ce2e709f367f743acf592e7fffd455deedac6d88",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00000.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00000.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -44,7 +48,11 @@
       "shard_idx": 1,
       "chunk_count": 1000,
       "dataset_hash": "c21cdea5d81161a92eed007b8120d82c7e4acc0865c45922bf8346512ef413dd",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00001.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00001.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -79,7 +87,11 @@
       "shard_idx": 2,
       "chunk_count": 1000,
       "dataset_hash": "6901926b0f834112e71db2008d160ed573871516ffed4f6763a043c232ba2623",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00002.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00002.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -114,7 +126,11 @@
       "shard_idx": 3,
       "chunk_count": 1000,
       "dataset_hash": "7ade70bf40e796e49301b83e264247f8c38a331fd8ff5f76af130da003a3ca91",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00003.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00003.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -149,7 +165,11 @@
       "shard_idx": 4,
       "chunk_count": 1000,
       "dataset_hash": "51801a7a485c233f418a57a67ae0368bf19e1806c702e05b69a62c39405751d9",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00004.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00004.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -184,7 +204,11 @@
       "shard_idx": 5,
       "chunk_count": 1000,
       "dataset_hash": "9521c789ba322542d4e60586f3c5a39ffc49d112290dd53f57efcf922f77f191",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00005.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00005.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -219,7 +243,11 @@
       "shard_idx": 6,
       "chunk_count": 1000,
       "dataset_hash": "41a19b8522615423c5850de5778f684e8b7847d2738da896f8c359edb05d68b3",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00006.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00006.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -254,7 +282,11 @@
       "shard_idx": 7,
       "chunk_count": 1000,
       "dataset_hash": "3ae01a38d2ce32c9f117685171147f44ea8a3857f17f1d107a3131363164df94",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00007.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00007.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -289,7 +321,11 @@
       "shard_idx": 8,
       "chunk_count": 1000,
       "dataset_hash": "2ca1a596845a8f39f23f634b7fa4f24a9af1876afe5ba27056e41f0c08dee348",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00008.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00008.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,
@@ -324,7 +360,11 @@
       "shard_idx": 9,
       "chunk_count": 1000,
       "dataset_hash": "e5627da605b1608d8d45165fe0fc727ff2af1d35dfc8889f4c4579af4d8dba8d",
+<<<<<<< HEAD:workspace/dataset/unpreprocessed/train/system_bot/shards/shard_meta.json
       "path": "workspace/dataset/unpreprocessed/train/shards/shard_00009.parquet",
+=======
+      "path": "workspace/dataset/unpreprocessed/original_train/shards/shard_00009.parquet",
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020:workspace/dataset/unpreprocessed/original_train/shards/shard_meta.json
       "stats": {
         "chunk_count": 1000,
         "human_chunks": 500,

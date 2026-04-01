@@ -26,7 +26,11 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 --human-json workspace/dataset/source/zenodo_holdout.json \
+<<<<<<< HEAD
 --out workspace/dataset/unpreprocessed/test \
+=======
+--out workspace/dataset/unpreprocessed/original_test \
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020
 --chunk-count 1000 \
 --progress-every-chunks 100 \
 --preset training
@@ -85,17 +89,29 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 
 python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
   --input-source-dir workspace/ssl_data/json/miner_1_v2 \
+<<<<<<< HEAD
   --sample workspace/dataset/robusted_dataset/train/train.parquet \
+=======
+  --sample workspace/dataset/robusted_dataset/original_train/train.parquet \
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020
   --outdir workspace/ssl_data/raw_data \
   --output-name validator_request_miner_1.parquet
 
 PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
+<<<<<<< HEAD
   --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
+=======
+  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020
   --in-parquet workspace/ssl_data/raw_data/validator_request_miner_1.parquet \
   --out-parquet workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet
 
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
+<<<<<<< HEAD
   --train-parquet workspace/dataset/robusted_dataset/train/train.parquet \
+=======
+  --train-parquet workspace/dataset/robusted_dataset/original_train/train.parquet \
+>>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020
   --validator-parquet workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet \
   --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator_robusted \
   --max-rows-per-source 0
