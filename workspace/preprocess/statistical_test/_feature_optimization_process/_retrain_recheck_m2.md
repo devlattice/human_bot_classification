@@ -1,25 +1,25 @@
 
 # First modify keep_features from analysis of  train_vs_validator_robusted
 
+Try this mild-strong setting first (safer than aggressive clipping):
+--q-low 0.02
+--q-high 0.98
+--scaled-clip-abs 6.0
+
+If you want one more robust (second step):
+--q-low 0.03 --q-high 0.97 --scaled-clip-abs 5.0
+
 ```bash
 python3 workspace/preprocess/robust_feature_transform.py \
-  --data-dir workspace/dataset/unpreprocessed/train \
-  --out-dir workspace/dataset/robusted_dataset/train \
-  --fit-stats-from workspace/dataset/unpreprocessed/train/train.parquet \
-  --keep-features-file workspace/preprocess/statistical_test/artifacts/feature_selection_m_1/keep_features.txt \
+  --data-dir workspace/dataset/unpreprocessed/train/system_human_bot \
+  --out-dir workspace/dataset/robusted_dataset/train/system_human_bot \
+  --fit-stats-from workspace/dataset/unpreprocessed/train/system_human_bot/train.parquet \
+  --keep-features-file workspace/preprocess/statistical_test/artifacts/feature_selection_m_2/feature_tune/keep_features_v3b.txt \
   --restrict-to-keep-features \
   --enable-log1p \
-  --enable-robust-scale
-```
-e.g.
-```bash
-python3 workspace/preprocess/robust_feature_transform.py \
-  --data-dir workspace/dataset/unpreprocessed/train/system_bot \
-  --out-dir workspace/dataset/robusted_dataset/train/system_bot \
-  --fit-stats-from workspace/dataset/unpreprocessed/train/system_bot/train.parquet \
-  --keep-features-file workspace/preprocess/statistical_test/artifacts/feature_selection_m_1/feature_tune/keep_features_v3b.txt \
-  --restrict-to-keep-features \
-  --enable-log1p \
+  --q-low 0.02 \
+  --q-high 0.98 \
+  --scaled-clip-abs 6.0 \
   --enable-robust-scale
 ```
 ## Apply the training transform_meta.json to miner logs (same as inference):

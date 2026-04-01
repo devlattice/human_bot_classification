@@ -26,11 +26,7 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \
 --human-json workspace/dataset/source/zenodo_holdout.json \
-<<<<<<< HEAD
 --out workspace/dataset/unpreprocessed/test \
-=======
---out workspace/dataset/unpreprocessed/original_test \
->>>>>>> 80a6dfb39239853bca856c812dbfe09a157e4020
 --chunk-count 1000 \
 --progress-every-chunks 100 \
 --preset training

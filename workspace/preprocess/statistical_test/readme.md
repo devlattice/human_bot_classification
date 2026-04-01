@@ -187,9 +187,9 @@ python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
 
 ```bash
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
-  --train-parquet workspace/dataset/unpreprocessed/train/train.parquet \
-  --validator-parquet workspace/ssl_data/raw_data/validator_request.parquet \
-  --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator \
+  --train-parquet workspace/dataset/unpreprocessed/train/sytem_bot/train.parquet \
+  --validator-parquet workspace/ssl_data/raw_data/minier_1/validator_request.parquet \
+  --out-dir workspace/preprocess/statistical_test/plots/miner_1/train_vs_validator \
   --max-rows-per-source 0
 ```
 

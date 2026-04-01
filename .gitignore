@@ -145,8 +145,7 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
+# Environments (.env already listed at top)
 .venv
 .venv312/
 env/
@@ -199,11 +198,11 @@ hands_generator/bot_hands/bot_hands.json
 scripts/miner/install_dependencies.sh
 scripts/validator/main/install_dependencies.sh
 testing/
+
+# --- Local data, venvs, and artifacts (one entry each; edit here only) ---
 data/mongodb_data/
 data/validator_mixed_chunks.json
 openClutch_venv/
-prueba.dem.zst
-prueba.dem.zst:Zone.Identifier
 prueba.dem.zst
 prueba.dem.zst:Zone.Identifier
 
@@ -227,18 +226,6 @@ score_low.json
 # Local human hands
 hands_generator/human_hands/poker_hands_combined.json
 hands_generator/human_hands/poker_hands_combined.json.gz
-# Local Weights & Biases runs/artifacts
-wandb/
-data/mongodb_data/
-data/validator_mixed_chunks.json
-openClutch_venv/
-prueba.dem.zst
-prueba.dem.zst:Zone.Identifier
-prueba.dem.zst
-prueba.dem.zst:Zone.Identifier
 
-# Local large dataset for validator API (do not commit)
-hands_for_validator/poker_hands_from_rar.json
-
-# Local Weights & Biases runs/artifacts
+# Weights & Biases
 wandb/
