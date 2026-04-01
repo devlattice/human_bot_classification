@@ -169,7 +169,7 @@ class Miner(BaseMinerNeuron):
                 / "workspace"
                 / "model"
                 / "artifacts"
-                / "lgbm_keep"
+                / "lgbm_2_v1"
                 / "lgbm_classifier.joblib"
             ),
         ).strip()

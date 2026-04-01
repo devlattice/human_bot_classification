@@ -6,7 +6,8 @@ Stream JSONL miner logs → chunk-level Parquet (raw aggregates, no robust trans
 - Expected fields per line: ``chunk`` (list of hands), ``chunk_hash`` (dedup key),
   ``risk_score`` (ignored, not written).
 - Deduplicates by ``chunk_hash`` by default (``--no-dedupe`` to keep duplicates).
-- Output schema matches ``--sample`` Parquet (column names/order for raw aggregates).
+- Output schema matches ``--sample`` Parquet (column names/order). Aggregator may return
+  a superset of columns; only ``--sample`` feature columns are written (extras ignored).
 - ``label`` is always null (validator labels are unknown here).
 - Writes **one** Parquet file under ``--outdir`` (no train/val split).
 
@@ -76,7 +77,11 @@ def main() -> int:
         "--sample",
         type=Path,
         default=default_sample,
-        help=f"Reference Parquet for schema (default: {default_sample})",
+        help=(
+            "Reference Parquet for output columns (order + dtypes). "
+            "May be full raw train (~79 features) or a keep-only table (e.g. 44); "
+            "aggregator output must include every sample feature name."
+        ),
     )
     ap.add_argument(
         "--outdir",
@@ -196,14 +201,14 @@ def main() -> int:
             if not feat:
                 n_bad_chunk += 1
                 continue
-            if set(feat.keys()) != feature_set:
+            feat_keys = set(feat.keys())
+            if not feature_set.issubset(feat_keys):
                 n_feat_mismatch += 1
                 if n_feat_mismatch <= 3:
-                    missing = feature_set - set(feat.keys())
-                    extra = set(feat.keys()) - feature_set
+                    missing = feature_set - feat_keys
                     print(
                         f"[build_raw_domain] feature mismatch (line {lineno} {jpath.name}): "
-                        f"missing={sorted(missing)[:8]!s} extra={sorted(extra)[:8]!s}",
+                        f"missing={sorted(missing)[:12]!s} (sample requires these in aggregate_chunk_from_hands output)",
                         file=sys.stderr,
                     )
                 continue

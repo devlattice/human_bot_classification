@@ -1,9 +1,9 @@
 {
   "train_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/robusted_dataset/original_train/train.parquet",
-  "validator_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/raw_data/validator_request_robusted.parquet",
+  "validator_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet",
   "n_features_tested": 44,
   "n_ks_finite": 44,
-  "n_sig_fdr_0_05": 40,
+  "n_sig_fdr_0_05": 29,
   "max_rows_per_source": 0,
   "stratify_train_label": false,
   "outputs": {

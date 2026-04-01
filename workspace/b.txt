@@ -5,7 +5,7 @@ git pull --tags upstream main --no-rebase
 git push origin main
 
 
-scp  -P 41389 -r root@77.104.167.149:/root/Workspace/miner_1/workspace/real_distribution  /home/dr/Workspace
+scp  -P 41389 -r root@77.104.167.149:/root/Workspace/miner/human_bot_classification/workspace/real_distribution  /home/dr/Workspace
 
 
 ## hands_geneartor_syn
@@ -79,3 +79,23 @@ PYTHONPATH=. python workspace/preprocess/build_dataset.py \
   --out workspace/dataset/unpreprocessed/original_train \
   --chunk-count 10000 --shard-size 1000 --resume --preset training-merged \
   --seed 42 --progress-every-chunks 100
+
+
+# Validator domain test
+
+python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
+  --input-source-dir workspace/ssl_data/json/miner_1_v2 \
+  --sample workspace/dataset/robusted_dataset/original_train/train.parquet \
+  --outdir workspace/ssl_data/raw_data \
+  --output-name validator_request_miner_1.parquet
+
+PYTHONPATH=. python workspace/preprocess/robust_feature_transform.py \
+  --transform-meta-in workspace/dataset/robusted_dataset/original_train/transform_meta.json \
+  --in-parquet workspace/ssl_data/raw_data/validator_request_miner_1.parquet \
+  --out-parquet workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet
+
+python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
+  --train-parquet workspace/dataset/robusted_dataset/original_train/train.parquet \
+  --validator-parquet workspace/ssl_data/raw_data/robusted_for_feature_selection/validator_request_robusted_miner_1.parquet \
+  --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator_robusted \
+  --max-rows-per-source 0

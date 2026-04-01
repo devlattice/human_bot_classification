@@ -22,7 +22,7 @@ HOTKEY="${HOTKEY:-poker_miner_1}"
 NETWORK="${NETWORK:-finney}" ##finney
 # Resolved after cd to REPO_ROOT (absolute path used for PM2).
 MINER_SCRIPT="${MINER_SCRIPT:-neurons/miner.py}"
-PM2_NAME="${PM2_NAME:-poker_miner}"  ##  name of Miner, as you wish
+PM2_NAME="${PM2_NAME:-poker_miner_1}"  ##  name of Miner, as you wish
 AXON_PORT="${AXON_PORT:-8091}"
 # Space-separated SS58 validator *hotkeys* (not coldkey, not wallet name).
 # Must match ``synapse.dendrite.hotkey`` exactly. Strip CR from Windows .env lines.
