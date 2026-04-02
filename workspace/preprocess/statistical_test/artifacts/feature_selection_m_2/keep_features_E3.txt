@@ -18,8 +18,6 @@ mean_pot_after_std
 n_streets_mean
 n_streets_std
 p2_max
-p2_mean
-p2_std
 p3_mean
 p3_std
 p4_max
@@ -29,10 +27,8 @@ p5_max
 p5_mean
 p5_std
 p6p_std
-raise_ratio_max
 raise_ratio_mean
 raise_ratio_std
-stack_mean_max
 stack_mean_mean
 stack_mean_std
 stack_std_max

@@ -1,5 +1,5 @@
 
-sudo chown -R "$USER:$USER" workspace/dataset
+sudo chown -R "$USER:$USER" workspace
 
 git pull --tags upstream main --no-rebase
 git push origin main

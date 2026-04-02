@@ -27,3 +27,12 @@ python3 source_split.py --input poker_hands_combined.json \
 ```
 
 The script shuffles **indices**, then takes the first `round(n * train_ratio)` hands for training and the rest for test. Order inside each file follows that shuffled order.
+
+## Holdout human pools (evaluation)
+
+| File | Role |
+|------|------|
+| `poker_hands_test.json` | **Subnet public human** holdout: the test side of the 80/20 split from `poker_hands_combined.json` (same hand schema). Use as unseen human traffic *relative to* `poker_hands_train.json` — do not train on this file if you want a clean public-human eval. |
+| `zenodo_holdout.json` | **Zenodo human** holdout: hands reserved outside the Zenodo pool used for training / `hollout_test`-style mixes. Use for unseen Zenodo-style humans (orthogonal to subnet public split). |
+
+When building mixed human+bot eval parquets, point `workspace/preprocess/build_dataset.py --human-json` at the appropriate file, then apply the same frozen `transform_meta.json` + keep-list as training (`workspace/preprocess/robust_feature_transform.py` apply-only mode).

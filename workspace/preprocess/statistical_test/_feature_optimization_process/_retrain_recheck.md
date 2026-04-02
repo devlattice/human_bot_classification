@@ -29,8 +29,8 @@ cd /home/dr/Workspace/Poker44-subnet
 
 python3 workspace/preprocess/robust_feature_transform.py \
   --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
-  --in-parquet workspace/ssl_data/raw_data/validator_request.parquet \
-  --out-parquet workspace/ssl_data/raw_data/validator_request_robusted.parquet
+  --in-parquet workspace/ssl_data/raw_data/miner_1/validator_request.parquet \
+  --out-parquet workspace/ssl_data/raw_data/miner_1/validator_request_robusted.parquet
 
 ```
 ## KS + plots on robust train vs robust validator (shared 60 numeric features):

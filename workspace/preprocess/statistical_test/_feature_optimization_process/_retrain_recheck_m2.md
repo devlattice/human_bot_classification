@@ -28,17 +28,17 @@ python3 workspace/preprocess/robust_feature_transform.py \
 cd /home/dr/Workspace/Poker44-subnet
 
 python3 workspace/preprocess/robust_feature_transform.py \
-  --transform-meta-in workspace/dataset/robusted_dataset/train/transform_meta.json \
-  --in-parquet workspace/ssl_data/raw_data/validator_request.parquet \
-  --out-parquet workspace/ssl_data/raw_data/validator_request_robusted.parquet
+  --transform-meta-in workspace/dataset/robusted_dataset/train/system_human_bot/transform_meta.json \
+  --in-parquet workspace/ssl_data/raw_data/miner_1/validator_request.parquet \
+  --out-parquet workspace/ssl_data/raw_data/miner_1/validator_request_robusted.parquet
 
 ```
 ## KS + plots on robust train vs robust validator (shared 60 numeric features):
 ```bash
 python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
-  --train-parquet workspace/dataset/robusted_dataset/train/train.parquet \
-  --validator-parquet workspace/ssl_data/raw_data/validator_request_robusted.parquet \
-  --out-dir workspace/preprocess/statistical_test/plots/train_vs_validator_robusted \
+  --train-parquet workspace/dataset/robusted_dataset/train/system_human_bot/train.parquet \
+  --validator-parquet workspace/ssl_data/raw_data/miner_1/validator_request_robusted.parquet \
+  --out-dir workspace/preprocess/statistical_test/plots/miner_2/train_vs_validator_robusted \
   --max-rows-per-source 0
 
 ```

@@ -62,8 +62,8 @@ Explicit paths:
 ```bash
 python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
   --input-source-dir workspace/ssl_data/json \
-  --sample workspace/dataset/unpreprocessed/train/train.parquet \
-  --outdir workspace/ssl_data/raw_data \
+  --sample workspace/dataset/unpreprocessed/train/*/train.parquet \
+  --outdir workspace/ssl_data/raw_data/* \
   --output-name validator_request.parquet
 ```
 
