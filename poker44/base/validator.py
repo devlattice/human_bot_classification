@@ -31,6 +31,12 @@ from poker44.base.utils.weight_utils import (
     convert_weights_and_uids_for_emit,
 )
 from poker44.utils.config import add_validator_args
+from poker44.validator.integrity import (
+    persist_json_registry,
+    remove_uid_from_compliance_registry,
+    remove_uid_from_model_manifest_registry,
+    remove_uid_from_suspicion_registry,
+)
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -405,10 +411,37 @@ class BaseValidatorNeuron(BaseNeuron):
         bt.logging.info(
             "Metagraph updated, re-syncing hotkeys, dendrite pool and moving averages"
         )
+        prediction_buffer = getattr(self, "prediction_buffer", None)
+        label_buffer = getattr(self, "label_buffer", None)
+        model_manifest_registry = getattr(self, "model_manifest_registry", None)
+        compliance_registry = getattr(self, "compliance_registry", None)
+        suspicion_registry = getattr(self, "suspicion_registry", None)
+        manifest_registry_changed = False
+        compliance_registry_changed = False
+        suspicion_registry_changed = False
         # Zero out all hotkeys that have been replaced.
         for uid, hotkey in enumerate(self.hotkeys):
             if hotkey != self.metagraph.hotkeys[uid]:
                 self.scores[uid] = 0  # hotkey has been replaced
+                if isinstance(prediction_buffer, dict):
+                    prediction_buffer.pop(uid, None)
+                if isinstance(label_buffer, dict):
+                    label_buffer.pop(uid, None)
+                if isinstance(model_manifest_registry, dict):
+                    manifest_registry_changed = (
+                        remove_uid_from_model_manifest_registry(model_manifest_registry, uid)
+                        or manifest_registry_changed
+                    )
+                if isinstance(compliance_registry, dict):
+                    compliance_registry_changed = (
+                        remove_uid_from_compliance_registry(compliance_registry, uid)
+                        or compliance_registry_changed
+                    )
+                if isinstance(suspicion_registry, dict):
+                    suspicion_registry_changed = (
+                        remove_uid_from_suspicion_registry(suspicion_registry, uid)
+                        or suspicion_registry_changed
+                    )
 
         # Check to see if the metagraph has changed size.
         # If so, we need to add new hotkeys and moving averages.
@@ -418,6 +451,45 @@ class BaseValidatorNeuron(BaseNeuron):
             min_len = min(len(self.hotkeys), len(self.scores))
             new_moving_average[:min_len] = self.scores[:min_len]
             self.scores = new_moving_average
+
+        if len(self.hotkeys) > len(self.metagraph.hotkeys):
+            removed_uids = range(len(self.metagraph.hotkeys), len(self.hotkeys))
+            for uid in removed_uids:
+                if isinstance(prediction_buffer, dict):
+                    prediction_buffer.pop(uid, None)
+                if isinstance(label_buffer, dict):
+                    label_buffer.pop(uid, None)
+                if isinstance(model_manifest_registry, dict):
+                    manifest_registry_changed = (
+                        remove_uid_from_model_manifest_registry(model_manifest_registry, uid)
+                        or manifest_registry_changed
+                    )
+                if isinstance(compliance_registry, dict):
+                    compliance_registry_changed = (
+                        remove_uid_from_compliance_registry(compliance_registry, uid)
+                        or compliance_registry_changed
+                    )
+                if isinstance(suspicion_registry, dict):
+                    suspicion_registry_changed = (
+                        remove_uid_from_suspicion_registry(suspicion_registry, uid)
+                        or suspicion_registry_changed
+                    )
+
+        if manifest_registry_changed:
+            persist_json_registry(
+                getattr(self, "model_manifest_path", None),
+                model_manifest_registry,
+            )
+        if compliance_registry_changed:
+            persist_json_registry(
+                getattr(self, "compliance_registry_path", None),
+                compliance_registry,
+            )
+        if suspicion_registry_changed:
+            persist_json_registry(
+                getattr(self, "suspicion_registry_path", None),
+                suspicion_registry,
+            )
 
         # Update the hotkeys.
         self.hotkeys = copy.deepcopy(self.metagraph.hotkeys)
@@ -455,18 +527,14 @@ class BaseValidatorNeuron(BaseNeuron):
                 f"cannot be broadcast to uids array of shape {uids_array.shape}"
             )
 
-        # Compute forward pass rewards, assumes uids are mutually exclusive.
-        # shape: [ metagraph.n ]
-        scattered_rewards: np.ndarray = np.zeros_like(self.scores)
-        scattered_rewards[uids_array] = rewards
-        bt.logging.debug(f"Scattered rewards: {rewards}")
-
-        # Update scores with rewards produced by this step.
-        # shape: [ metagraph.n ]
+        # Apply EMA only to the UIDs that were actually updated this cycle.
+        # Non-sampled miners should retain their existing score instead of
+        # decaying as if they had received an implicit zero reward.
         alpha: float = self.config.neuron.moving_average_alpha
-        self.scores: np.ndarray = (
-            alpha * scattered_rewards + (1 - alpha) * self.scores
-        )
+        observed_scores = self.scores[uids_array]
+        updated_scores = alpha * rewards + (1 - alpha) * observed_scores
+        bt.logging.debug(f"Observed rewards: {rewards}")
+        self.scores[uids_array] = updated_scores
         bt.logging.debug(f"Updated moving avg scores: {self.scores}")
 
     def save_state(self):
