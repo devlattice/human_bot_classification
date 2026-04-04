@@ -21,6 +21,9 @@ Run from repo root::
     --output-dir workspace/ssl_data/usl_hdbscan/human_bot_validator \\
     --n-per-class 3000 --summary --copy-manifest
 
+  # Use all available balanced train rows (e.g. 4000+4000 when val has 6638 rows):
+  PYTHONPATH=. python .../mix_data.py ... --n-per-class auto --summary --copy-manifest
+
 PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/human_bot_validator/mix_data.py \
   --real-source workspace/dataset/robusted_dataset/train/system_human_bot/train.parquet \
   --validator-source workspace/ssl_data/raw_data/miner_1/validator_request_robusted.parquet \
@@ -71,9 +74,10 @@ def main() -> int:
     )
     ap.add_argument(
         "--n-per-class",
-        type=int,
-        default=3000,
-        help="Sample this many rows with label=0 and this many with label=1 (default: 3000).",
+        type=str,
+        default="3000",
+        help="Sample this many rows per class (label=0 and label=1). Use integer, or 'auto' / 'max' "
+        "to use min(count_humans, count_bots) in --real-source (default: 3000).",
     )
     ap.add_argument(
         "--output-dir",
@@ -105,11 +109,6 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    n = int(args.n_per_class)
-    if n < 1:
-        print("[mix_data] error: --n-per-class must be >= 1", file=sys.stderr)
-        return 1
-
     real_path = args.real_source.expanduser().resolve()
     val_path = args.validator_source.expanduser().resolve()
     out_dir = args.output_dir.expanduser().resolve()
@@ -134,9 +133,27 @@ def main() -> int:
 
     h = df_real[df_real["label"] == 0]
     b = df_real[df_real["label"] == 1]
+    max_per_class = min(len(h), len(b))
+    n_raw = (args.n_per_class or "").strip().lower()
+    if n_raw in ("auto", "max"):
+        n = max_per_class
+        print(f"[mix_data] --n-per-class {n_raw!r} → using {n} per class (min of label=0/1 counts).", file=sys.stderr)
+    else:
+        try:
+            n = int(args.n_per_class, 10)
+        except ValueError:
+            print(
+                f"[mix_data] error: --n-per-class must be an integer or 'auto'/'max', got {args.n_per_class!r}",
+                file=sys.stderr,
+            )
+            return 1
+    if n < 1:
+        print("[mix_data] error: --n-per-class must be >= 1", file=sys.stderr)
+        return 1
     if len(h) < n or len(b) < n:
         print(
-            f"[mix_data] error: need at least {n} rows per class; have label=0: {len(h)}, label=1: {len(b)}",
+            f"[mix_data] error: need at least {n} rows per class; have label=0: {len(h)}, label=1: {len(b)}. "
+            f"Use --n-per-class {max_per_class} or --n-per-class auto",
             file=sys.stderr,
         )
         return 1

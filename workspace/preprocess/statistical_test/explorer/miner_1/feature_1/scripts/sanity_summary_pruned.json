@@ -1,0 +1,10 @@
+{
+  "n_rows": 10000,
+  "n_features": 66,
+  "label_col": "label",
+  "n_flag_constant": 0,
+  "n_flag_near_constant": 0,
+  "n_with_coercion_issues": 0,
+  "exact_duplicate_groups": [],
+  "high_corr_pairs": []
+}

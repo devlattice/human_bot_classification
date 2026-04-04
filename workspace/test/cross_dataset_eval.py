@@ -105,12 +105,27 @@ def _nan_train_row_stub() -> Dict[str, Any]:
     }
 
 
+def _base_estimator_for_feature_names(model: Any) -> Any:
+    """Unwrap meta-estimators (e.g. CalibratedClassifierCV) to the underlying GBDT."""
+    steps = getattr(model, "steps", None)
+    if isinstance(steps, list) and len(steps) > 0:
+        return _base_estimator_for_feature_names(steps[-1][1])
+    ccl = getattr(model, "calibrated_classifiers_", None)
+    if isinstance(ccl, list) and len(ccl) > 0:
+        inner = ccl[0]
+        est = getattr(inner, "estimator", None)
+        if est is not None:
+            return _base_estimator_for_feature_names(est)
+    return model
+
+
 def _model_feature_names(model: Any) -> List[str]:
     """Column order the sklearn LightGBM model was fit with (must match at predict time)."""
-    names = getattr(model, "feature_name_in_", None)
+    base = _base_estimator_for_feature_names(model)
+    names = getattr(base, "feature_name_in_", None)
     if names is not None and len(names) > 0:
         return [str(x) for x in names]
-    booster = getattr(model, "booster_", None)
+    booster = getattr(base, "booster_", None)
     if booster is not None:
         raw = booster.feature_name()
         if raw:

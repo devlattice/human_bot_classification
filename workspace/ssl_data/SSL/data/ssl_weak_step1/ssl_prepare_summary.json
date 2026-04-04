@@ -1,9 +1,8 @@
 {
-  "input_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_train.parquet",
-  "output_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_clusters.parquet",
-  "n_rows": 14638,
-  "n_features_used": 56,
-  "feature_columns": [
+  "input": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_train_with_clusters.parquet",
+  "out_dir": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/ssl_weak_step1",
+  "n_features": 56,
+  "feature_cols": [
     "bet_ratio_max",
     "bet_ratio_mean",
     "bet_ratio_std",
@@ -61,17 +60,23 @@
     "std_pot_after_mean",
     "std_pot_after_std"
   ],
-  "manifest_used": null,
-  "hdbscan": {
-    "min_cluster_size": 60,
-    "min_samples": 15,
-    "metric": "euclidean",
-    "cluster_selection_epsilon": 0.0,
-    "scaled": true,
-    "random_state": 42
-  },
-  "summary": {
-    "n_distinct_clusters": 2,
-    "n_noise": 2252
+  "val_mode": "external_parquet",
+  "val_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/miner_1/feature_1/data/train_v2_robust/val.parquet",
+  "val_fraction": null,
+  "min_cluster_prob": 0.7,
+  "pseudo_weight_scale": 0.15,
+  "pseudo_fraction": 1.0,
+  "no_pseudo": false,
+  "agreement": "none",
+  "cluster_human": 0,
+  "cluster_bot": 1,
+  "counts": {
+    "labeled_total": 8000,
+    "train_fit_real": 8000,
+    "val_holdout_real": 2000,
+    "pseudo_candidates": 4124,
+    "pseudo_after_filters": 4124,
+    "pseudo_dropped_agreement": 0,
+    "train_total_rows": 12124
   }
 }

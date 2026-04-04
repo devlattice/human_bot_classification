@@ -15,7 +15,7 @@ Requires matplotlib + seaborn.
 PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/human_bot_validator/plot_mixed_clusters.py \
   --mixed workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_train.parquet \
   --clusters workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_clusters.parquet \
-  --out-dir workspace/ssl_data/usl_hdbscan/human_bot_validator
+  --out-dir workspace/ssl_data/usl_hdbscan/human_bot_validator/plots
 
 """
 

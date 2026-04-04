@@ -1,0 +1,6 @@
+fold_ratio_max
+p3_max
+p3_mean
+p3_std
+p6p_std
+n_players_mean

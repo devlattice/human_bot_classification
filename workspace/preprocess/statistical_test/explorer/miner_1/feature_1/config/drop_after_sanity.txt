@@ -1,0 +1,17 @@
+# Drop list from sanity_check: 12 constants + p6p_max (|corr|==1 vs n_players_max).
+# Edit if you prefer keeping p6p_max and dropping n_players_max instead.
+# Lines starting with # ignored.
+
+n_streets_max
+n_actions_slot_mean
+n_actions_slot_std
+n_actions_slot_max
+all_in_ratio_mean
+all_in_ratio_std
+all_in_ratio_max
+other_ratio_mean
+other_ratio_std
+other_ratio_max
+end_preflop_max
+end_river_max
+p6p_max

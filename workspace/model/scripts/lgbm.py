@@ -34,7 +34,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
-def load_parquet_pair(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
+def load_parquet_pair(
+    data_dir: Path,
+    *,
+    exclude_from_features: tuple[str, ...] = (),
+) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     data_dir = Path(data_dir).expanduser().resolve()
     train_path = data_dir / "train.parquet"
     val_path = data_dir / "val.parquet"
@@ -44,9 +48,11 @@ def load_parquet_pair(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, list[
     val_df = pd.read_parquet(val_path)
     if "label" not in train_df.columns or "label" not in val_df.columns:
         raise ValueError("Both train and val must contain `label` column")
-    feature_cols = [c for c in train_df.columns if c != "label"]
-    if set(feature_cols) != set(c for c in val_df.columns if c != "label"):
-        raise ValueError("Train/val feature columns differ")
+    skip = {"label", *exclude_from_features}
+    feature_cols = [c for c in train_df.columns if c not in skip]
+    val_feats = [c for c in val_df.columns if c not in skip]
+    if set(feature_cols) != set(val_feats):
+        raise ValueError("Train/val feature columns differ (after excluding label and weight columns)")
     return train_df, val_df, feature_cols
 
 
@@ -152,6 +158,7 @@ def _threshold_sweep(
     y_score: np.ndarray,
     target_human_fpr: float,
     grid_size: int = 1001,
+    threshold_tie_ref: float = 0.5,
 ) -> Dict[str, Any]:
     """
     Sweep thresholds and pick the best one under a human-FPR constraint.
@@ -159,7 +166,8 @@ def _threshold_sweep(
     Selection rule:
       1) human_fpr <= target_human_fpr
       2) maximize bot_recall
-      3) tie-break: higher threshold (more conservative on humans)
+      3) tie-break: threshold closest to ``threshold_tie_ref`` (default 0.5); then
+         lower threshold if still tied (stable grid behavior vs always ~0 or ~1)
     """
     if grid_size < 2:
         raise ValueError("grid_size must be >= 2")
@@ -192,13 +200,23 @@ def _threshold_sweep(
     feasible = [
         r for r in rows if np.isfinite(r["human_fpr"]) and r["human_fpr"] <= target_human_fpr
     ]
+    ref = float(threshold_tie_ref)
+
+    def _pick_closest(recall_pool: list[Dict[str, Any]]) -> Dict[str, Any]:
+        finite = [r for r in recall_pool if np.isfinite(r["bot_recall"])]
+        if not finite:
+            return min(recall_pool, key=lambda r: (abs(r["threshold"] - ref), r["threshold"]))
+        max_recall = max(r["bot_recall"] for r in finite)
+        winners = [r for r in finite if r["bot_recall"] == max_recall]
+        return min(winners, key=lambda r: (abs(r["threshold"] - ref), r["threshold"]))
+
     if feasible:
-        best = max(feasible, key=lambda r: (r["bot_recall"], r["threshold"]))
+        best = _pick_closest(feasible)
         hit_target = True
     else:
         min_fpr = min(r["human_fpr"] for r in rows if np.isfinite(r["human_fpr"]))
         tied = [r for r in rows if r["human_fpr"] == min_fpr]
-        best = max(tied, key=lambda r: (r["bot_recall"], r["threshold"]))
+        best = _pick_closest(tied)
         hit_target = False
 
     checkpoints = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -215,6 +233,7 @@ def _threshold_sweep(
     return {
         "target_human_fpr": float(target_human_fpr),
         "grid_size": int(grid_size),
+        "threshold_tie_ref": ref,
         "hit_target": bool(hit_target),
         "selected_threshold": best["threshold"],
         "selected_metrics": {
@@ -242,6 +261,7 @@ def train_lgbm_b(
     seed: int,
     device: str,
     log_every: int,
+    sample_weight: np.ndarray | None = None,
 ):
     from lightgbm import LGBMClassifier, early_stopping, log_evaluation
 
@@ -265,12 +285,16 @@ def train_lgbm_b(
     callbacks = [early_stopping(stopping_rounds=120, verbose=True)]
     if log_every > 0:
         callbacks.append(log_evaluation(period=log_every))
+    fit_kw: Dict[str, Any] = {}
+    if sample_weight is not None:
+        fit_kw["sample_weight"] = sample_weight
     model.fit(
         X_train,
         y_train,
         eval_set=[(X_train, y_train), (X_val, y_val)],
         eval_names=["train", "valid"],
         callbacks=callbacks,
+        **fit_kw,
     )
     return model
 
@@ -309,9 +333,31 @@ def main() -> None:
         default=1001,
         help="Number of thresholds for sweep in [0,1].",
     )
+    p.add_argument(
+        "--threshold-tie-ref",
+        type=float,
+        default=0.5,
+        help="Among max bot_recall under FPR cap, pick threshold closest to this value.",
+    )
+    p.add_argument(
+        "--sample-weight-col",
+        default="",
+        help="If set, column in train.parquet used as LightGBM sample_weight (val unweighted).",
+    )
     args = p.parse_args()
 
-    train_df, val_df, feature_cols = load_parquet_pair(args.data_dir)
+    sw_col = (args.sample_weight_col or "").strip()
+    exclude_feats: tuple[str, ...] = (sw_col,) if sw_col else ()
+    train_df, val_df, feature_cols = load_parquet_pair(args.data_dir, exclude_from_features=exclude_feats)
+    sample_weight: np.ndarray | None = None
+    if sw_col:
+        if sw_col not in train_df.columns:
+            raise ValueError(f"--sample-weight-col {sw_col!r} not found in train.parquet")
+        sample_weight = pd.to_numeric(train_df[sw_col], errors="coerce").to_numpy(dtype=float)
+        if not np.all(np.isfinite(sample_weight)) or np.any(sample_weight < 0):
+            raise ValueError(f"Column {sw_col!r} must be finite and nonnegative")
+        if float(np.sum(sample_weight)) <= 0:
+            raise ValueError(f"Column {sw_col!r} sums to zero")
     X_train = train_df[feature_cols]
     y_train = train_df["label"].to_numpy()
     X_val = val_df[feature_cols]
@@ -332,6 +378,7 @@ def main() -> None:
         seed=args.seed,
         device=args.device,
         log_every=max(0, int(args.log_every)),
+        sample_weight=sample_weight,
     )
 
     train_metrics = evaluate(model, X_train, y_train)
@@ -342,6 +389,7 @@ def main() -> None:
         y_score=y_val_score,
         target_human_fpr=args.target_human_fpr,
         grid_size=args.threshold_grid_size,
+        threshold_tie_ref=args.threshold_tie_ref,
     )
     selected_threshold = float(sweep["selected_threshold"])
     val_metrics_at_selected = evaluate(model, X_val, y_val, threshold=selected_threshold)
@@ -352,6 +400,7 @@ def main() -> None:
     report = {
         "data_dir": str(Path(args.data_dir).resolve()),
         "model": "LGBM-B",
+        "sample_weight_col": sw_col or None,
         "params": {
             "num_leaves": 31,
             "max_depth": 6,
@@ -372,6 +421,7 @@ def main() -> None:
         "threshold_selection": {
             "policy": "max bot_recall under target human_fpr",
             "target_human_fpr": args.target_human_fpr,
+            "threshold_tie_ref": float(args.threshold_tie_ref),
             "selected_threshold": selected_threshold,
             "val_metrics_at_selected_threshold": val_metrics_at_selected,
             "sweep": sweep,
