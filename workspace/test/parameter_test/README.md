@@ -87,3 +87,12 @@ Pick the config with:
 2. Highest `val_bot_recall` under your safety constraint.
 
 If two configs are close, prefer the simpler / more conservative one.
+
+
+## Mini-grid harness: workspace/test/parameter_test/run_grid.sh
+
+```bash
+cd /home/dr/Workspace/Poker44-subnet
+MODEL_PATH=workspace/model/artifacts/lgbm_weak_ssl_ultralow_ssl_weak_mcp055/lgbm_b_classifier_calibrated.joblib \
+bash workspace/test/parameter_test/run_grid.sh
+```
