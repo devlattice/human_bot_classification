@@ -8,7 +8,7 @@ git push origin main
 scp  -P 41389 -r root@77.104.167.149:/root/Workspace/miner/human_bot_classification/workspace/real_distribution  /home/dr/Workspace
 
 rsync -avzP -e "ssh -p 41389" \
-root@77.104.167.149:/root/Workspace/miner/human_bot_classification/workspace/real_distribution \
+root@77.104.167.149:/root/Workspace/miner_2/human_bot_classification/workspace/real_distribution \
 /home/dr/Workspace
 
 ## hands_geneartor_syn

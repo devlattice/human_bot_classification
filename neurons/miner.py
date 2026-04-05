@@ -338,13 +338,20 @@ class Miner(BaseMinerNeuron):
             joblib = importlib.import_module("joblib")
             model = joblib.load(model_path)
             self._model = model
-            self._model_features = self._model_feature_names(model)
+            self._model_features = self._resolve_model_feature_names(model, model_path)
             feat_info = (
                 f"{len(self._model_features)} features"
                 if self._model_features is not None
                 else "unknown feature order"
             )
             bt.logging.info(f"Miner scoring mode: model ({model_path}, {feat_info})")
+            if self._model_features is None:
+                bt.logging.warning(
+                    "Model feature list unknown: predict_proba will receive every key from "
+                    "aggregate_chunk_from_hands (can mismatch 56-col estimators). Add "
+                    "feature_cols.json next to the joblib or use an estimator that exposes "
+                    "feature_names_in_ / feature_name_in_ (e.g. unwrap CalibratedClassifierCV)."
+                )
         except Exception as e:
             bt.logging.warning(
                 f"Failed to load miner model from {model_path}: {e}. Falling back to heuristic scoring."
@@ -475,18 +482,60 @@ class Miner(BaseMinerNeuron):
         return out
 
     @staticmethod
-    def _model_feature_names(model: Any) -> Optional[list[str]]:
-        names = getattr(model, "feature_name_in_", None)
-        if names is not None and len(names) > 0:
-            return [str(x) for x in names]
-        booster = getattr(model, "booster_", None)
-        if booster is not None:
-            try:
-                raw = booster.feature_name()
-                if raw:
-                    return [str(x) for x in raw]
-            except Exception:
-                return None
+    def _base_estimator_for_feature_names(model: Any) -> Any:
+        """Unwrap Pipeline / CalibratedClassifierCV to the underlying GBDT (same idea as cross_dataset_eval)."""
+        steps = getattr(model, "steps", None)
+        if isinstance(steps, list) and len(steps) > 0:
+            return Miner._base_estimator_for_feature_names(steps[-1][1])
+        ccl = getattr(model, "calibrated_classifiers_", None)
+        if isinstance(ccl, list) and len(ccl) > 0:
+            inner = ccl[0]
+            est = getattr(inner, "estimator", None)
+            if est is not None:
+                return Miner._base_estimator_for_feature_names(est)
+        return model
+
+    @staticmethod
+    def _feature_cols_from_artifact_dir(model_path: Path) -> Optional[list[str]]:
+        """``feature_cols.json`` written by training scripts (calibration / lgbm)."""
+        fc_path = model_path.parent / "feature_cols.json"
+        if not fc_path.is_file():
+            return None
+        try:
+            payload = json.loads(fc_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        cols = payload.get("feature_cols")
+        if not isinstance(cols, list) or not cols:
+            return None
+        return [str(c) for c in cols if str(c)]
+
+    @classmethod
+    def _resolve_model_feature_names(cls, model: Any, model_path: Path) -> Optional[list[str]]:
+        """
+        Column order for ``predict_proba`` — must match training (e.g. 56 cols), not the full
+        aggregate_chunk_from_hands key set (often larger as the schema grows).
+
+        Validators send **hand JSON** in ``synapse.chunks``; features are computed locally.
+        Only these names are passed to the estimator when this list is non-None.
+        """
+        from_json = cls._feature_cols_from_artifact_dir(model_path)
+        if from_json:
+            return from_json
+
+        for m in (model, cls._base_estimator_for_feature_names(model)):
+            for attr in ("feature_names_in_", "feature_name_in_"):
+                names = getattr(m, attr, None)
+                if names is not None and len(names) > 0:
+                    return [str(x) for x in names]
+            booster = getattr(m, "booster_", None)
+            if booster is not None:
+                try:
+                    raw = booster.feature_name()
+                    if raw:
+                        return [str(x) for x in raw]
+                except Exception:
+                    pass
         return None
 
     def _score_chunk_runtime(self, chunk: list[dict]) -> float:
