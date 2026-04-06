@@ -212,12 +212,18 @@ poker_hands_combined.json
 poker_hands_test.json
 poker_hands_train.json
 
+
 workspace/dataset/source/zenodo_holdout.json
 zenodo_holdout.json
 _balanced_human_pool.json
 
+
+*.gz
+*.tgz
 *.parquet
 *.jsonl
+*.txt
+*.TXT
 train.csv
 val.csv
 score_high.json
@@ -227,6 +233,9 @@ score_low.json
 # Local human hands
 hands_generator/human_hands/poker_hands_combined.json
 hands_generator/human_hands/poker_hands_combined.json.gz
+
+qc_summary.json
+.extracted_ok
 
 # Weights & Biases
 wandb/
