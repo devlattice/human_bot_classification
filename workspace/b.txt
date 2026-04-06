@@ -16,7 +16,7 @@ root@77.104.167.149:/root/Workspace/miner_2/human_bot_classification/workspace/r
 PYTHONPATH=. python workspace/preprocess/build_dataset.py \
   --human-json workspace/dataset/source/poker_hands_train.json \
   --out workspace/dataset/unpreprocessed/train \
-  --chunk-count 10000 --shard-size 1000 --resume --preset training-merged \
+  --chunk-count 10000 --shard-size 1000 --resume --pr\eset training-merged \
   --bot-profile-mode mixed --bot-candidate-attempts 3 --bot-generation-rounds 1 \
   --seed 42 --progress-every-chunks 100
 
