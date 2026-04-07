@@ -227,6 +227,7 @@ _balanced_human_pool.json
 *.png
 *.jpg
 
+git.txt
 train.csv
 val.csv
 score_high.json
