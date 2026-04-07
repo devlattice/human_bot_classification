@@ -242,3 +242,4 @@ qc_summary.json
 
 # Weights & Biases
 wandb/
+workspace/dataset/unpreprocessed/train/irc/.human_json_cache/
