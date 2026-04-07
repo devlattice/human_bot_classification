@@ -14,11 +14,10 @@ Stream JSONL miner logs → chunk-level Parquet (raw aggregates, no robust trans
 CPU-friendly: line-by-line read + batched Parquet row groups (``--batch-size``).
 
 python3 workspace/ssl_data/build_raw_dataset_for_domain.py \
-  --input-source-dir workspace/ssl_data/json \
-  --sample workspace/dataset/robusted_dataset/train/train_E2_stronger_robust/train.parquet \
-  --outdir workspace/ssl_data/raw_data/miner_1/ \
-  --output-name validator_request_E2.parquet
-
+  --input-source-dir workspace/ssl_data/raw_data/source \
+  --sample workspace/preprocess/statistical_test/explorer/feature_2/data/public/train.parquet \
+  --outdir workspace/ssl_data/raw_data/feature_2/ \
+  --output-name validator.parquet
 """
 
 from __future__ import annotations

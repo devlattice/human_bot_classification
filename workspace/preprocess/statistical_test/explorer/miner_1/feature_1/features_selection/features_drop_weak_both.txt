@@ -1,3 +1,0 @@
-chunk_n_hands
-end_flop_max
-end_turn_max

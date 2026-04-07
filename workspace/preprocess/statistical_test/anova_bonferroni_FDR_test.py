@@ -149,6 +149,9 @@ def render_anova_domain_plots(
     Write PNGs under plots_dir: volcano, domain-vs-task scatter, keep_score bars.
     Domain-aware plots require columns from domain_shift merge.
     """
+    import os
+
+    os.environ.setdefault("MPLBACKEND", "Agg")
     try:
         import matplotlib.pyplot as plt
     except Exception as e:
@@ -332,6 +335,7 @@ def main() -> None:
     plot_paths: List[str] = []
     if not args.no_plots:
         plot_dir = Path(args.plots_dir).expanduser().resolve()
+        print(f"[anova] plots-dir (resolved): {plot_dir}", flush=True)
         try:
             plot_paths = render_anova_domain_plots(
                 out,
@@ -340,7 +344,7 @@ def main() -> None:
                 point_label_max=args.plot_label_max,
             )
         except RuntimeError as e:
-            print(f"[anova] plots skipped: {e}")
+            print(f"[anova] plots skipped: {e}", flush=True)
 
     n_sig = int((out["sig_p_lt_0_05"] == True).sum())
     n_bonf = int((out["sig_bonferroni"] == True).sum())

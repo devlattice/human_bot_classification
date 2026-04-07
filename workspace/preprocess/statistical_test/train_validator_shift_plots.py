@@ -12,6 +12,12 @@ Outputs under ``--out-dir``:
   - PNGs: top-K KS bar chart, mean–mean scatter, optional distribution overlays
 
 Requires: pandas, numpy, scipy, matplotlib, pyarrow (parquet).
+
+
+python3 workspace/preprocess/statistical_test/train_validator_shift_plots.py \
+  --train-parquet workspace/preprocess/statistical_test/explorer/feature_2/data/public/train.parquet \
+  --validator-parquet workspace/preprocess/statistical_test/explorer/feature_2/data/validator/validator.parquet \
+  --out-dir workspace/preprocess/statistical_test/explorer/feature_2/shift/public
 """
 
 from __future__ import annotations
@@ -156,6 +162,10 @@ def _render_plots(
     top_k: int,
     overlay_k: int,
 ) -> List[str]:
+    import os
+
+    # Headless / CI: avoid needing a display when saving PNG only.
+    os.environ.setdefault("MPLBACKEND", "Agg")
     try:
         import matplotlib.pyplot as plt
     except Exception as e:
@@ -347,6 +357,7 @@ def main() -> int:
             "plots_dir": str(out_dir),
         },
         "plot_files": [],
+        "plots_skip_reason": None,
         "note": "KS compares marginal distributions (train vs validator). High KS does not imply bad for human/bot task.",
     }
 
@@ -363,7 +374,9 @@ def main() -> int:
             )
             summary["plot_files"] = plot_files
         except RuntimeError as e:
-            print(f"[train_validator_shift] plots skipped: {e}", file=sys.stderr)
+            msg = str(e)
+            summary["plots_skip_reason"] = msg
+            print(f"[train_validator_shift] plots skipped: {msg}", file=sys.stderr)
 
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 

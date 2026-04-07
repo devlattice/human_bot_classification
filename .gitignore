@@ -224,6 +224,9 @@ _balanced_human_pool.json
 *.jsonl
 *.txt
 *.TXT
+*.png
+*.jpg
+
 train.csv
 val.csv
 score_high.json

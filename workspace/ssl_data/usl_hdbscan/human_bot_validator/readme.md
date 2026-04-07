@@ -1,173 +1,162 @@
-# Human / bot / validator mix → HDBSCAN
+# Human / bot / validator mix → HDBSCAN → weak SSL
 
-**Scaling:** `cluster_hdbscan.py` uses **`StandardScaler` (z-score per feature) on the full mixed matrix** before Euclidean HDBSCAN **by default**. To disable: pass **`--no-scale`**.
+`cluster_hdbscan.py` applies **`StandardScaler`** then Euclidean HDBSCAN by default. Use **`--no-scale`** only if distances should use the input scale as-is.
 
-## 1) Mix labeled train + validator requests
+---
 
-Use **`--n-per-class auto`** if you want the maximum balanced sample from real train (e.g. 4000+4000 when that is the limit). Validator rows are appended in full.
+## 1. `mix_data.py`
 
-Paths assume **57 features + `label`** (same columns in both parquets; validator may have `label` NA — ok).
+Samples **`n`** rows per class from labeled train, appends **all** validator rows, shuffles. Writes **`mixed_train.parquet`** + `mix_source` (`train_human` / `train_bot` / `validator`).
+
+Default PNGs go to **`<--output-dir>/plots/`** (`--no-plot` to skip, `--plot-dir` to override).
+
+**feature_2 example** (validator often has fewer columns than train — use **`--intersect-features`**):
 
 ```bash
-cd /home/dr/Workspace/Poker44-subnet
+cd /path/to/Poker44-subnet
 
 PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/human_bot_validator/mix_data.py \
-  --real-source workspace/preprocess/statistical_test/explorer/miner_1/feature_1/data/train_v2_robust/train.parquet \
-  --validator-source workspace/ssl_data/raw_data/feature_1/requests_robusted.parquet \
-  --output-dir workspace/ssl_data/usl_hdbscan/human_bot_validator \
+  --real-source workspace/preprocess/statistical_test/explorer/feature_2/data/public/train.parquet \
+  --validator-source workspace/ssl_data/raw_data/feature_2/validator.parquet \
+  --output-dir workspace/ssl_data/usl_hdbscan/human_bot_validator/data \
   --output-name mixed_train.parquet \
   --n-per-class auto \
+  --intersect-features \
   --seed 42 \
   --summary \
   --copy-manifest
 ```
 
-Fixed sample size (e.g. 3000 per class) instead of `auto`:
+- **`--n-per-class auto`:** use `min(count_human, count_bot)` from `--real-source`.
+- **Schema mismatch:** without `--intersect-features`, validator must include every column from `--real-source`. With it, only the **intersection** is kept (train column order); stderr lists dropped train-only columns. If you **`--copy-manifest`**, trim `hdbscan_feature_columns` in the copied `build_manifest.json` to match intersected features, or rely on `cluster_hdbscan` numeric auto-selection.
+
+### Optional extra sources (e.g. IRC)
+
+`mix_data.py` can append up to two extra parquets:
+- `--extra-source-1`, `--extra-source-1-rate`
+- `--extra-source-2`, `--extra-source-2-rate`
+
+Rate is relative to sampled labeled rows (`2 * n_per_class`):  
+e.g. `--extra-source-1-rate 0.2` adds about `0.2 * (2n)` rows from extra source 1 (capped by available rows).
+
+Extra rows are tagged as `mix_source=extra_source_1` / `extra_source_2`.
 
 ```bash
-  --n-per-class 3000
+PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/human_bot_validator/mix_data.py \
+  --real-source workspace/preprocess/statistical_test/explorer/feature_2/data/public/train.parquet \
+  --validator-source workspace/ssl_data/raw_data/feature_2/validator.parquet \
+  --extra-source-1 workspace/preprocess/statistical_test/explorer/feature_2/data/irc/irc_train.parquet \
+  --extra-source-1-rate 0.2 \
+  --output-dir workspace/ssl_data/usl_hdbscan/human_bot_validator/data \
+  --n-per-class auto \
+  --intersect-features \
+  --summary
 ```
 
-## 2) HDBSCAN with StandardScaler (default)
+---
 
-Uses **`build_manifest.json`** next to `--input` if present (from `--copy-manifest`), for `hdbscan_feature_columns`. Otherwise all numeric columns except `label`, `mix_source`, etc.
+## 2. `cluster_hdbscan.py`
+
+Writes **`mixed_clusters.parquet`** (same row order as `--input`), sidecar **`mixed_clusters.json`**, and PNGs under **`<output parent>/plots/`** unless **`--no-plot`**.
 
 ```bash
 PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/cluster_hdbscan.py \
-  --input workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_train.parquet \
-  --output workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_clusters.parquet \
+  --input workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train.parquet \
+  --output workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.parquet \
   --min-cluster-size 80 \
   --min-samples 40 \
-  --metric euclidean \
-  --cluster-selection-epsilon 0.0 \
   --random-state 42
 ```
 
-**Tuning hints** (~14k rows mixed):
+Omit **`--min-samples`** to default it to **`--min-cluster-size`**. Uses **`build_manifest.json`** beside `--input` when present (`--manifest` to override). **`--no-scale`** skips the extra scaler.
 
-| Argument | Role |
-|----------|------|
-| `--min-cluster-size` | Larger → fewer, bigger clusters; try **50–150** first. |
-| `--min-samples` | Defaults to `min_cluster_size` if omitted; **lower** (e.g. half of min_cluster_size) → denser cores, often **less noise**. |
-| `--metric` | Keep **`euclidean`** with StandardScaler (default). |
-| `--cluster-selection-epsilon` | **0** default; small **>0** merges close clusters (use sparingly). |
+---
 
-**Explicit manifest** (if not beside `mixed_train.parquet`):
+### Grid search (train gate → minimize validator noise)
 
-```bash
-  --manifest workspace/ssl_data/usl_hdbscan/data/build_manifest.json
-```
+This mode enforces:
+- `train_balanced_accuracy_clustered >= --min-train-balanced-accuracy`
+- `train_clustered_coverage >= --min-train-clustered-coverage`
 
-**Skip StandardScaler** (only if you explicitly want raw mixed features in distance):
+Among feasible points, it selects the one with lowest `validator_noise_frac` and writes:
+- final `mixed_clusters.parquet`
+- grid table CSV (`--grid-csv`)
+- live progress logs in shell (`--grid-log-every`)
 
 ```bash
-  --no-scale
+PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/cluster_hdbscan.py \
+  --input workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train.parquet \
+  --output workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.parquet \
+  --grid-search \
+  --grid-min-cluster-size-start 20 \
+  --grid-min-cluster-size-stop 100 \
+  --grid-min-cluster-size-step 10 \
+  --grid-min-samples-start 5 \
+  --grid-min-samples-stop 50 \
+  --grid-min-samples-step 10 \
+  --min-train-balanced-accuracy 0.80 \
+  --min-train-clustered-coverage 0.70 \
+  --grid-log-every 1 \
+  --grid-csv workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.grid.csv \
+  --random-state 42
 ```
 
-## 3) Join train + cluster columns (wide parquet)
+---
 
-Row order is the same as `mixed_train.parquet` and `mixed_clusters.parquet`; this script concatenates horizontally.
+### Confusion-style cluster plots
+```bash
+PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/human_bot_validator/plot_mixed_clusters.py \
+  --mixed workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train.parquet \
+  --clusters workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.parquet \
+  --out-dir workspace/ssl_data/usl_hdbscan/human_bot_validator/data/plots
+```
+
+## 3. `join_mixed_clusters.py`
 
 ```bash
 PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/human_bot_validator/join_mixed_clusters.py \
-  --mixed workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_train.parquet \
-  --clusters workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_clusters.parquet \
-  --output workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_train_with_clusters.parquet
+  --mixed workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train.parquet \
+  --clusters workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.parquet \
+  --output workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train_with_clusters.parquet
 ```
 
-Defaults: all three paths under `human_bot_validator/` with those filenames.
+---
 
-## 4) Weak SSL dataset → `train.parquet` / `val.parquet` (step-by-step)
+## 4. `prepare_weak_ssl_dataset.py`
 
-Do this **after** §3 so you have `mixed_train_with_clusters.parquet`.
+Builds **`train.parquet`** (real labels + optional validator pseudo-labels + `sample_weight`) and **`val.parquet`**. Requires **`mixed_train_with_clusters.parquet`**.
 
-| Step | What |
-|------|------|
-| 1 | Load wide mixed + clusters. |
-| 2 | **Real labels:** `train_human` / `train_bot` rows with non-null `label`. |
-| 3 | **Val:** either stratified holdout from labeled mixed (`--val-fraction`) **or** `--val-parquet` (e.g. explorer `train_v2_robust/val.parquet`) so **all** labeled mixed rows stay in train — no duplicate holdout. |
-| 4 | **Pseudo:** `validator` rows, `cluster != -1`, `cluster_probability ≥` threshold; map cluster **0→human (0)**, **1→bot (1)** (override with `--cluster-human` / `--cluster-bot`). |
-| 5 | **Weights:** real rows `sample_weight=1.0`; pseudo rows `pseudo_weight × cluster_probability`. |
-| 6 | **Optional:** `--agreement logistic` keeps pseudo rows only if a quick logistic model (fit on labeled train split) agrees with the cluster label. |
-| 7 | Write `train.parquet` (features + `label` + `sample_weight`) and `ssl_prepare_summary.json`. |
-
-**Recommended** when mixed train already comes from the same feature pipeline: use your **fixed** `val.parquet` (all 8000 labeled mixed rows + pseudo in `train.parquet`):
+Typical call: external labeled val so **all** mixed human/bot rows stay in train:
 
 ```bash
 PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/human_bot_validator/prepare_weak_ssl_dataset.py \
-  --input workspace/ssl_data/usl_hdbscan/human_bot_validator/mixed_train_with_clusters.parquet \
-  --out-dir workspace/ssl_data/usl_hdbscan/human_bot_validator/ssl_weak_step1 \
-  --val-parquet workspace/preprocess/statistical_test/explorer/miner_1/feature_1/data/train_v2_robust/val.parquet \
-  --min-cluster-prob 0.7 \
+  --input workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train_with_clusters.parquet \
+  --out-dir workspace/ssl_data/SSL/data/ssl_47_mcp055 \
+  --val-parquet workspace/preprocess/statistical_test/explorer/feature_2/data/public/val.parquet \
+  --min-cluster-prob 0.55 \
   --pseudo-weight 0.15 \
   --seed 42
 ```
 
-**Alternative:** internal stratified split from labeled mixed only (ignores external val):
+Adjust **`--val-parquet`** / **`--out-dir`** to your explorer layout. Without **`--val-parquet`**, use **`--val-fraction`** on labeled mixed rows only. Flags: **`--no-pseudo`**, **`--pseudo-fraction`**, **`--agreement logistic`**, **`--cluster-human` / `--cluster-bot`**.
 
-```bash
-  ... --val-fraction 0.15
-```
-(omit `--val-parquet`).
+**Train:** `workspace/model/scripts/lgbm_2.py` with **`--sample-weight-col sample_weight`** and the same **`--data-dir`** as `--out-dir` above. Optional calibration: `calibrate_lgbm_joblib.py` — see `workspace/model/readme.md`.
 
-**Second round (your idea):** run inference on medium-confidence rows outside this script, build a new `--input` or concat rows, and rerun `prepare_weak_ssl_dataset.py` with `--no-pseudo` plus your hand-built augment, or extend the script later. **Evaluate** using `val.parquet` from this step (real labels only).
+---
 
-**Train LGBM** on the prepared dir (`val` is unweighted; train uses weights):
+## 5. `plot_mixed_clusters.py`
 
-```bash
-PYTHONPATH=. python workspace/model/scripts/lgbm_2.py \
-  --data-dir workspace/ssl_data/SSL/data/ssl_weak_step1 \
-  --sample-weight-col sample_weight \
-  --out-dir workspace/model/artifacts/lgbm_weak_ssl_step1
-```
+Heatmap **`mix_source × cluster`** and label-fraction bars (needs matplotlib + seaborn). Default **`--out-dir`** is this folder; set it e.g. to **`.../plots`**.
 
-**Fair compare to `lgbm_feature56_v4_ultralow`** (same capacity / regularization as that artifact; only data + weights differ):
+---
 
-```bash
-PYTHONPATH=. python workspace/model/scripts/lgbm_2.py \
-  --data-dir workspace/ssl_data/SSL/data/ssl_weak_step1 \
-  --sample-weight-col sample_weight \
-  --out-dir workspace/model/artifacts/lgbm_weak_ssl_ultralow \
-  --n-estimators 8000 \
-  --learning-rate 0.01 \
-  --num-leaves 3 \
-  --max-depth 2 \
-  --min-child-samples 2000 \
-  --subsample 0.4 \
-  --colsample-bytree 0.4 \
-  --reg-alpha 10.0 \
-  --reg-lambda 30.0 \
-  --min-gain-to-split 0.35 \
-  --early-stopping-rounds 250
-```
+## 6. Artifacts
 
-**Calibrate** the **raw** joblib (not required to retrain). Uses **`val.parquet`** from the same **`--data-dir`** you trained with (labeled holdout; no `sample_weight` column needed on val).
-
-```bash
-PYTHONPATH=. python workspace/model/scripts/calibrate_lgbm_joblib.py \
-  --artifact-dir workspace/model/artifacts/lgbm_weak_ssl_ultralow \
-  --data-dir workspace/ssl_data/SSL/data/ssl_weak_step1 \
-  --method sigmoid \
-  --report-threshold 0.5
-```
-
-Writes next to the artifact:
-
-- `lgbm_b_classifier_calibrated.joblib`
-- `lgbm_b_classifier_calibrated.calibration.json`
-
-Point **`POKER44_MINER_MODEL_PATH`** (or your deploy path) at the **calibrated** joblib if you want miner `>= 0.5` to use calibrated probabilities.
-
-If your prepared data lives under **`human_bot_validator/ssl_weak_step1`** instead, use that path for **`--data-dir`** here and in **`lgbm_2`** above.
-
-Threshold sweep: among thresholds with max bot recall under target human FPR, the chosen cutoff is **closest to `--threshold-tie-ref`** (default **0.5**), then lower *t* if still tied — avoids useless extremes when val separates cleanly.
-
-Ablations: `--no-pseudo` (labeled split only), `--pseudo-fraction 0.25`, `--agreement logistic`.
-
-## 5) Outputs
-
-- `mixed_train.parquet` — mixed rows + `mix_source` (`train_human` / `train_bot` / `validator`).
-- `mixed_clusters.parquet` — `cluster` (+ optional `cluster_probability`); **row order matches `--input`** (join back to mixed train by index).
-- `mixed_train_with_clusters.parquet` — wide table from `join_mixed_clusters.py` (train columns + cluster columns).
-- `mixed_clusters.json` — run metadata (`scaled: true` when StandardScaler ran).
-- `ssl_weak_step1/` (or your `--out-dir`) — `train.parquet`, `val.parquet`, `ssl_prepare_summary.json` from `prepare_weak_ssl_dataset.py`.
+| Path | Role |
+|------|------|
+| `mixed_train.parquet` | Features + `label` + `mix_source` |
+| `mixed_clusters.parquet` | `cluster`, `cluster_probability` (aligned rows) |
+| `mixed_train_with_clusters.parquet` | Wide join |
+| `mixed_clusters.json` | HDBSCAN meta + `plot_paths` |
+| `plots/` | `mix_data` + `cluster_hdbscan` PNGs |
+| `ssl_weak_step1/` (or chosen `--out-dir`) | `train.parquet`, `val.parquet`, `ssl_prepare_summary.json` |

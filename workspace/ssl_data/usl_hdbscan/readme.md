@@ -25,6 +25,7 @@ This folder is separate from generic SSL tooling in `workspace/ssl_data/readme.m
 - **`--same-schema`:** a **robusted** `train.parquet` whose columns are `label` + your keep features (defines feature **order** and count).
 - **`--transform-meta`:** the **`transform_meta.json`** that matches that training pipeline.
 - **Clustering:** `pip install hdbscan scikit-learn` (for `cluster_hdbscan.py`).
+- **Plots (default on):** `pip install matplotlib` for PNG summaries from `cluster_hdbscan.py` (use `--no-plot` to skip).
 
 **Naming:** do not create a file named `hdbscan.py` in this folder — it shadows the PyPI **`hdbscan`** package and breaks clustering. Use **`cluster_hdbscan.py`** only.
 
@@ -60,9 +61,7 @@ PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/build_usl_data.py \
   --batch-size 2048 \
   --hdbscan-parquet-name usl_hdbscan_features.parquet
 ```
-```bash
---json-dir workspace/ssl_data/json \
-```
+
 ### CPU / memory (batched streaming)
 
 Peak RAM scales with **`--batch-size`** (default `2048`), not total JSONL size. Lower on small machines, raise if you have headroom:
@@ -99,10 +98,22 @@ PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/build_usl_data.py --help
 
 ### Run clustering (`cluster_hdbscan.py`)
 
-Writes **`clusters.parquet`** (`cluster`, optional `cluster_probability`) and **`clusters.json`** metadata — **same row order** as the feature input (join with `plot.py` via `--clusters-parquet`).
+Writes **`clusters.parquet`** (`cluster`, optional `cluster_probability`) and a sidecar **`clusters.json`** metadata file — **same row order** as the feature input (join with `plot.py` via `--clusters-parquet`).
+
+**Plots (end of run):** by default saves PNGs under **`<parent of --output>/plots/`** (e.g. `data/plots/` when `--output` is `data/clusters.parquet`):
+
+| File | Content |
+|------|---------|
+| `{stem}_cluster_sizes.png` | Row counts per cluster id (including **noise -1**). |
+| `{stem}_cluster_probability_hist.png` | Histogram of `cluster_probability` for clustered rows only (if HDBSCAN exposes probabilities). |
+
+- **`--plot-dir`:** override output directory for PNGs.
+- **`--no-plot`:** skip matplotlib (no PNGs; metadata still written).
+- **`plot_paths`** in the `*.json` meta lists absolute paths to written PNGs.
+- **`--grid-search`:** optional sweep mode for mixed labeled+validator input. It computes train confusion metrics, enforces train-quality gates, and picks the feasible setting with minimum validator noise (`cluster==-1` on `mix_source=="validator"`).
 
 ```bash
-pip install hdbscan scikit-learn
+pip install hdbscan scikit-learn matplotlib
 
 PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/cluster_hdbscan.py \
   --input workspace/ssl_data/usl_hdbscan/data/usl_hdbscan_features.parquet \
@@ -110,11 +121,43 @@ PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/cluster_hdbscan.py \
   --min-cluster-size 15
 ```
 
+Grid-search example with live shell logs:
+
+```bash
+PYTHONPATH=. python workspace/ssl_data/usl_hdbscan/cluster_hdbscan.py \
+  --input workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train.parquet \
+  --output workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.parquet \
+  --grid-search \
+  --grid-min-cluster-size-start 20 \
+  --grid-min-cluster-size-stop 100 \
+  --grid-min-cluster-size-step 10 \
+  --grid-min-samples-start 5 \
+  --grid-min-samples-stop 50 \
+  --grid-min-samples-step 10 \
+  --min-train-balanced-accuracy 0.80 \
+  --min-train-clustered-coverage 0.70 \
+  --grid-log-every 1 \
+  --grid-csv workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.grid.csv \
+  --random-state 42
+```
+
+**Mixed train + validator** (human/bot SSL path): point `--input` at `human_bot_validator/mixed_train.parquet` and `--output` at e.g. `human_bot_validator/mixed_clusters.parquet`; plots land in **`human_bot_validator/plots/`**.
+
 If `build_manifest.json` sits in the **same directory** as `--input`, feature names are taken from `hdbscan_feature_columns` automatically (same as passing `--manifest` explicitly).
 
 - **`--manifest`:** override path to `build_manifest.json` when it is not beside the input.
-- Omit **`--manifest`** (and no sidecar file) and **`--columns`** → auto-select all numeric columns (excluding `label` / `miner_score` / `cluster`).
+- Omit **`--manifest`** (and no sidecar file) and **`--columns`** → auto-select all numeric columns (excluding `label` / `miner_score` / `cluster` / `mix_source`).
 - **`--no-scale`:** skip `StandardScaler` if you already want raw robust features in distance space.
+
+### Labeled + validator mix (`human_bot_validator/mix_data.py`)
+
+For the **train human/bot + validator** parquet used above, `mix_data.py` also writes summary PNGs by default under **`--output-dir/plots/`** (e.g. `mixed_train_mix_source_counts.png`). Use **`--no-plot`** to skip. Full **`mix_source × cluster`** heatmaps remain in **`human_bot_validator/plot_mixed_clusters.py`** (see **`human_bot_validator/readme.md`**).
+
+`mix_data.py` also supports optional extra sources:
+- `--extra-source-1`, `--extra-source-1-rate`
+- `--extra-source-2`, `--extra-source-2-rate`
+
+Rates are fractions of sampled labeled rows (`2 * n_per_class`). Useful for controlled IRC ablations while keeping `mix_source` traceability.
 
 ### Pseudo human / bot from clusters + miner score
 
@@ -137,10 +180,11 @@ Outputs `data/pseudo_label_map.parquet` (cluster → label + medians) and `data/
 | Path | Role |
 |------|------|
 | `build_usl_data.py` | Builder CLI |
-| `cluster_hdbscan.py` | HDBSCAN on feature Parquet → `clusters.parquet` |
+| `cluster_hdbscan.py` | HDBSCAN on feature Parquet → `clusters.parquet` + `*.json` meta + default PNG plots |
 | `assign_pseudo_labels.py` | cluster → pseudo_human / pseudo_bot / uncertain (from miner_score) |
 | `plot.py` | `miner_score` vs cluster / label plots |
-| `data/` | Default output (`usl.parquet`, `usl_hdbscan_features.parquet`, `build_manifest.json`) |
+| `human_bot_validator/` | `mix_data.py`, `plot_mixed_clusters.py`, weak-SSL prep (see `human_bot_validator/readme.md`) |
+| `data/` | Default output (`usl.parquet`, `usl_hdbscan_features.parquet`, `build_manifest.json`; `plots/` after clustering) |
 
 ---
 

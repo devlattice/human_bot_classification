@@ -162,10 +162,73 @@ def _mkdir_output_dir(path: Path) -> None:
         ) from e
 
 
+def _human_source_is_jsonl(path: Path) -> bool:
+    n = path.name.lower()
+    return n.endswith(".jsonl") or n.endswith(".jsonl.gz")
+
+
+def _load_jsonl_hand_objects(path: Path) -> List[Dict[str, Any]]:
+    """One JSON object per line; skips blank / invalid lines."""
+    p = Path(path).expanduser().resolve()
+    if not p.is_file():
+        raise DataValidationError(f"Human JSON source not found: {p}")
+    if p.name.lower().endswith(".jsonl.gz"):
+        ctx = gzip.open(p, "rt", encoding="utf-8")
+    else:
+        ctx = p.open("r", encoding="utf-8")
+    out: List[Dict[str, Any]] = []
+    with ctx as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(item, dict):
+                out.append(item)
+    if not out:
+        raise DataValidationError(f"{p}: JSONL contained no valid JSON objects.")
+    return out
+
+
+def _materialize_human_json_if_jsonl(path: Path, cache_dir: Path) -> Path:
+    """
+    ``hands_generator.mixed_dataset_provider`` only accepts a top-level JSON array on disk.
+    If ``path`` is ``.jsonl`` / ``.jsonl.gz``, convert once to a cached ``.json`` under
+    ``cache_dir`` and return that path; otherwise return ``path`` unchanged.
+    """
+    p = Path(path).expanduser().resolve()
+    if not _human_source_is_jsonl(p):
+        return p
+    cache_dir = Path(cache_dir).expanduser().resolve()
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    st = p.stat()
+    key = f"{p}\0{st.st_mtime_ns}\0{st.st_size}"
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()[:24]
+    cached = cache_dir / f"human_json_materialized_{digest}.json"
+    if cached.is_file():
+        print(
+            f"[human-json] JSONL → using cached array {_rel_repo(cached)}",
+            flush=True,
+        )
+        return cached
+    rows = _load_jsonl_hand_objects(p)
+    print(
+        f"[human-json] materializing JSONL ({len(rows)} hands) → {_rel_repo(cached)}",
+        flush=True,
+    )
+    cached.write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
+    return cached
+
+
 def _load_json_array(path: Path) -> List[Dict[str, Any]]:
     p = Path(path).expanduser().resolve()
     if not p.is_file():
         raise DataValidationError(f"Human JSON source not found: {p}")
+    if _human_source_is_jsonl(p):
+        return _load_jsonl_hand_objects(p)
     if p.suffix.lower() == ".gz":
         with gzip.open(p, "rt", encoding="utf-8") as f:
             data = json.load(f)
@@ -1246,6 +1309,12 @@ def main() -> None:
         print(f"[human-balance] wrote stats: {bal_stats_path}", flush=True)
     elif args.human_json is not None:
         human_json_resolved = Path(args.human_json).expanduser().resolve()
+
+    if human_json_resolved is not None:
+        human_json_resolved = _materialize_human_json_if_jsonl(
+            human_json_resolved,
+            Path(args.out).expanduser().resolve() / ".human_json_cache",
+        )
 
     if args.shard_size is not None:
         build_sharded_training_dataset(
