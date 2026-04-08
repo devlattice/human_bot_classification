@@ -40,6 +40,10 @@ if ! "$PYTHON_BIN" -c "import bittensor, dotenv, numpy, pandas, sklearn" >/dev/n
     exit 1
 fi
 
+GIT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
+GIT_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || true)"
+DEPLOY_VERSION="$(grep -E '^VALIDATOR_DEPLOY_VERSION[[:space:]]*=' poker44/__init__.py 2>/dev/null | head -n1 | sed -E 's/^VALIDATOR_DEPLOY_VERSION[[:space:]]*=[[:space:]]*["'\'']([^"'\'']+)["'\'']/\1/')"
+
 pm2 delete $PM2_NAME 2>/dev/null || true
 
 export PYTHONPATH="$(pwd)"
@@ -56,4 +60,8 @@ pm2 save
 
 echo "Validator started: $PM2_NAME"
 echo "View logs: pm2 logs $PM2_NAME"
-echo "Profile: chunks=$POKER44_CHUNK_COUNT reward_window=$POKER44_REWARD_WINDOW poll_interval_s=$POKER44_POLL_INTERVAL_SECONDS timeout_s=$NEURON_TIMEOUT"
+echo "Code: branch=${GIT_BRANCH:-<unknown>} commit=${GIT_COMMIT:-<unknown>} deploy_version=${DEPLOY_VERSION:-<unknown>}"
+echo "Config: netuid=$NETUID network=$NETWORK wallet=$WALLET_NAME hotkey=$HOTKEY python=$PYTHON_BIN"
+echo "Subtensor args: ${SUBTENSOR_PARAM:---subtensor.network $NETWORK}"
+echo "Runtime extras: wallet_path=${WALLET_PATH:-<default>} extra_args=${VALIDATOR_EXTRA_ARGS:-<none>}"
+echo "Profile: chunks=$POKER44_CHUNK_COUNT reward_window=$POKER44_REWARD_WINDOW poll_interval_s=$POKER44_POLL_INTERVAL_SECONDS miners_per_cycle=$POKER44_MINERS_PER_CYCLE timeout_s=$NEURON_TIMEOUT sync_window_mode=$POKER44_SYNCED_WINDOW_MODE sync_all_miners=$POKER44_SYNC_ALL_MINERS direct_score_update=$POKER44_SYNC_DIRECT_SCORE_UPDATE"
