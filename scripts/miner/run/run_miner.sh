@@ -23,7 +23,7 @@ NETWORK="${NETWORK:-finney}" ##finney
 # Resolved after cd to REPO_ROOT (absolute path used for PM2).
 MINER_SCRIPT="${MINER_SCRIPT:-neurons/miner.py}"
 PM2_NAME="${PM2_NAME:-poker_miner_1}"  ##  name of Miner, as you wish
-AXON_PORT="${AXON_PORT:-8091}"
+AXON_PORT="${AXON_PORT:-8080}"
 # Space-separated SS58 validator *hotkeys* (not coldkey, not wallet name).
 # Must match ``synapse.dendrite.hotkey`` exactly. Strip CR from Windows .env lines.
 ALLOWED_VALIDATOR_HOTKEYS="${ALLOWED_VALIDATOR_HOTKEYS:-}"
@@ -49,14 +49,14 @@ export PYTHONPATH="$REPO_ROOT"
 
 # joblib LightGBM loads need ``import lightgbm`` in the SAME interpreter PM2 uses.
 MINER_PYTHON="${MINER_PYTHON:-}"
-if [ -z "$MINER_PYTHON" ] && [ -x "$REPO_ROOT/miner_env/bin/python" ]; then
-  MINER_PYTHON="$REPO_ROOT/miner_env/bin/python"
+if [ -z "$MINER_PYTHON" ] && [ -x "$REPO_ROOT/.venv/bin/python" ]; then
+  MINER_PYTHON="$REPO_ROOT/.venv/bin/python"
 fi
 if [ -z "$MINER_PYTHON" ]; then
   MINER_PYTHON="$(command -v python3 || command -v python || true)"
 fi
 if [ -z "$MINER_PYTHON" ] || [ ! -x "$MINER_PYTHON" ]; then
-  echo "Error: no Python interpreter found. Set MINER_PYTHON or create $REPO_ROOT/miner_env"
+  echo "Error: no Python interpreter found. Set MINER_PYTHON or create $REPO_ROOT/.venv"
   exit 1
 fi
 if ! "$MINER_PYTHON" -c "import lightgbm" 2>/dev/null; then

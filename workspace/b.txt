@@ -5,6 +5,11 @@ git pull --tags upstream main --no-rebase
 git push origin main
 
 
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_ed25519
+chmod 644 ~/.ssh/id_ed25519.pub
+
+
 scp  -P 41389 -r root@77.104.167.149:/root/Workspace/miner/human_bot_classification/workspace/real_distribution  /home/dr/Workspace
 
 rsync -avzP -e "ssh -p 41389" \
