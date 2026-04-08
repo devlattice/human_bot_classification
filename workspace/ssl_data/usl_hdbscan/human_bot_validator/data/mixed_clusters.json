@@ -1,7 +1,7 @@
 {
   "input_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train.parquet",
   "output_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.parquet",
-  "n_rows": 18077,
+  "n_rows": 21217,
   "n_features_used": 47,
   "feature_columns": [
     "bet_ratio_max",
@@ -63,7 +63,7 @@
   },
   "summary": {
     "n_distinct_clusters": 2,
-    "n_noise": 3860
+    "n_noise": 4337
   },
   "grid_search": {
     "grid_csv": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_clusters.grid.csv",

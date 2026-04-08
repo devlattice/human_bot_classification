@@ -13,6 +13,7 @@ Example::
     python3 workspace/ssl_data/merge.py \
         --input-dir workspace/ssl_data/json \
         --output-dir workspace/ssl_data/raw_data/source \
+        --output-stem merged_2_0_0 \
         --log-every 100
 
     #optional arguments    

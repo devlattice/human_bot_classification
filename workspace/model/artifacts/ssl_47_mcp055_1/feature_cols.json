@@ -1,7 +1,4 @@
 {
-  "input": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/usl_hdbscan/human_bot_validator/data/mixed_train_with_clusters.parquet",
-  "out_dir": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/SSL/data/ssl_47_mcp055",
-  "n_features": 47,
   "feature_cols": [
     "bet_ratio_max",
     "bet_ratio_mean",
@@ -51,23 +48,5 @@
     "std_pot_after_mean",
     "std_pot_after_std"
   ],
-  "val_mode": "external_parquet",
-  "val_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_2/data/public/val.parquet",
-  "val_fraction": null,
-  "min_cluster_prob": 0.55,
-  "pseudo_weight_scale": 0.15,
-  "pseudo_fraction": 1.0,
-  "no_pseudo": false,
-  "agreement": "none",
-  "cluster_human": 0,
-  "cluster_bot": 1,
-  "counts": {
-    "labeled_total": 8000,
-    "train_fit_real": 8000,
-    "val_holdout_real": 2000,
-    "pseudo_candidates": 9781,
-    "pseudo_after_filters": 9781,
-    "pseudo_dropped_agreement": 0,
-    "train_total_rows": 17781
-  }
+  "n_features": 47
 }

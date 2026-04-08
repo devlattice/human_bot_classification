@@ -204,11 +204,9 @@ class Miner(BaseMinerNeuron):
         self._maybe_load_transform_meta()
         _tm_path = self._resolve_transform_meta_path()
         bt.logging.info(
-            "Miner scoring stack: model_path=%r loaded=%s | transform_meta_path=%r loaded=%s",
-            self._model_path or "",
-            bool(self._model),
-            str(_tm_path) if _tm_path else "",
-            bool(self._transform_meta),
+            f"Miner scoring stack: model_path={self._model_path or ''!r} "
+            f"loaded={bool(self._model)} | transform_meta_path={str(_tm_path) if _tm_path else ''!r} "
+            f"loaded={bool(self._transform_meta)}"
         )
         if self._miner_require_model and self._model is None:
             raise RuntimeError(
