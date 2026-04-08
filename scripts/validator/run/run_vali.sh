@@ -4,6 +4,7 @@ set -euo pipefail
 
 # Poker44 Validator Startup Script
 
+<<<<<<< HEAD
 NETUID=126
 WALLET_NAME="poker44-test-ck"
 HOTKEY="poker44-hk"
@@ -16,6 +17,39 @@ POKER44_CHUNK_COUNT=40
 POKER44_REWARD_WINDOW=40
 POKER44_POLL_INTERVAL_SECONDS=300
 NEURON_TIMEOUT=60
+=======
+NETUID="${NETUID:-126}"
+WALLET_NAME="${WALLET_NAME:-poker44-test-ck}"
+HOTKEY="${HOTKEY:-poker44-hk}"
+NETWORK="${NETWORK:-finney}"
+SUBTENSOR_PARAM="${SUBTENSOR_PARAM:-}"
+VALIDATOR_SCRIPT="${VALIDATOR_SCRIPT:-./neurons/validator.py}"
+PM2_NAME="${PM2_NAME:-poker44_validator}"  ##  name of validator, as you wish
+VALIDATOR_ENV_DIR="${VALIDATOR_ENV_DIR:-validator_env}"
+WALLET_PATH="${WALLET_PATH:-}"
+VALIDATOR_EXTRA_ARGS="${VALIDATOR_EXTRA_ARGS:-}"
+POKER44_HUMAN_JSON_PATH="${POKER44_HUMAN_JSON_PATH:-/path/to/private/poker_data_combined.json}"
+POKER44_CHUNK_COUNT="${POKER44_CHUNK_COUNT:-40}"
+POKER44_REWARD_WINDOW="${POKER44_REWARD_WINDOW:-40}"
+POKER44_POLL_INTERVAL_SECONDS="${POKER44_POLL_INTERVAL_SECONDS:-300}"
+POKER44_MINERS_PER_CYCLE="${POKER44_MINERS_PER_CYCLE:-24}"
+POKER44_SYNCED_WINDOW_MODE="${POKER44_SYNCED_WINDOW_MODE:-true}"
+POKER44_SYNC_ALL_MINERS="${POKER44_SYNC_ALL_MINERS:-false}"
+POKER44_SYNC_DIRECT_SCORE_UPDATE="${POKER44_SYNC_DIRECT_SCORE_UPDATE:-false}"
+POKER44_SYNC_RESET_BUFFERS_ON_WINDOW_CHANGE="${POKER44_SYNC_RESET_BUFFERS_ON_WINDOW_CHANGE:-false}"
+NEURON_TIMEOUT="${NEURON_TIMEOUT:-60}"
+
+if [ -x "$VALIDATOR_ENV_DIR/bin/python" ]; then
+    PYTHON_BIN="$VALIDATOR_ENV_DIR/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python3)"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python)"
+else
+    echo "Error: No Python interpreter found"
+    exit 1
+fi
+>>>>>>> aead4a2e1d8d56f9e104aaaf40abfff566a3888e
 
 if [ ! -f "$VALIDATOR_SCRIPT" ]; then
     echo "Error: Validator script not found at $VALIDATOR_SCRIPT"

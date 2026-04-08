@@ -31,6 +31,7 @@ from poker44 import __version__, VALIDATOR_DEPLOY_VERSION
 from poker44.base.validator import BaseValidatorNeuron
 from poker44.utils.config import config
 from poker44.utils.runtime_info import (
+    build_signed_runtime_request,
     collect_runtime_info,
     post_runtime_snapshot,
     write_runtime_snapshot,
@@ -51,6 +52,10 @@ load_dotenv()
 os.makedirs("./logs", exist_ok=True)
 bt.logging.set_trace()
 bt.logging(debug=True, trace=False, logging_dir="./logs", record_log=True)
+
+DEFAULT_VALIDATOR_RUNTIME_REPORT_URL = (
+    "https://api.poker44.net/internal/validators/runtime"
+)
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -113,13 +118,15 @@ class Validator(BaseValidatorNeuron):
         self.reward_window = int(os.getenv("POKER44_REWARD_WINDOW", "40"))
         self.synced_window_mode = _env_bool("POKER44_SYNCED_WINDOW_MODE", True)
         self.sync_all_miners = _env_bool("POKER44_SYNC_ALL_MINERS", False)
+        # Keep synchronized evaluation windows, but default to persistent scoring so
+        # short outages and uneven request coverage do not reset miner rankings.
         self.sync_direct_score_update = _env_bool(
             "POKER44_SYNC_DIRECT_SCORE_UPDATE",
-            self.synced_window_mode,
+            False,
         )
         self.sync_reset_buffers_on_window_change = _env_bool(
             "POKER44_SYNC_RESET_BUFFERS_ON_WINDOW_CHANGE",
-            self.synced_window_mode,
+            False,
         )
         self.current_eval_window_id: Optional[int] = None
         self.prediction_buffer = {}
@@ -214,17 +221,26 @@ class Validator(BaseValidatorNeuron):
         if extra:
             payload.update(extra)
         write_runtime_snapshot(self.runtime_snapshot_path, payload)
-        report_url = str(os.getenv("POKER44_VALIDATOR_RUNTIME_REPORT_URL", "")).strip()
-        report_secret = str(os.getenv("POKER44_VALIDATOR_RUNTIME_SECRET", "")).strip()
-        if report_url and report_secret:
+        report_url = str(
+            os.getenv(
+                "POKER44_VALIDATOR_RUNTIME_REPORT_URL",
+                DEFAULT_VALIDATOR_RUNTIME_REPORT_URL,
+            )
+        ).strip()
+        if report_url:
             timeout_seconds = float(
                 os.getenv("POKER44_VALIDATOR_RUNTIME_REPORT_TIMEOUT_SECONDS", "5")
             )
+            signed_request = build_signed_runtime_request(
+                wallet=self.wallet,
+                url=report_url,
+                payload=payload,
+            )
             ok, message = post_runtime_snapshot(
                 url=report_url,
-                secret=report_secret,
                 payload=payload,
                 timeout_seconds=timeout_seconds,
+                **signed_request,
             )
             if ok:
                 bt.logging.debug(
