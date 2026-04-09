@@ -187,7 +187,7 @@ cython_debug/
 mixed_hands.json
 
 hands_generator/human_hands/raw_files_hands/
-ssl_data
+workspace/ssl_data
 
 hands_generator/human_hands/hands_txt/
 hands_generator/human_hands/poker_data/
