@@ -188,6 +188,8 @@ mixed_hands.json
 
 hands_generator/human_hands/raw_files_hands/
 workspace/ssl_data
+workspace/docs
+
 
 hands_generator/human_hands/hands_txt/
 hands_generator/human_hands/poker_data/
