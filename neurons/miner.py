@@ -182,6 +182,9 @@ class Miner(BaseMinerNeuron):
         self._model: Optional[Any] = None
         self._model_features: Optional[list[str]] = None
         self._transform_meta: Optional[dict[str, Any]] = None
+        # Optional ``ssl_masked_ae.npz`` — when set, ``emb_*`` columns are filled before LGBM predict.
+        self._ssl_npz_path = os.getenv("POKER44_MINER_SSL_NPZ_PATH", "").strip()
+        self._ssl_art: Optional[dict[str, Any]] = None
         self._model_infer_failed = False
         self._first_model_infer_debug_done = False
         self._debug_first_model_infer = os.getenv(
@@ -202,12 +205,15 @@ class Miner(BaseMinerNeuron):
                 self._start_async_log_worker()
         self._maybe_load_model()
         self._maybe_load_transform_meta()
+        self._maybe_load_ssl_artifact()
         _tm_path = self._resolve_transform_meta_path()
         bt.logging.info(
             f"Miner scoring stack: model_path={self._model_path or ''!r} "
             f"loaded={bool(self._model)} | transform_meta_path={str(_tm_path) if _tm_path else ''!r} "
-            f"loaded={bool(self._transform_meta)}"
+            f"loaded={bool(self._transform_meta)} | "
+            f"ssl_npz={self._ssl_npz_path or ''!r} loaded={bool(self._ssl_art)}"
         )
+        self._warn_ssl_model_mismatch()
         if self._miner_require_model and self._model is None:
             raise RuntimeError(
                 "POKER44_MINER_REQUIRE_MODEL is enabled but no estimator loaded. "
@@ -388,6 +394,67 @@ class Miner(BaseMinerNeuron):
             )
             self._transform_meta = None
 
+    def _maybe_load_ssl_artifact(self) -> None:
+        if not self._ssl_npz_path:
+            return
+        path = Path(self._ssl_npz_path).expanduser().resolve()
+        if not path.is_file():
+            bt.logging.warning(
+                f"POKER44_MINER_SSL_NPZ_PATH set but file missing: {path} "
+                "(emb_* columns will be zeros if the model expects them)."
+            )
+            return
+        try:
+            from poker44.utils.ssl_embed_runtime import load_ssl_masked_ae
+
+            self._ssl_art = load_ssl_masked_ae(path)
+            n_in = len(self._ssl_art["feature_cols"])
+            bt.logging.info(f"Loaded SSL masked-AE artifact: {path} (encoder_in_features={n_in})")
+        except Exception as e:
+            bt.logging.warning(f"Failed to load SSL artifact {path}: {e}")
+            self._ssl_art = None
+
+    def _model_expects_ssl_embeddings(self) -> bool:
+        if not self._model_features:
+            return False
+        return any(str(f).startswith("emb_") for f in self._model_features)
+
+    def _warn_ssl_model_mismatch(self) -> None:
+        needs = self._model_expects_ssl_embeddings()
+        has = self._ssl_art is not None
+        if needs and not has:
+            bt.logging.warning(
+                "Model feature list includes emb_* but POKER44_MINER_SSL_NPZ_PATH is unset or failed to load. "
+                "Those inputs will be passed as 0.0 — set the npz path to match training."
+            )
+        elif has and not needs:
+            bt.logging.info(
+                "SSL masked-AE artifact loaded but model feature_cols have no emb_* — encoder is unused."
+            )
+        elif has and needs and self._ssl_art is not None and self._model_features is not None:
+            try:
+                from poker44.utils.ssl_embed_runtime import ssl_embedding_from_row
+
+                z, _ = ssl_embedding_from_row({}, self._ssl_art)
+                zdim = int(z.shape[1])
+                emb_idx = []
+                for f in self._model_features:
+                    if not str(f).startswith("emb_"):
+                        continue
+                    try:
+                        emb_idx.append(int(str(f)[4:]))
+                    except ValueError:
+                        continue
+                if emb_idx:
+                    need_dim = max(emb_idx) + 1
+                    if need_dim != zdim:
+                        bt.logging.warning(
+                            f"SSL embedding dim mismatch: model expects emb_* up to index {need_dim - 1} "
+                            f"({need_dim} dims) but encoder outputs {zdim}. Check artifact vs joblib."
+                        )
+            except Exception as e:
+                bt.logging.warning(f"Could not validate SSL embedding width: {e}")
+
     @staticmethod
     def _signed_log1p(x: float) -> float:
         # Mirrors training transform behavior for potentially negative values.
@@ -561,10 +628,21 @@ class Miner(BaseMinerNeuron):
                             "aggregate_chunk_from_hands returned no features; cannot run model."
                         )
                     return 0.5
+                row_for_model: dict[str, float] = row
+                if (
+                    self._ssl_art is not None
+                    and self._model_features is not None
+                    and self._model_expects_ssl_embeddings()
+                ):
+                    from poker44.utils.ssl_embed_runtime import augment_row_with_ssl_embeddings
+
+                    row_for_model = augment_row_with_ssl_embeddings(
+                        row, self._ssl_art, self._model_features
+                    )
                 if self._model_features is None:
-                    X = pd.DataFrame([row])
+                    X = pd.DataFrame([row_for_model])
                 else:
-                    aligned = {k: float(row.get(k, 0.0)) for k in self._model_features}
+                    aligned = {k: float(row_for_model.get(k, 0.0)) for k in self._model_features}
                     X = pd.DataFrame([aligned], columns=self._model_features)
                 # Hard guarantee for GBDT: only finite floats reach the estimator.
                 X = X.astype(np.float64)
@@ -575,7 +653,7 @@ class Miner(BaseMinerNeuron):
                     n_nan = int(np.isnan(xflat).sum())
                     n_inf = int(np.isinf(xflat).sum())
                     feat_names = self._model_features or []
-                    missing = [k for k in feat_names if k not in row]
+                    missing = [k for k in feat_names if k not in row_for_model]
                     classes = getattr(self._model, "classes_", None)
                     cls_repr = (
                         np.asarray(classes).tolist()

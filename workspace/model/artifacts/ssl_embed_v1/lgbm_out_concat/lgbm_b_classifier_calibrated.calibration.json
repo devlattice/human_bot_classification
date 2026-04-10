@@ -1,0 +1,42 @@
+{
+  "model_in": "/home/dr/Workspace/Poker44-subnet/workspace/model/artifacts/ssl_embed_v1/lgbm_out_concat/lgbm_b_classifier.joblib",
+  "val_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/ssl_embed/artifacts/ssl_embed_v1/lgbm_data_concat/val.parquet",
+  "feature_source": "feature_cols.json/metrics.json",
+  "method": "sigmoid",
+  "n_val": 2000,
+  "n_features": 79,
+  "class_balance": {
+    "n_human_0": 1000,
+    "n_bot_1": 1000
+  },
+  "brier_score_loss_raw": 3.252724504335413e-07,
+  "brier_score_loss_calibrated": 9.960272682524072e-07,
+  "log_loss_raw": 0.0005140098716429498,
+  "log_loss_calibrated": 0.000998504007523118,
+  "report_threshold": 0.5,
+  "at_report_threshold_raw": {
+    "threshold": 0.5,
+    "accuracy": 1.0,
+    "human_fpr": 0.0,
+    "bot_recall": 1.0
+  },
+  "at_report_threshold_calibrated": {
+    "threshold": 0.5,
+    "accuracy": 1.0,
+    "human_fpr": 0.0,
+    "bot_recall": 1.0
+  },
+  "score_summary_raw": {
+    "p01": 0.0004846733037701397,
+    "p50": 0.5020150081803403,
+    "p99": 0.9995507147995425,
+    "mean": 0.5000403844464194
+  },
+  "score_summary_calibrated": {
+    "p01": 0.0009970364863066427,
+    "p50": 0.5000289416796935,
+    "p99": 0.9990023288362819,
+    "mean": 0.4999999999596712
+  },
+  "out": "/home/dr/Workspace/Poker44-subnet/workspace/model/artifacts/ssl_embed_v1/lgbm_out_concat/lgbm_b_classifier_calibrated.joblib"
+}
