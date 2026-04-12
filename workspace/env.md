@@ -35,23 +35,26 @@ POKER44_MODEL_ARTIFACT_URL="<public URL for that joblib, or empty>"
 ## 3) Implementation SHA256 (inference code digest)
 
 ```bash
-python - <<'PY'
+cd /root/Workspace/miner_7/poker_miner_7
+
+python3 -c "
 import hashlib
 from pathlib import Path
 
-root = Path("/home/dr/Workspace/Poker44-subnet")
-files = [
-    root / "neurons" / "miner.py",
-    root / "poker44" / "validator" / "chunk_features.py",
-    root / "poker44" / "utils" / "model_manifest.py",
-]
-h = hashlib.sha256()
-for p in files:
-    b = p.read_bytes()
-    h.update(str(p.relative_to(root)).encode() + b"\n")
-    h.update(hashlib.sha256(b).hexdigest().encode() + b"\n")
-print(h.hexdigest())
-PY
+def sha256_for_files(paths):
+    digest = hashlib.sha256()
+    for path in sorted((p.resolve() for p in paths), key=lambda p: str(p)):
+        digest.update(str(path).encode('utf-8'))
+        with path.open('rb') as f:
+            while True:
+                chunk = f.read(1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+    return digest.hexdigest()
+
+print(sha256_for_files([Path('neurons/miner.py')]))
+"
 ```
 
 Set:
