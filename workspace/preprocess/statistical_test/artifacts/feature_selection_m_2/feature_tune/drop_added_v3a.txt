@@ -1,4 +1,0 @@
-bet_ratio_mean
-max_norm_bb_mean
-end_flop_mean
-check_ratio_mean
