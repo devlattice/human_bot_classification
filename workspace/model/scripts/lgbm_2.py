@@ -148,8 +148,49 @@ def main() -> None:
     p.add_argument("--reg-lambda", type=float, default=12.0)
     p.add_argument("--min-gain-to-split", type=float, default=0.05)
     p.add_argument("--early-stopping-rounds", type=int, default=150)
+    p.add_argument(
+        "--hparams-json",
+        type=Path,
+        default=None,
+        help="Optional JSON file: either ssl_embed_ablation_manifest.json (uses 'lgbm' key) or a flat dict of LGBM params (n_estimators, learning_rate, ...). Overrides numeric hyperparameter CLI defaults.",
+    )
 
     args = p.parse_args()
+
+    if args.hparams_json is not None:
+        hp_path = Path(args.hparams_json).expanduser().resolve()
+        payload = json.loads(hp_path.read_text(encoding="utf-8"))
+        lgbm = payload.get("lgbm") if isinstance(payload.get("lgbm"), dict) else payload
+        if not isinstance(lgbm, dict):
+            raise SystemExit(f"--hparams-json {hp_path}: expected object or {{'lgbm': {{...}}}}")
+        key_to_dest = {
+            "n_estimators": "n_estimators",
+            "learning_rate": "learning_rate",
+            "num_leaves": "num_leaves",
+            "max_depth": "max_depth",
+            "min_child_samples": "min_child_samples",
+            "subsample": "subsample",
+            "colsample_bytree": "colsample_bytree",
+            "reg_alpha": "reg_alpha",
+            "reg_lambda": "reg_lambda",
+            "min_gain_to_split": "min_gain_to_split",
+            "early_stopping_rounds": "early_stopping_rounds",
+        }
+        int_keys = {
+            "n_estimators",
+            "num_leaves",
+            "max_depth",
+            "min_child_samples",
+            "early_stopping_rounds",
+        }
+        for k, dest in key_to_dest.items():
+            if k not in lgbm:
+                continue
+            v = lgbm[k]
+            if dest in int_keys:
+                setattr(args, dest, int(v))
+            else:
+                setattr(args, dest, float(v))
 
     sw_col = (args.sample_weight_col or "").strip()
     exclude_feats: tuple[str, ...] = (sw_col,) if sw_col else ()

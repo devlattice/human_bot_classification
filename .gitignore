@@ -188,7 +188,15 @@ mixed_hands.json
 
 hands_generator/human_hands/raw_files_hands/
 workspace/ssl_data
+workspace/preprocess
 workspace/docs
+workspace/dataset/source
+workspace/real_distribution
+workspace/utils
+workspace/test/cross_eval
+workspace/model/artifacts/ssl_embed_v1/cross_eval_concat/
+workspace/DANN
+workspace/teacher
 
 
 hands_generator/human_hands/hands_txt/
@@ -221,6 +229,7 @@ zenodo_holdout.json
 _balanced_human_pool.json
 
 
+*.md
 *.gz
 *.tgz
 *.parquet
@@ -236,6 +245,10 @@ val.csv
 score_high.json
 score_medium.json
 score_low.json
+metrics.json
+ssl_masked_ae.json
+feature_cols.json
+
 
 # Local human hands
 hands_generator/human_hands/poker_hands_combined.json
