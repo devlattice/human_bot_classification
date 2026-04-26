@@ -72,8 +72,9 @@ class Miner(BaseMinerNeuron):
 
     Scoring uses the same **chunk schema** as ``preprocess_lightgbm`` / LGBM training:
     ``sanitize_hand_for_miner`` → per-hand numeric features → mean/std/max over the
-    chunk → one heuristic score in [0, 1]. The validator still receives **one risk
-    score per chunk** (not per hand).
+    chunk → optional ``transform_meta`` → optional ``dbf_*`` (train-fitted bounds JSON)
+    → optional SSL ``emb_*`` → one score in ``[0, 1]``. The validator still receives
+    **one risk score per chunk** (not per hand).
 
     The goal is not SOTA accuracy, but a deterministic and explainable baseline
     that is meaningfully better than random and aligned with miner-visible features.
@@ -185,6 +186,10 @@ class Miner(BaseMinerNeuron):
         # Optional ``ssl_masked_ae.npz`` — when set, ``emb_*`` columns are filled before LGBM predict.
         self._ssl_npz_path = os.getenv("POKER44_MINER_SSL_NPZ_PATH", "").strip()
         self._ssl_art: Optional[dict[str, Any]] = None
+        # Train-fitted DBF winsor bounds (same JSON as ``prepare_ssl_embed_dbf_inputs`` /
+        # ``dbf_quantile_bounds.json`` next to the joblib, or ``POKER44_MINER_DBF_BOUNDS_JSON``).
+        self._dbf_bounds_path_env = os.getenv("POKER44_MINER_DBF_BOUNDS_JSON", "").strip()
+        self._dbf_quantile_bounds: Optional[dict[str, tuple[float, float]]] = None
         self._model_infer_failed = False
         self._first_model_infer_debug_done = False
         self._debug_first_model_infer = os.getenv(
@@ -206,12 +211,17 @@ class Miner(BaseMinerNeuron):
         self._maybe_load_model()
         self._maybe_load_transform_meta()
         self._maybe_load_ssl_artifact()
+        self._maybe_load_dbf_bounds()
         _tm_path = self._resolve_transform_meta_path()
+        _dbf_path = self._resolve_dbf_bounds_path()
         bt.logging.info(
             f"Miner scoring stack: model_path={self._model_path or ''!r} "
             f"loaded={bool(self._model)} | transform_meta_path={str(_tm_path) if _tm_path else ''!r} "
             f"loaded={bool(self._transform_meta)} | "
-            f"ssl_npz={self._ssl_npz_path or ''!r} loaded={bool(self._ssl_art)}"
+            f"ssl_npz={self._ssl_npz_path or ''!r} loaded={bool(self._ssl_art)} | "
+            f"dbf_bounds_path={str(_dbf_path) if _dbf_path else ''!r} "
+            f"loaded={bool(self._dbf_quantile_bounds)} "
+            f"expects_dbf={self._model_expects_dbf_features()}"
         )
         self._warn_ssl_model_mismatch()
         if self._miner_require_model and self._model is None:
@@ -414,6 +424,99 @@ class Miner(BaseMinerNeuron):
             bt.logging.warning(f"Failed to load SSL artifact {path}: {e}")
             self._ssl_art = None
 
+    def _resolve_dbf_bounds_path(self) -> Optional[Path]:
+        if self._dbf_bounds_path_env:
+            return Path(self._dbf_bounds_path_env).expanduser().resolve()
+        if self._model_path:
+            return Path(self._model_path).expanduser().resolve().with_name("dbf_quantile_bounds.json")
+        return None
+
+    def _model_expects_dbf_features(self) -> bool:
+        if not self._model_features:
+            return False
+        return any(str(f).startswith("dbf_") for f in self._model_features)
+
+    def _maybe_load_dbf_bounds(self) -> None:
+        """Load train-fitted DBF winsor bounds when the estimator lists ``dbf_*`` inputs."""
+        self._dbf_quantile_bounds = None
+        if not self._model or not self._model_expects_dbf_features():
+            return
+        path = self._resolve_dbf_bounds_path()
+        if path is None or not path.is_file():
+            msg = (
+                "Model expects dbf_* features but DBF bounds JSON was not found. "
+                f"Set POKER44_MINER_DBF_BOUNDS_JSON or place dbf_quantile_bounds.json next to the joblib "
+                f"(tried {path})."
+            )
+            if self._miner_require_model:
+                raise RuntimeError(msg)
+            bt.logging.warning(msg + " Using 0.0 for all dbf_* at inference.")
+            return
+        try:
+            from poker44.utils.dbf_chunk_runtime import load_dbf_quantile_bounds_file
+
+            self._dbf_quantile_bounds = load_dbf_quantile_bounds_file(REPO_ROOT, path)
+            n = len(self._dbf_quantile_bounds)
+            bt.logging.info(f"Loaded DBF quantile bounds: {path} ({n} dbf columns)")
+            self._warn_dbf_transform_meta_overlap()
+        except Exception as e:
+            if self._miner_require_model:
+                raise RuntimeError(f"Failed to load DBF bounds from {path}: {e}") from e
+            bt.logging.warning(f"Failed to load DBF bounds ({e}); dbf_* will be 0.0.")
+
+    def _warn_dbf_transform_meta_overlap(self) -> None:
+        """If meta ever lists ``dbf_*``, clip/log/scale could double-process DBF — warn once."""
+        meta = self._transform_meta
+        if not meta or not isinstance(meta, dict):
+            return
+        clip = meta.get("clip_bounds") or {}
+        if isinstance(clip, dict) and any(str(k).startswith("dbf_") for k in clip):
+            bt.logging.warning(
+                "transform_meta clip_bounds includes dbf_* keys. Miner applies meta only before "
+                "DBF; dbf_* are not re-clipped by meta. Confirm this matches your training script."
+            )
+        log_feats = meta.get("log1p_selected_features") or []
+        if isinstance(log_feats, list) and any(str(k).startswith("dbf_") for k in log_feats):
+            bt.logging.warning(
+                "transform_meta log1p_selected_features includes dbf_* — miner does not log1p "
+                "dbf_* after compute_dbf_frame; verify training parity."
+            )
+        scale_stats = meta.get("robust_scale_stats") or {}
+        if isinstance(scale_stats, dict) and any(str(k).startswith("dbf_") for k in scale_stats):
+            bt.logging.warning(
+                "transform_meta robust_scale_stats includes dbf_* — miner does not robust-scale "
+                "dbf_* via meta; verify training parity."
+            )
+
+    def _append_dbf_features_after_transform(self, row: dict[str, float]) -> dict[str, float]:
+        """
+        Append ``dbf_*`` after ``transform_meta`` — matches ``*_with_dbf`` parquet pipeline
+        (base columns robust-transformed first; DBF uses train-fitted quantiles only).
+
+        ``transform_meta`` must not re-apply to ``dbf_*`` (those keys are absent from
+        explorer ``transform_meta.json``); DBF already applies winsor + tanh internally.
+        """
+        if not self._model_expects_dbf_features():
+            return row
+        if self._dbf_quantile_bounds:
+            try:
+                from poker44.utils.dbf_chunk_runtime import compute_dbf_row_values
+
+                dbf_vals = compute_dbf_row_values(REPO_ROOT, row, self._dbf_quantile_bounds)
+                merged = dict(row)
+                merged.update(dbf_vals)
+                return merged
+            except Exception as e:
+                if self._miner_require_model:
+                    raise RuntimeError(f"DBF feature compute failed: {e}") from e
+                bt.logging.warning(f"DBF compute failed ({e}); using 0.0 for dbf_*.")
+        out = dict(row)
+        for k in self._model_features or []:
+            sk = str(k)
+            if sk.startswith("dbf_"):
+                out[sk] = 0.0
+        return out
+
     def _model_expects_ssl_embeddings(self) -> bool:
         if not self._model_features:
             return False
@@ -607,8 +710,10 @@ class Miner(BaseMinerNeuron):
         """
         Chunk dicts from the validator are never passed to the model.
 
-        Flow: ``chunk`` (hands JSON) → :func:`aggregate_chunk_from_hands` → one numeric row
-        → ``predict_proba`` on float features only.
+        Flow: ``chunk`` (hands JSON) → :func:`aggregate_chunk_from_hands` →
+        ``_apply_runtime_transform_meta`` (base columns only in meta) → optional
+        ``dbf_*`` via train-fitted bounds → optional ``emb_*`` → align to
+        ``feature_cols`` → ``predict_proba``.
         """
         if self._miner_require_model:
             if self._model is None:
@@ -622,6 +727,7 @@ class Miner(BaseMinerNeuron):
             try:
                 raw_row = aggregate_chunk_from_hands(chunk)
                 row = self._apply_runtime_transform_meta(raw_row)
+                row = self._append_dbf_features_after_transform(row)
                 if not row:
                     if self._miner_require_model:
                         raise ValueError(
