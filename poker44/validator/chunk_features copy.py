@@ -5,9 +5,7 @@ Used by ``workspace/datasets/preprocess_lightgbm`` (training) and ``neurons/mine
 (reference heuristic) so both apply the same pipeline:
 
   raw hand JSON → ``sanitize_hand_for_miner`` → per-hand numeric features
-  → mean / std / max (+ selected p10/p50/p90) across hands in the chunk
-  → small set of deterministic contrast features
-  → one feature vector per chunk.
+  → mean / std / max across hands in the chunk → one feature vector per chunk.
 """
 
 from __future__ import annotations
@@ -20,18 +18,6 @@ import numpy as np
 from poker44.validator.sanitization import sanitize_hand_for_miner
 
 MEANINGFUL_ACTIONS = ("call", "check", "bet", "raise", "fold", "all_in")
-EPS = 1e-6
-
-# Percentile summaries are always emitted for these per-hand keys.
-PERCENTILE_KEYS = (
-    "bet_ratio",
-    "call_ratio",
-    "check_ratio",
-    "fold_ratio",
-    "raise_ratio",
-    "mean_norm_bb",
-    "mean_pot_after",
-)
 
 
 def hand_features_miner_view(sanitized: Dict[str, Any]) -> Dict[str, float]:
@@ -103,7 +89,7 @@ def hand_features_miner_view(sanitized: Dict[str, Any]) -> Dict[str, float]:
 
 
 def aggregate_chunk_from_hands(hands: List[Dict[str, Any]]) -> Dict[str, float]:
-    """One row: aggregated + derived chunk features (same as training)."""
+    """One row: mean / std / max of per-hand miner-view features (same as training)."""
     if not hands:
         return {}
 
@@ -116,24 +102,6 @@ def aggregate_chunk_from_hands(hands: List[Dict[str, Any]]) -> Dict[str, float]:
         out[f"{k}_mean"] = float(np.mean(arr))
         out[f"{k}_std"] = float(np.std(arr))
         out[f"{k}_max"] = float(np.max(arr))
-        if k in PERCENTILE_KEYS:
-            out[f"{k}_p10"] = float(np.quantile(arr, 0.10))
-            out[f"{k}_p50"] = float(np.quantile(arr, 0.50))
-            out[f"{k}_p90"] = float(np.quantile(arr, 0.90))
-
-    # Deterministic contrast features from stable aggregated primitives.
-    out["raise_minus_call_mean"] = float(out["raise_ratio_mean"] - out["call_ratio_mean"])
-    out["bet_minus_fold_mean"] = float(out["bet_ratio_mean"] - out["fold_ratio_mean"])
-    out["late_minus_early_mean"] = float(
-        (out["end_turn_mean"] + out["end_river_mean"])
-        - (out["end_preflop_mean"] + out["end_flop_mean"])
-    )
-    out["raise_std_over_check_std"] = float(
-        out["raise_ratio_std"] / (abs(out["check_ratio_std"]) + EPS)
-    )
-    out["pot_after_over_stack_mean"] = float(
-        out["mean_pot_after_mean"] / (abs(out["stack_mean_mean"]) + EPS)
-    )
     return out
 
 

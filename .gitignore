@@ -191,14 +191,19 @@ workspace/ssl_data
 workspace/preprocess
 workspace/docs
 workspace/dataset/source
+workspace/dataset/raw_dataset/
 workspace/real_distribution
 workspace/utils
 workspace/test/cross_eval
 workspace/model/artifacts/ssl_embed_v1/cross_eval_concat/
 workspace/DANN
-workspace/teacher
-workspace/model/artifacts/
+workspace/teacher/artifacts
+workspace/teacher/docs
+workspace/teacher/scripts
+workspace/teacher/train_qc
+# workspace/model/artifacts/
 workspace/test/
+workspace/student
 
 hands_generator/human_hands/hands_txt/
 hands_generator/human_hands/poker_data/

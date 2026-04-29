@@ -72,8 +72,9 @@ class Miner(BaseMinerNeuron):
 
     Scoring uses the same **chunk schema** as ``preprocess_lightgbm`` / LGBM training:
     ``sanitize_hand_for_miner`` → per-hand numeric features → mean/std/max over the
-    chunk → one heuristic score in [0, 1]. The validator still receives **one risk
-    score per chunk** (not per hand).
+    chunk → optional ``transform_meta`` → optional ``dbf_*`` (train-fitted bounds JSON)
+    → optional SSL ``emb_*`` → one score in ``[0, 1]``. The validator still receives
+    **one risk score per chunk** (not per hand).
 
     The goal is not SOTA accuracy, but a deterministic and explainable baseline
     that is meaningfully better than random and aligned with miner-visible features.
@@ -173,6 +174,7 @@ class Miner(BaseMinerNeuron):
                 / "lgbm_classifier.joblib"
             ),
         ).strip()
+        self._model_bundle_dir = os.getenv("POKER44_MINER_MODEL_BUNDLE_DIR", "").strip()
         self._transform_meta_path = os.getenv("POKER44_MINER_TRANSFORM_META_PATH", "").strip()
         # If true: refuse to start without a loaded model, and never fall back to heuristics
         # on a chunk (inference errors propagate; fix model or restart).
@@ -181,10 +183,17 @@ class Miner(BaseMinerNeuron):
         ).strip() in {"1", "true", "yes", "on"}
         self._model: Optional[Any] = None
         self._model_features: Optional[list[str]] = None
+        self._inference_threshold: float = 0.5
         self._transform_meta: Optional[dict[str, Any]] = None
         # Optional ``ssl_masked_ae.npz`` — when set, ``emb_*`` columns are filled before LGBM predict.
         self._ssl_npz_path = os.getenv("POKER44_MINER_SSL_NPZ_PATH", "").strip()
         self._ssl_art: Optional[dict[str, Any]] = None
+        # Train-fitted DBF winsor bounds (same JSON as ``prepare_ssl_embed_dbf_inputs`` /
+        # ``dbf_quantile_bounds.json`` next to the joblib, or ``POKER44_MINER_DBF_BOUNDS_JSON``).
+        self._dbf_bounds_path_env = os.getenv("POKER44_MINER_DBF_BOUNDS_JSON", "").strip()
+        self._dbf_quantile_bounds: Optional[dict[str, tuple[float, float]]] = None
+        self._tbm_adapter: Optional[dict[str, Any]] = None
+        self._tbm_adapter_encoder: Optional[Any] = None
         self._model_infer_failed = False
         self._first_model_infer_debug_done = False
         self._debug_first_model_infer = os.getenv(
@@ -206,12 +215,17 @@ class Miner(BaseMinerNeuron):
         self._maybe_load_model()
         self._maybe_load_transform_meta()
         self._maybe_load_ssl_artifact()
+        self._maybe_load_dbf_bounds()
         _tm_path = self._resolve_transform_meta_path()
+        _dbf_path = self._resolve_dbf_bounds_path()
         bt.logging.info(
             f"Miner scoring stack: model_path={self._model_path or ''!r} "
             f"loaded={bool(self._model)} | transform_meta_path={str(_tm_path) if _tm_path else ''!r} "
             f"loaded={bool(self._transform_meta)} | "
-            f"ssl_npz={self._ssl_npz_path or ''!r} loaded={bool(self._ssl_art)}"
+            f"ssl_npz={self._ssl_npz_path or ''!r} loaded={bool(self._ssl_art)} | "
+            f"dbf_bounds_path={str(_dbf_path) if _dbf_path else ''!r} "
+            f"loaded={bool(self._dbf_quantile_bounds)} "
+            f"expects_dbf={self._model_expects_dbf_features()}"
         )
         self._warn_ssl_model_mismatch()
         if self._miner_require_model and self._model is None:
@@ -250,7 +264,7 @@ class Miner(BaseMinerNeuron):
                 ),
                 "training_data_sources": ["none"],
                 "private_data_attestation": (
-                    "This reference miner does not train on validator-private human data."
+                    "This reference miner does not train on validator-only evaluation data."
                 ),
             },
         )
@@ -310,7 +324,7 @@ class Miner(BaseMinerNeuron):
         vhk = self._validator_hotkey_from_synapse(synapse)
         self._record_latency(latency_ms)
         synapse.risk_scores = smoothed_scores
-        synapse.predictions = [s >= 0.5 for s in smoothed_scores]
+        synapse.predictions = [s >= self._inference_threshold for s in smoothed_scores]
         synapse.model_manifest = dict(self.model_manifest)
         self._maybe_log_request(
             synapse=synapse,
@@ -329,6 +343,16 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     def _maybe_load_model(self) -> None:
+        if self._model_bundle_dir:
+            bundle_dir = Path(self._model_bundle_dir).expanduser().resolve()
+            model_path = bundle_dir / "lgbm_student.joblib"
+            if model_path.is_file():
+                self._model_path = str(model_path)
+                self._maybe_load_bundle_runtime(bundle_dir)
+            else:
+                bt.logging.warning(
+                    f"POKER44_MINER_MODEL_BUNDLE_DIR set but missing joblib: {model_path}"
+                )
         if not self._model_path:
             bt.logging.info("Miner scoring mode: heuristic (POKER44_MINER_MODEL_PATH not set)")
             return
@@ -362,6 +386,64 @@ class Miner(BaseMinerNeuron):
             )
             self._model = None
             self._model_features = None
+
+    def _maybe_load_bundle_runtime(self, bundle_dir: Path) -> None:
+        """Load optional bundle metadata (threshold + adapter) for tbm_v5-style runtime."""
+        # Inference threshold from retrain summary (fallback 0.5).
+        summary_path = bundle_dir / "retrain_summary.json"
+        if summary_path.is_file():
+            try:
+                payload = json.loads(summary_path.read_text(encoding="utf-8"))
+                self._inference_threshold = float(payload.get("selected_threshold", 0.5))
+            except Exception as e:
+                bt.logging.warning(f"Failed to read bundle retrain_summary.json ({e}); threshold=0.5")
+                self._inference_threshold = 0.5
+        # Adapter runtime for adp_* feature synthesis.
+        adp_path = bundle_dir / "adapter" / "dl_adapter.pt"
+        if adp_path.is_file():
+            try:
+                torch = importlib.import_module("torch")
+                try:
+                    payload = torch.load(adp_path, map_location="cpu", weights_only=False)
+                except TypeError:
+                    # Backward compatibility for torch versions without weights_only kwarg.
+                    payload = torch.load(adp_path, map_location="cpu")
+                nn = importlib.import_module("torch.nn")
+                self._tbm_adapter = {
+                    "feature_cols": [str(x) for x in payload["feature_cols"]],
+                    "mean": np.asarray(payload["mean"], dtype=np.float32),
+                    "std": np.asarray(payload["std"], dtype=np.float32),
+                    "hidden_dim": int(payload["hidden_dim"]),
+                    "embed_dim": int(payload["embed_dim"]),
+                    "dropout": float(payload["dropout"]),
+                    "state_dict": payload["state_dict"],
+                }
+                enc = self._build_adapter_encoder(
+                    nn,
+                    len(self._tbm_adapter["feature_cols"]),
+                    int(self._tbm_adapter["hidden_dim"]),
+                    int(self._tbm_adapter["embed_dim"]),
+                    float(self._tbm_adapter["dropout"]),
+                )
+                state_dict = self._tbm_adapter["state_dict"]
+                enc_state = {
+                    k[len("encoder.") :]: v
+                    for k, v in state_dict.items()
+                    if str(k).startswith("encoder.")
+                }
+                enc.load_state_dict(enc_state)
+                enc.eval()
+                self._tbm_adapter_encoder = enc
+                bt.logging.info(
+                    f"Loaded tbm adapter runtime: {adp_path} (embed_dim={self._tbm_adapter['embed_dim']})"
+                )
+            except Exception as e:
+                bt.logging.warning(f"Failed to load tbm adapter runtime ({adp_path}): {e}")
+                self._tbm_adapter = None
+                self._tbm_adapter_encoder = None
+        else:
+            self._tbm_adapter = None
+            self._tbm_adapter_encoder = None
 
     def _resolve_transform_meta_path(self) -> Optional[Path]:
         # Explicit env override wins.
@@ -414,12 +496,115 @@ class Miner(BaseMinerNeuron):
             bt.logging.warning(f"Failed to load SSL artifact {path}: {e}")
             self._ssl_art = None
 
+    def _resolve_dbf_bounds_path(self) -> Optional[Path]:
+        if self._dbf_bounds_path_env:
+            return Path(self._dbf_bounds_path_env).expanduser().resolve()
+        if self._model_path:
+            return Path(self._model_path).expanduser().resolve().with_name("dbf_quantile_bounds.json")
+        return None
+
+    def _model_expects_dbf_features(self) -> bool:
+        if not self._model_features:
+            return False
+        return any(str(f).startswith("dbf_") for f in self._model_features)
+
+    def _maybe_load_dbf_bounds(self) -> None:
+        """Load train-fitted DBF winsor bounds when the estimator lists ``dbf_*`` inputs."""
+        self._dbf_quantile_bounds = None
+        if not self._model or not self._model_expects_dbf_features():
+            return
+        path = self._resolve_dbf_bounds_path()
+        if path is None or not path.is_file():
+            msg = (
+                "Model expects dbf_* features but DBF bounds JSON was not found. "
+                f"Set POKER44_MINER_DBF_BOUNDS_JSON or place dbf_quantile_bounds.json next to the joblib "
+                f"(tried {path})."
+            )
+            if self._miner_require_model:
+                raise RuntimeError(msg)
+            bt.logging.warning(msg + " Using 0.0 for all dbf_* at inference.")
+            return
+        try:
+            from poker44.utils.dbf_chunk_runtime import load_dbf_quantile_bounds_file
+
+            self._dbf_quantile_bounds = load_dbf_quantile_bounds_file(REPO_ROOT, path)
+            n = len(self._dbf_quantile_bounds)
+            bt.logging.info(f"Loaded DBF quantile bounds: {path} ({n} dbf columns)")
+            self._warn_dbf_transform_meta_overlap()
+        except Exception as e:
+            if self._miner_require_model:
+                raise RuntimeError(f"Failed to load DBF bounds from {path}: {e}") from e
+            bt.logging.warning(f"Failed to load DBF bounds ({e}); dbf_* will be 0.0.")
+
+    def _warn_dbf_transform_meta_overlap(self) -> None:
+        """If meta ever lists ``dbf_*``, clip/log/scale could double-process DBF — warn once."""
+        meta = self._transform_meta
+        if not meta or not isinstance(meta, dict):
+            return
+        clip = meta.get("clip_bounds") or {}
+        if isinstance(clip, dict) and any(str(k).startswith("dbf_") for k in clip):
+            bt.logging.warning(
+                "transform_meta clip_bounds includes dbf_* keys. Miner applies meta only before "
+                "DBF; dbf_* are not re-clipped by meta. Confirm this matches your training script."
+            )
+        log_feats = meta.get("log1p_selected_features") or []
+        if isinstance(log_feats, list) and any(str(k).startswith("dbf_") for k in log_feats):
+            bt.logging.warning(
+                "transform_meta log1p_selected_features includes dbf_* — miner does not log1p "
+                "dbf_* after compute_dbf_frame; verify training parity."
+            )
+        scale_stats = meta.get("robust_scale_stats") or {}
+        if isinstance(scale_stats, dict) and any(str(k).startswith("dbf_") for k in scale_stats):
+            bt.logging.warning(
+                "transform_meta robust_scale_stats includes dbf_* — miner does not robust-scale "
+                "dbf_* via meta; verify training parity."
+            )
+
+    def _append_dbf_features_after_transform(self, row: dict[str, float]) -> dict[str, float]:
+        """
+        Append ``dbf_*`` after ``transform_meta`` — matches ``*_with_dbf`` parquet pipeline
+        (base columns robust-transformed first; DBF uses train-fitted quantiles only).
+
+        ``transform_meta`` must not re-apply to ``dbf_*`` (those keys are absent from
+        explorer ``transform_meta.json``); DBF already applies winsor + tanh internally.
+        """
+        if not self._model_expects_dbf_features():
+            return row
+        if self._dbf_quantile_bounds:
+            try:
+                from poker44.utils.dbf_chunk_runtime import compute_dbf_row_values
+
+                dbf_vals = compute_dbf_row_values(REPO_ROOT, row, self._dbf_quantile_bounds)
+                merged = dict(row)
+                merged.update(dbf_vals)
+                return merged
+            except Exception as e:
+                if self._miner_require_model:
+                    raise RuntimeError(f"DBF feature compute failed: {e}") from e
+                bt.logging.warning(f"DBF compute failed ({e}); using 0.0 for dbf_*.")
+        out = dict(row)
+        for k in self._model_features or []:
+            sk = str(k)
+            if sk.startswith("dbf_"):
+                out[sk] = 0.0
+        return out
+
     def _model_expects_ssl_embeddings(self) -> bool:
         if not self._model_features:
             return False
         return any(str(f).startswith("emb_") for f in self._model_features)
 
+    def _model_expects_adapter_embeddings(self) -> bool:
+        if not self._model_features:
+            return False
+        return any(str(f).startswith("adp_") for f in self._model_features)
+
     def _warn_ssl_model_mismatch(self) -> None:
+        if self._model_expects_adapter_embeddings() and self._tbm_adapter is None:
+            bt.logging.warning(
+                "Model feature list includes adp_* but tbm adapter runtime is not loaded. "
+                "Set POKER44_MINER_MODEL_BUNDLE_DIR to a valid bundle (with adapter/dl_adapter.pt)."
+            )
         needs = self._model_expects_ssl_embeddings()
         has = self._ssl_art is not None
         if needs and not has:
@@ -454,6 +639,57 @@ class Miner(BaseMinerNeuron):
                         )
             except Exception as e:
                 bt.logging.warning(f"Could not validate SSL embedding width: {e}")
+
+    @staticmethod
+    def _build_adapter_encoder(nn: Any, in_dim: int, hidden_dim: int, embed_dim: int, dropout: float) -> Any:
+        return nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, embed_dim),
+        )
+
+    def _augment_row_with_tbm_adapter(self, row: dict[str, float]) -> dict[str, float]:
+        """Append adp_* features from bundle adapter for model runtime parity."""
+        if not self._model_expects_adapter_embeddings():
+            return row
+        if self._tbm_adapter is None:
+            if self._miner_require_model:
+                raise RuntimeError("Model expects adp_* but tbm adapter runtime is unavailable.")
+            out = dict(row)
+            for k in self._model_features or []:
+                if str(k).startswith("adp_"):
+                    out[str(k)] = 0.0
+            return out
+        try:
+            torch = importlib.import_module("torch")
+            feat_cols = self._tbm_adapter["feature_cols"]
+            mean = self._tbm_adapter["mean"]
+            std = self._tbm_adapter["std"]
+            x = np.asarray([float(row.get(c, 0.0)) for c in feat_cols], dtype=np.float32)
+            x = (x - mean) / std
+            x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+            enc = self._tbm_adapter_encoder
+            if enc is None:
+                raise RuntimeError("tbm adapter encoder not initialized")
+            with torch.no_grad():
+                z = enc(torch.from_numpy(x.reshape(1, -1))).detach().cpu().numpy().astype(np.float32)
+            out = dict(row)
+            for i in range(z.shape[1]):
+                out[f"adp_{i:03d}"] = float(z[0, i])
+            return out
+        except Exception as e:
+            if self._miner_require_model:
+                raise RuntimeError(f"TBM adapter embedding failed: {e}") from e
+            bt.logging.warning(f"TBM adapter embedding failed ({e}); using 0.0 for adp_*.")
+            out = dict(row)
+            for k in self._model_features or []:
+                if str(k).startswith("adp_"):
+                    out[str(k)] = 0.0
+            return out
 
     @staticmethod
     def _signed_log1p(x: float) -> float:
@@ -607,8 +843,10 @@ class Miner(BaseMinerNeuron):
         """
         Chunk dicts from the validator are never passed to the model.
 
-        Flow: ``chunk`` (hands JSON) → :func:`aggregate_chunk_from_hands` → one numeric row
-        → ``predict_proba`` on float features only.
+        Flow: ``chunk`` (hands JSON) → :func:`aggregate_chunk_from_hands` →
+        ``_apply_runtime_transform_meta`` (base columns only in meta) → optional
+        ``dbf_*`` via train-fitted bounds → optional ``emb_*`` → align to
+        ``feature_cols`` → ``predict_proba``.
         """
         if self._miner_require_model:
             if self._model is None:
@@ -622,6 +860,8 @@ class Miner(BaseMinerNeuron):
             try:
                 raw_row = aggregate_chunk_from_hands(chunk)
                 row = self._apply_runtime_transform_meta(raw_row)
+                row = self._append_dbf_features_after_transform(row)
+                row = self._augment_row_with_tbm_adapter(row)
                 if not row:
                     if self._miner_require_model:
                         raise ValueError(

@@ -48,7 +48,16 @@ cd "$REPO_ROOT" || exit 1
 export PYTHONPATH="$REPO_ROOT"
 
 # joblib LightGBM loads need ``import lightgbm`` in the SAME interpreter PM2 uses.
+# Interpreter selection priority:
+# 1) MINER_PYTHON (explicit python binary)
+# 2) SHARED_MINER_VENV/bin/python (shared venv for many miners)
+# 3) <repo>/.venv/bin/python (repo-local venv)
+# 4) system python3/python
 MINER_PYTHON="${MINER_PYTHON:-}"
+SHARED_MINER_VENV="${SHARED_MINER_VENV:-}"
+if [ -z "$MINER_PYTHON" ] && [ -n "$SHARED_MINER_VENV" ] && [ -x "$SHARED_MINER_VENV/bin/python" ]; then
+  MINER_PYTHON="$SHARED_MINER_VENV/bin/python"
+fi
 if [ -z "$MINER_PYTHON" ] && [ -x "$REPO_ROOT/.venv/bin/python" ]; then
   MINER_PYTHON="$REPO_ROOT/.venv/bin/python"
 fi
@@ -56,7 +65,7 @@ if [ -z "$MINER_PYTHON" ]; then
   MINER_PYTHON="$(command -v python3 || command -v python || true)"
 fi
 if [ -z "$MINER_PYTHON" ] || [ ! -x "$MINER_PYTHON" ]; then
-  echo "Error: no Python interpreter found. Set MINER_PYTHON or create $REPO_ROOT/.venv"
+  echo "Error: no Python interpreter found. Set MINER_PYTHON, or SHARED_MINER_VENV, or create $REPO_ROOT/.venv"
   exit 1
 fi
 if ! "$MINER_PYTHON" -c "import lightgbm" 2>/dev/null; then
