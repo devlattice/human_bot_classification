@@ -1,0 +1,98 @@
+{
+  "pseudo_dir": "/home/dr/Workspace/Poker44-subnet/workspace/teacher/artifacts/total_dataset/pub_old_new",
+  "adapter_artifact": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/pub_old_new/adapter/dl_adapter.pt",
+  "optuna_summary": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/pub_old_new/lgbm_optuna/optuna_summary.json",
+  "best_params_reused": {
+    "n_estimators": 1220,
+    "learning_rate": 0.05308392833164174,
+    "num_leaves": 23,
+    "max_depth": 5,
+    "min_child_samples": 59,
+    "subsample": 0.6123978081344811,
+    "colsample_bytree": 0.5732334448672798,
+    "reg_alpha": 14.810758294151743,
+    "reg_lambda": 13.846905247421054,
+    "min_gain_to_split": 0.25074467645065546,
+    "early_stopping_rounds": 82
+  },
+  "fpr_cap": 0.05,
+  "selected_threshold": 0.5,
+  "train_metrics_at_selected_threshold": {
+    "threshold": 0.5,
+    "accuracy": 0.997765485915235,
+    "precision": 0.9971896955503513,
+    "recall": 0.9987267122369655,
+    "f1": 0.9979576120802223,
+    "human_fpr": 0.0033933909671164256,
+    "bot_tpr": 0.9987267122369655,
+    "confusion_matrix": {
+      "tn": 12335,
+      "fp": 42,
+      "fn": 19,
+      "tp": 14903
+    },
+    "roc_auc": 0.9999715251959459
+  },
+  "val_metrics_at_selected_threshold": {
+    "threshold": 0.5,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "human_fpr": 0.0,
+    "bot_tpr": 1.0,
+    "confusion_matrix": {
+      "tn": 250,
+      "fp": 0,
+      "fn": 0,
+      "tp": 250
+    },
+    "roc_auc": 1.0
+  },
+  "n_features": 160,
+  "concat_original_features": true,
+  "embeddings_train": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts_retrain/pub_old_new/embeddings/train.parquet",
+  "embeddings_val": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts_retrain/pub_old_new/embeddings/val.parquet",
+  "holdout_eval": {
+    "per_holdout": [
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/data/test/holdout/rb_B/holdout_1.parquet",
+        "n": 352,
+        "embedded_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts_retrain/pub_old_new/embeddings/holdout_holdout_1.parquet",
+        "human_fpr": 0.028409090909090908,
+        "bot_recall": 0.9943181818181818,
+        "accuracy": 0.9829545454545454,
+        "roc_auc": 0.9995157541322314
+      },
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/data/test/holdout/rb_B/holdout_2.parquet",
+        "n": 88,
+        "embedded_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts_retrain/pub_old_new/embeddings/holdout_holdout_2.parquet",
+        "human_fpr": 0.09090909090909091,
+        "bot_recall": 1.0,
+        "accuracy": 0.9545454545454546,
+        "roc_auc": 0.9994834710743802
+      },
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/data/test/holdout_zenodo/rb_B/zenodo_1.parquet",
+        "n": 1200,
+        "embedded_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts_retrain/pub_old_new/embeddings/holdout_zenodo_1.parquet",
+        "human_fpr": 0.17333333333333334,
+        "bot_recall": 0.9933333333333333,
+        "accuracy": 0.91,
+        "roc_auc": 0.9951416666666667
+      },
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/data/test/wsop/rb_B/wsop.parquet",
+        "n": 20,
+        "embedded_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts_retrain/pub_old_new/embeddings/holdout_wsop.parquet",
+        "human_fpr": 1.0,
+        "bot_recall": 1.0,
+        "accuracy": 0.5,
+        "roc_auc": 0.98
+      }
+    ],
+    "max_human_fpr": 1.0,
+    "mean_human_fpr": 0.3231628787878788
+  }
+}
