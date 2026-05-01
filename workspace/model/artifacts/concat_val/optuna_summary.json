@@ -1,0 +1,306 @@
+{
+  "data_dir": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/lgbm_data",
+  "n_trials": 60,
+  "objective": "multi_objective_generalization_at_05",
+  "fpr_cap": 0.05,
+  "threshold_fixed": 0.5,
+  "tune_parquet": [
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_2.parquet",
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_2.parquet"
+  ],
+  "test_parquet": [
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_1.parquet",
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_1.parquet",
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/wsop.parquet"
+  ],
+  "best_value": 101010001.0,
+  "best_params": {
+    "n_estimators": 1220,
+    "learning_rate": 0.05308392833164174,
+    "num_leaves": 23,
+    "max_depth": 5,
+    "min_child_samples": 147,
+    "subsample": 0.6123978081344811,
+    "colsample_bytree": 0.5732334448672798,
+    "reg_alpha": 14.810758294151743,
+    "reg_lambda": 13.846905247421054,
+    "min_gain_to_split": 0.25074467645065546,
+    "early_stopping_rounds": 82
+  },
+  "selected_threshold": 0.5,
+  "train_metrics_at_selected_threshold": {
+    "threshold": 0.5,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "human_fpr": 0.0,
+    "bot_tpr": 1.0,
+    "confusion_matrix": {
+      "tn": 4800,
+      "fp": 0,
+      "fn": 0,
+      "tp": 4800
+    },
+    "roc_auc": 1.0
+  },
+  "val_metrics_at_selected_threshold": {
+    "threshold": 0.5,
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "human_fpr": 0.0,
+    "bot_tpr": 1.0,
+    "confusion_matrix": {
+      "tn": 1200,
+      "fp": 0,
+      "fn": 0,
+      "tp": 1200
+    },
+    "roc_auc": 1.0
+  },
+  "val_detail": {
+    "sweep": {
+      "target_human_fpr": 0.05,
+      "grid_size": 1001,
+      "threshold_tie_ref": 0.5,
+      "hit_target": true,
+      "selected_threshold": 0.5,
+      "selected_metrics": {
+        "human_fpr": 0.0,
+        "bot_recall": 1.0,
+        "accuracy": 1.0
+      },
+      "checkpoints": {
+        "0.1": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.2": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.3": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.4": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.5": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.6": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.7": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.8": {
+          "human_fpr": 0.0,
+          "bot_recall": 1.0,
+          "accuracy": 1.0
+        },
+        "0.9": {
+          "human_fpr": 0.0,
+          "bot_recall": 0.9983333333333333,
+          "accuracy": 0.9991666666666666
+        }
+      }
+    }
+  },
+  "n_features": 116,
+  "feature_cols": [
+    "adp_000",
+    "adp_001",
+    "adp_002",
+    "adp_003",
+    "adp_004",
+    "adp_005",
+    "adp_006",
+    "adp_007",
+    "adp_008",
+    "adp_009",
+    "adp_010",
+    "adp_011",
+    "adp_012",
+    "adp_013",
+    "adp_014",
+    "adp_015",
+    "adp_016",
+    "adp_017",
+    "adp_018",
+    "adp_019",
+    "adp_020",
+    "adp_021",
+    "adp_022",
+    "adp_023",
+    "adp_024",
+    "adp_025",
+    "adp_026",
+    "adp_027",
+    "adp_028",
+    "adp_029",
+    "adp_030",
+    "adp_031",
+    "p2_std",
+    "n_players_std",
+    "stack_mean_std",
+    "stack_std_max",
+    "stack_std_std",
+    "n_players_max",
+    "pot_after_over_stack_mean",
+    "p3_max",
+    "stack_mean_mean",
+    "p3_std",
+    "p6p_std",
+    "bet_ratio_p50",
+    "p2_max",
+    "mean_norm_bb_std",
+    "stack_std_mean",
+    "p4_max",
+    "mean_norm_bb_max",
+    "end_preflop_std",
+    "std_norm_bb_max",
+    "std_norm_bb_std",
+    "std_pot_after_std",
+    "mean_pot_after_std",
+    "std_pot_after_max",
+    "bet_ratio_mean",
+    "mean_pot_after_max",
+    "raise_ratio_max",
+    "raise_std_over_check_std",
+    "max_norm_bb_max",
+    "max_norm_bb_std",
+    "end_flop_std",
+    "check_ratio_std",
+    "check_ratio_p90",
+    "end_flop_mean",
+    "p4_std",
+    "p5_std",
+    "p6p_max",
+    "mean_pot_after_p50",
+    "p5_max",
+    "p3_mean",
+    "call_ratio_std",
+    "fold_ratio_max",
+    "stack_mean_max",
+    "check_ratio_p50",
+    "std_pot_after_mean",
+    "mean_pot_after_mean",
+    "fold_ratio_p90",
+    "call_ratio_max",
+    "mean_norm_bb_mean",
+    "bet_ratio_p90",
+    "call_ratio_p90",
+    "check_ratio_mean",
+    "fold_ratio_std",
+    "mean_pot_after_p90",
+    "end_preflop_mean",
+    "mean_norm_bb_p50",
+    "raise_ratio_p10",
+    "n_streets_std",
+    "n_players_mean",
+    "mean_norm_bb_p10",
+    "bet_ratio_std",
+    "std_norm_bb_mean",
+    "end_river_std",
+    "raise_ratio_std",
+    "p6p_mean",
+    "bet_minus_fold_mean",
+    "p2_mean",
+    "n_streets_mean",
+    "call_ratio_mean",
+    "raise_ratio_p50",
+    "end_turn_mean",
+    "end_river_mean",
+    "fold_ratio_mean",
+    "max_norm_bb_mean",
+    "p5_mean",
+    "bet_ratio_max",
+    "check_ratio_max",
+    "end_turn_std",
+    "fold_ratio_p50",
+    "mean_norm_bb_p90",
+    "mean_pot_after_p10",
+    "fold_ratio_p10",
+    "raise_ratio_mean",
+    "raise_ratio_p90",
+    "late_minus_early_mean"
+  ],
+  "tune_eval": {
+    "per_domain": [
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/lgbm_data/val.parquet",
+        "n": 2400,
+        "human_fpr": 0.0,
+        "bot_recall": 1.0,
+        "accuracy": 1.0,
+        "feasible": true
+      },
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_2.parquet",
+        "n": 28,
+        "human_fpr": 0.0,
+        "bot_recall": 1.0,
+        "accuracy": 1.0,
+        "feasible": true
+      },
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_2.parquet",
+        "n": 2400,
+        "human_fpr": 0.0,
+        "bot_recall": 1.0,
+        "accuracy": 1.0,
+        "feasible": true
+      }
+    ],
+    "all_feasible": true,
+    "worst_bot_recall": 1.0,
+    "mean_bot_recall": 1.0,
+    "mean_human_fpr": 0.0,
+    "mean_accuracy": 1.0
+  },
+  "test_eval": {
+    "per_holdout": [
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_1.parquet",
+        "n": 112,
+        "human_fpr": 0.03571428571428571,
+        "bot_recall": 1.0,
+        "accuracy": 0.9821428571428571,
+        "roc_auc": 0.9995216836734694
+      },
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_1.parquet",
+        "n": 9600,
+        "human_fpr": 0.0,
+        "bot_recall": 1.0,
+        "accuracy": 1.0,
+        "roc_auc": 1.0
+      },
+      {
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/wsop.parquet",
+        "n": 20,
+        "human_fpr": 0.0,
+        "bot_recall": 1.0,
+        "accuracy": 1.0,
+        "roc_auc": 1.0
+      }
+    ],
+    "max_human_fpr": 0.03571428571428571,
+    "mean_human_fpr": 0.011904761904761904
+  }
+}

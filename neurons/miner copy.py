@@ -176,7 +176,6 @@ class Miner(BaseMinerNeuron):
         ).strip()
         self._model_bundle_dir = os.getenv("POKER44_MINER_MODEL_BUNDLE_DIR", "").strip()
         self._transform_meta_path = os.getenv("POKER44_MINER_TRANSFORM_META_PATH", "").strip()
-        self._wgz_meta_path = os.getenv("POKER44_MINER_WGZ_META_PATH", "").strip()
         # If true: refuse to start without a loaded model, and never fall back to heuristics
         # on a chunk (inference errors propagate; fix model or restart).
         self._miner_require_model = os.getenv(
@@ -186,7 +185,6 @@ class Miner(BaseMinerNeuron):
         self._model_features: Optional[list[str]] = None
         self._inference_threshold: float = 0.5
         self._transform_meta: Optional[dict[str, Any]] = None
-        self._wgz_meta: Optional[dict[str, Any]] = None
         # Optional ``ssl_masked_ae.npz`` — when set, ``emb_*`` columns are filled before LGBM predict.
         self._ssl_npz_path = os.getenv("POKER44_MINER_SSL_NPZ_PATH", "").strip()
         self._ssl_art: Optional[dict[str, Any]] = None
@@ -221,19 +219,15 @@ class Miner(BaseMinerNeuron):
             if self._log_async:
                 self._start_async_log_worker()
         self._maybe_load_model()
-        self._maybe_load_wgz_meta()
         self._maybe_load_transform_meta()
         self._maybe_load_ssl_artifact()
         self._maybe_load_dbf_bounds()
         _tm_path = self._resolve_transform_meta_path()
-        _wgz_path = self._resolve_wgz_meta_path()
         _dbf_path = self._resolve_dbf_bounds_path()
         bt.logging.info(
             f"Miner scoring stack: model_path={self._model_path or ''!r} "
             f"loaded={bool(self._model)} | transform_meta_path={str(_tm_path) if _tm_path else ''!r} "
             f"loaded={bool(self._transform_meta)} | "
-            f"wgz_meta_path={str(_wgz_path) if _wgz_path else ''!r} "
-            f"loaded={bool(self._wgz_meta)} | "
             f"ssl_npz={self._ssl_npz_path or ''!r} loaded={bool(self._ssl_art)} | "
             f"dbf_bounds_path={str(_dbf_path) if _dbf_path else ''!r} "
             f"loaded={bool(self._dbf_quantile_bounds)} "
@@ -463,41 +457,6 @@ class Miner(BaseMinerNeuron):
             return model_path.with_name("transform_meta.json")
         return None
 
-    def _resolve_wgz_meta_path(self) -> Optional[Path]:
-        # Explicit env override wins.
-        if self._wgz_meta_path:
-            return Path(self._wgz_meta_path).expanduser().resolve()
-        # Bundle-local artifact.
-        if self._model_bundle_dir:
-            p = Path(self._model_bundle_dir).expanduser().resolve() / "within_group_zscore_meta.json"
-            return p
-        # Common colocated artifact: same folder as model.
-        if self._model_path:
-            model_path = Path(self._model_path).expanduser().resolve()
-            return model_path.with_name("within_group_zscore_meta.json")
-        return None
-
-    def _maybe_load_wgz_meta(self) -> None:
-        path = self._resolve_wgz_meta_path()
-        if path is None:
-            bt.logging.info("WGZ transform disabled (no path configured).")
-            return
-        if not path.exists():
-            bt.logging.info(f"WGZ meta not found at {path}; skipping WGZ transform.")
-            return
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                meta = json.load(f)
-            if not isinstance(meta, dict):
-                raise ValueError("within_group_zscore_meta root must be a JSON object.")
-            if "group_col" not in meta or "global" not in meta:
-                raise ValueError("WGZ meta missing required keys: group_col/global")
-            self._wgz_meta = meta
-            bt.logging.info(f"Loaded WGZ meta: {path}")
-        except Exception as e:
-            bt.logging.warning(f"Failed to load WGZ meta from {path}: {e}. WGZ transform disabled.")
-            self._wgz_meta = None
-
     def _maybe_load_transform_meta(self) -> None:
         path = self._resolve_transform_meta_path()
         if path is None:
@@ -518,48 +477,6 @@ class Miner(BaseMinerNeuron):
                 f"Failed to load transform meta from {path}: {e}. Using raw aggregate features."
             )
             self._transform_meta = None
-
-    @staticmethod
-    def _wgz_group_key(v: Any) -> Optional[int]:
-        try:
-            x = float(v)
-        except Exception:
-            return None
-        if not np.isfinite(x):
-            return None
-        x = float(np.clip(np.round(x), 2.0, 10.0))
-        return int(x)
-
-    def _apply_runtime_wgz(self, row: dict[str, Any]) -> dict[str, float]:
-        meta = self._wgz_meta
-        if not meta:
-            return {k: self._safe_float(v, 0.0) for k, v in row.items()}
-        out: dict[str, float] = {k: self._safe_float(v, np.nan) for k, v in row.items()}
-        group_col = str(meta.get("group_col", "n_players_max"))
-        global_stats = meta.get("global", {}) or {}
-        per_group = meta.get("per_group", {}) or {}
-        cols = meta.get("normalize_cols", []) or []
-
-        gk = self._wgz_group_key(out.get(group_col, np.nan))
-        gdict = per_group.get(str(gk), {}) if gk is not None and isinstance(per_group, dict) else {}
-        for c in cols:
-            if c not in out:
-                continue
-            x = out.get(c, np.nan)
-            if not np.isfinite(x):
-                continue
-            st = gdict.get(c) if isinstance(gdict, dict) else None
-            if not isinstance(st, dict):
-                st = global_stats.get(c, {"mean": 0.0, "std": 1.0})
-            mu = self._safe_float(st.get("mean", 0.0), 0.0)
-            sig = self._safe_float(st.get("std", 1.0), 1.0)
-            if abs(sig) < 1e-12:
-                sig = 1.0
-            out[c] = float((x - mu) / sig)
-        for feat, x in list(out.items()):
-            if not np.isfinite(x):
-                out[feat] = 0.0
-        return out
 
     def _maybe_load_ssl_artifact(self) -> None:
         if not self._ssl_npz_path:
@@ -944,8 +861,7 @@ class Miner(BaseMinerNeuron):
         if self._model is not None and not self._model_infer_failed:
             try:
                 raw_row = aggregate_chunk_from_hands(chunk)
-                row = self._apply_runtime_wgz(raw_row)
-                row = self._apply_runtime_transform_meta(row)
+                row = self._apply_runtime_transform_meta(raw_row)
                 row = self._append_dbf_features_after_transform(row)
                 row = self._augment_row_with_tbm_adapter(row)
                 if not row:
