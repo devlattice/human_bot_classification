@@ -199,6 +199,12 @@ class Miner(BaseMinerNeuron):
         self._debug_first_model_infer = os.getenv(
             "POKER44_MINER_DEBUG_FIRST_INFERENCE", "1"
         ).strip() in {"1", "true", "yes", "on"}
+        self._debug_score_distribution = os.getenv(
+            "POKER44_MINER_DEBUG_SCORE_DISTRIBUTION", "0"
+        ).strip() in {"1", "true", "yes", "on"}
+        self._score_sat_eps = float(
+            os.getenv("POKER44_MINER_DEBUG_SCORE_SAT_EPS", "0.01").strip() or "0.01"
+        )
         self._request_counter = 0
         if self._request_logging_enabled:
             self._request_log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -333,6 +339,12 @@ class Miner(BaseMinerNeuron):
             scores_raw=raw_scores,
             predictions=synapse.predictions,
             latency_ms=latency_ms,
+        )
+        self._maybe_log_score_diagnostics(
+            chunks=chunks,
+            scores=smoothed_scores,
+            scores_raw=raw_scores,
+            validator_hotkey=vhk,
         )
         bt.logging.info(f"Miner predictions: {synapse.predictions}")
         bt.logging.info(
@@ -1203,6 +1215,37 @@ class Miner(BaseMinerNeuron):
                 self._write_log_rows([row])
         except Exception as e:
             bt.logging.warning(f"Failed to log miner request: {e}")
+
+    def _maybe_log_score_diagnostics(
+        self,
+        *,
+        chunks: list[list[dict]],
+        scores: list[float],
+        scores_raw: Optional[list[float]],
+        validator_hotkey: Optional[str],
+    ) -> None:
+        """Optional per-request diagnostics for score spread and repeated patterns."""
+        if not self._debug_score_distribution or not scores:
+            return
+        try:
+            arr = np.asarray(scores, dtype=np.float64)
+            eps = max(0.0, float(self._score_sat_eps))
+            near_floor = int(np.sum(arr <= eps))
+            near_ceil = int(np.sum(arr >= (1.0 - eps)))
+            bool_vec = "".join("1" if float(s) >= self._inference_threshold else "0" for s in arr.tolist())
+            pred_sig = hashlib.sha256(bool_vec.encode("utf-8")).hexdigest()[:12]
+            chunk_hashes_sample = [self._stable_chunk_hash(c)[:12] for c in chunks[:3]]
+            raw_mean = float(np.mean(scores_raw)) if scores_raw else float("nan")
+            bt.logging.info(
+                "Score diagnostics: "
+                f"n={len(scores)} min={float(np.min(arr)):.6f} max={float(np.max(arr)):.6f} "
+                f"mean={float(np.mean(arr)):.6f} std={float(np.std(arr)):.6f} "
+                f"near_floor={near_floor} near_ceil={near_ceil} eps={eps:.4f} "
+                f"pred_sig={pred_sig} chunk_hashes_head={chunk_hashes_sample} "
+                f"raw_mean={raw_mean:.6f} validator={validator_hotkey}"
+            )
+        except Exception as e:
+            bt.logging.warning(f"Score diagnostics failed: {e}")
 
     @staticmethod
     def _clamp01(value: float) -> float:
