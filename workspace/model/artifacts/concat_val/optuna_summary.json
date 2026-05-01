@@ -1,19 +1,19 @@
 {
-  "data_dir": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/lgbm_data",
+  "data_dir": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/lgbm_data",
   "n_trials": 60,
   "objective": "multi_objective_generalization_at_05",
   "fpr_cap": 0.05,
   "threshold_fixed": 0.5,
   "tune_parquet": [
-    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_2.parquet",
-    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_2.parquet"
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/pb_2.parquet",
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/holdout_2.parquet"
   ],
   "test_parquet": [
-    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_1.parquet",
-    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_1.parquet",
-    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/wsop.parquet"
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/pb_1.parquet",
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/holdout_1.parquet",
+    "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/wsop.parquet"
   ],
-  "best_value": 101010001.0,
+  "best_value": 101009164.88875,
   "best_params": {
     "n_estimators": 1220,
     "learning_rate": 0.05308392833164174,
@@ -46,17 +46,17 @@
   },
   "val_metrics_at_selected_threshold": {
     "threshold": 0.5,
-    "accuracy": 1.0,
+    "accuracy": 0.9995833333333334,
     "precision": 1.0,
-    "recall": 1.0,
-    "f1": 1.0,
+    "recall": 0.9991666666666666,
+    "f1": 0.9995831596498541,
     "human_fpr": 0.0,
-    "bot_tpr": 1.0,
+    "bot_tpr": 0.9991666666666666,
     "confusion_matrix": {
       "tn": 1200,
       "fp": 0,
-      "fn": 0,
-      "tp": 1200
+      "fn": 1,
+      "tp": 1199
     },
     "roc_auc": 1.0
   },
@@ -66,7 +66,7 @@
       "grid_size": 1001,
       "threshold_tie_ref": 0.5,
       "hit_target": true,
-      "selected_threshold": 0.5,
+      "selected_threshold": 0.007,
       "selected_metrics": {
         "human_fpr": 0.0,
         "bot_recall": 1.0,
@@ -75,48 +75,48 @@
       "checkpoints": {
         "0.1": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.2": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.3": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.4": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.5": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.6": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.7": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.8": {
           "human_fpr": 0.0,
-          "bot_recall": 1.0,
-          "accuracy": 1.0
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         },
         "0.9": {
           "human_fpr": 0.0,
-          "bot_recall": 0.9983333333333333,
-          "accuracy": 0.9991666666666666
+          "bot_recall": 0.9991666666666666,
+          "accuracy": 0.9995833333333334
         }
       }
     }
@@ -243,15 +243,15 @@
   "tune_eval": {
     "per_domain": [
       {
-        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/lgbm_data/val.parquet",
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/lgbm_data/val.parquet",
         "n": 2400,
         "human_fpr": 0.0,
-        "bot_recall": 1.0,
-        "accuracy": 1.0,
+        "bot_recall": 0.9991666666666666,
+        "accuracy": 0.9995833333333334,
         "feasible": true
       },
       {
-        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_2.parquet",
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/pb_2.parquet",
         "n": 28,
         "human_fpr": 0.0,
         "bot_recall": 1.0,
@@ -259,7 +259,7 @@
         "feasible": true
       },
       {
-        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_2.parquet",
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/holdout_2.parquet",
         "n": 2400,
         "human_fpr": 0.0,
         "bot_recall": 1.0,
@@ -268,31 +268,31 @@
       }
     ],
     "all_feasible": true,
-    "worst_bot_recall": 1.0,
-    "mean_bot_recall": 1.0,
+    "worst_bot_recall": 0.9991666666666666,
+    "mean_bot_recall": 0.9997222222222222,
     "mean_human_fpr": 0.0,
-    "mean_accuracy": 1.0
+    "mean_accuracy": 0.9998611111111111
   },
   "test_eval": {
     "per_holdout": [
       {
-        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/pb_1.parquet",
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/pb_1.parquet",
         "n": 112,
-        "human_fpr": 0.03571428571428571,
-        "bot_recall": 1.0,
+        "human_fpr": 0.0,
+        "bot_recall": 0.9642857142857143,
         "accuracy": 0.9821428571428571,
-        "roc_auc": 0.9995216836734694
+        "roc_auc": 0.9904336734693878
       },
       {
-        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/holdout_1.parquet",
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/holdout_1.parquet",
         "n": 9600,
         "human_fpr": 0.0,
-        "bot_recall": 1.0,
-        "accuracy": 1.0,
+        "bot_recall": 0.9997916666666666,
+        "accuracy": 0.9998958333333333,
         "roc_auc": 1.0
       },
       {
-        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/rb_B_wgz_fullpipe_v1/embeddings/wsop.parquet",
+        "path": "/home/dr/Workspace/Poker44-subnet/workspace/student/artifacts/concat_val/embeddings/wsop.parquet",
         "n": 20,
         "human_fpr": 0.0,
         "bot_recall": 1.0,
@@ -300,7 +300,7 @@
         "roc_auc": 1.0
       }
     ],
-    "max_human_fpr": 0.03571428571428571,
-    "mean_human_fpr": 0.011904761904761904
+    "max_human_fpr": 0.0,
+    "mean_human_fpr": 0.0
   }
 }
