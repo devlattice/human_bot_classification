@@ -2,6 +2,10 @@
 
 Production-facing miner guide for Poker44 subnet `126`.
 
+For released supervised benchmark data, see:
+
+- [Training Benchmark](./training-benchmark.md)
+
 ## What Miners Are Solving Today
 
 Poker44 validators currently evaluate miners with behavioral payloads derived from
@@ -18,6 +22,11 @@ Current production path:
 7. the validator scores the miner and sets weights on-chain.
 
 Important: the miner does **not** receive labels.
+
+Released benchmark data is different:
+
+- the public training benchmark exposes miner-visible chunks plus `groundTruth`;
+- the live validator runtime still keeps labels on the validator side only.
 
 ## Current Miner Contract
 
@@ -222,6 +231,12 @@ Minimum fields for `transparent` compliance:
 The validator still scores your `risk_scores`; the manifest is for transparency and
 runtime tracking.
 
+Important:
+
+- once a model reaches a sufficiently high score, its published manifest may be reviewed more deeply;
+- the published repository and commit must make the full model flow publicly visible and verifiable;
+- if the published repo/commit does not match the logic behind the observed performance, the model may be disqualified or reduced to a score of `0`.
+
 ## Production Evaluation Boundary
 
 Production evaluation is not derived from local helper artifacts.
@@ -234,6 +249,21 @@ Production validators now target:
 
 Miners should optimize against the live contract and the current chunk-level scoring path, not
 against assumptions about any local reference corpus.
+
+## Public Training Benchmark
+
+Poker44 also exposes a public training benchmark through the backend API.
+
+That benchmark:
+
+- contains previously used evaluation chunks;
+- is released only after those chunks leave the live competitive field;
+- exposes the miner-visible chunk payload;
+- exposes `groundTruth` separately for training.
+
+See:
+
+- [Training Benchmark](./training-benchmark.md)
 
 ## PM2
 
