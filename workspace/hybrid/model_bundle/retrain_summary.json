@@ -1,0 +1,91 @@
+{
+  "trained_at": "2026-05-12T05:26:08.528010Z",
+  "n_features": 54,
+  "n_training_samples": 28236,
+  "data_sources": {
+    "gold_human": 2120,
+    "gold_bot": 2120,
+    "zenodo_human": 5000,
+    "public_human": 2996,
+    "full_spectrum_bot": 8000,
+    "gen_bot": 4000,
+    "cal_bot": 4000
+  },
+  "train_auc": 1.0,
+  "train_accuracy": 0.999823,
+  "selected_threshold": 0.41,
+  "cv_results": [
+    {
+      "date": "2026-04-30",
+      "auc": 1.0,
+      "accuracy": 1.0,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-01",
+      "auc": 1.0,
+      "accuracy": 1.0,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-02",
+      "auc": 1.0,
+      "accuracy": 0.997917,
+      "bot_detect_rate": 0.9958,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-03",
+      "auc": 1.0,
+      "accuracy": 1.0,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-04",
+      "auc": 1.0,
+      "accuracy": 1.0,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-05",
+      "auc": 1.0,
+      "accuracy": 1.0,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-06",
+      "auc": 1.0,
+      "accuracy": 1.0,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-07",
+      "auc": 1.0,
+      "accuracy": 1.0,
+      "bot_detect_rate": 1.0,
+      "n_samples": 440
+    },
+    {
+      "date": "2026-05-08",
+      "auc": 0.992624,
+      "accuracy": 0.681818,
+      "bot_detect_rate": 0.3636,
+      "n_samples": 440
+    }
+  ],
+  "cv_mean_auc": 0.99918,
+  "cv_min_auc": 0.992624,
+  "model_type": "RandomForestClassifier",
+  "model_params": {
+    "n_estimators": 300,
+    "max_depth": 6,
+    "min_samples_leaf": 15,
+    "class_weight": "balanced"
+  }
+}

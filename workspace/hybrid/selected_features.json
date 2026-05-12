@@ -1,0 +1,44 @@
+{
+  "selected_features": [
+    "fold_ratio_p90",
+    "fold_ratio_std",
+    "fold_ratio_max"
+  ],
+  "robust_features": [],
+  "weak_features": [],
+  "rejected_features": [
+    "fold_ratio_p90",
+    "fold_ratio_std",
+    "fold_ratio_max"
+  ],
+  "auc": 1.0,
+  "per_day_auc": {
+    "2026-04-30": 1.0,
+    "2026-05-01": 1.0,
+    "2026-05-02": 1.0,
+    "2026-05-03": 1.0,
+    "2026-05-04": 1.0,
+    "2026-05-05": 1.0,
+    "2026-05-06": 1.0,
+    "2026-05-07": 1.0,
+    "2026-05-08": 1.0
+  },
+  "selection_history": [
+    {
+      "feature": "fold_ratio_p90",
+      "auc": 0.9998668981481481,
+      "gain": 0.4998668981481481
+    },
+    {
+      "feature": "fold_ratio_std",
+      "auc": 0.9999980709876544,
+      "gain": 0.00013117283950625502
+    },
+    {
+      "feature": "fold_ratio_max",
+      "auc": 1.0,
+      "gain": 1.9290123456361385e-06
+    }
+  ],
+  "prefilter_candidates": 128
+}

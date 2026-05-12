@@ -150,6 +150,13 @@ class Miner(BaseMinerNeuron):
         self._log_queue: Optional[queue.Queue] = None
         self._log_worker: Optional[threading.Thread] = None
         self._log_worker_stop = threading.Event()
+        self._other_only_mode = os.getenv(
+            "POKER44_MINER_OTHER_ONLY", "0"
+        ).strip() in {"1", "true", "yes", "on"}
+        if self._other_only_mode:
+            bt.logging.info(
+                "🎯 OTHER-ONLY mode enabled: scoring purely on other_ratio_mean signal."
+            )
         self._uncertain_a = float(os.getenv("POKER44_MINER_UNCERTAIN_A", "-1"))
         self._uncertain_b = float(os.getenv("POKER44_MINER_UNCERTAIN_B", "-1"))
         self._uncertain_gamma = float(os.getenv("POKER44_MINER_UNCERTAIN_GAMMA", "1.0"))
@@ -933,6 +940,9 @@ class Miner(BaseMinerNeuron):
         ``dbf_*`` via train-fitted bounds → optional ``emb_*`` → align to
         ``feature_cols`` → ``predict_proba``.
         """
+        if self._other_only_mode:
+            return self._score_chunk_other_only(chunk)
+
         if self._miner_require_model:
             if self._model is None:
                 raise RuntimeError("POKER44_MINER_REQUIRE_MODEL but self._model is None")
@@ -943,7 +953,7 @@ class Miner(BaseMinerNeuron):
 
         if self._model is not None and not self._model_infer_failed:
             try:
-                raw_row = aggregate_chunk_from_hands(chunk)
+                raw_row = aggregate_chunk_from_hands(chunk, skip_sanitize=True)
                 row = self._apply_runtime_wgz(raw_row)
                 row = self._apply_runtime_transform_meta(row)
                 row = self._append_dbf_features_after_transform(row)
@@ -1007,6 +1017,16 @@ class Miner(BaseMinerNeuron):
                     f"Model inference failed once ({e}); switching to heuristic scoring."
                 )
         return self.score_chunk(chunk)
+
+    def _score_chunk_other_only(self, chunk: list[dict]) -> float:
+        """Pure 'other' signal rule: human chunks contain 'other' actions, bots don't."""
+        if not chunk:
+            return 0.5
+        row = aggregate_chunk_from_hands(chunk, skip_sanitize=True)
+        if not row:
+            return 0.5
+        other_ratio_mean = float(row.get("other_ratio_mean", 0.0))
+        return 0.0 if other_ratio_mean > 0 else 1.0
 
     def _start_async_log_worker(self) -> None:
         if self._log_queue is not None and self._log_worker is not None:
@@ -1354,7 +1374,7 @@ class Miner(BaseMinerNeuron):
         if not chunk:
             return 0.5
 
-        row = aggregate_chunk_from_hands(chunk)
+        row = aggregate_chunk_from_hands(chunk, skip_sanitize=True)
         if not row:
             return 0.5
 
