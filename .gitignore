@@ -3,6 +3,9 @@
 .envDev
 .envProd
 
+# Feature obfuscation mapping (contains plaintext↔hash pairs — never commit)
+**/feature_mapping.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -206,6 +209,11 @@ workspace/test/
 workspace/student
 workspace/hybrid/dataset/
 workspace/hybrid
+workspace/hybrid/scripts/
+workspace/hybrid/models/
+workspace/hybrid/docs/
+
+workspace/dataset/scripts
 
 hands_generator/human_hands/hands_txt/
 hands_generator/human_hands/poker_data/

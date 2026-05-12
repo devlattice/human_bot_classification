@@ -139,6 +139,17 @@ class ScoreMonitor:
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+def _hash_feature_name(name: str, salt: str) -> str:
+    """Deterministic hash of a feature name with a secret salt."""
+    raw = hashlib.sha256((salt + name).encode("utf-8")).hexdigest()[:10]
+    return f"f_{raw}"
+
+
+def _build_feature_hash_mapping(raw_names: list[str], salt: str) -> dict[str, str]:
+    """Build raw_name → hashed_name mapping for all known features."""
+    return {name: _hash_feature_name(name, salt) for name in raw_names}
+
+
 def _compute_invariant_features(row: dict[str, float]) -> dict[str, float]:
     """Compute domain-invariant ratio features from raw aggregate features.
 
@@ -363,6 +374,8 @@ class Miner(BaseMinerNeuron):
         self._model_features: Optional[list[str]] = None
         self._inference_threshold: float = 0.5
         self._score_monitor = ScoreMonitor(window=200, shift_threshold=0.15)
+        self._feature_salt = os.getenv("POKER44_FEATURE_SALT", "").strip()
+        self._feature_hash_map: Optional[dict[str, str]] = None
         self._transform_meta: Optional[dict[str, Any]] = None
         self._wgz_meta: Optional[dict[str, Any]] = None
         # Optional ``ssl_masked_ae.npz`` — when set, ``emb_*`` columns are filled before LGBM predict.
@@ -418,6 +431,7 @@ class Miner(BaseMinerNeuron):
             f"expects_dbf={self._model_expects_dbf_features()}"
         )
         self._warn_ssl_model_mismatch()
+        self._maybe_build_feature_hash_map()
         if self._miner_require_model and self._model is None:
             raise RuntimeError(
                 "POKER44_MINER_REQUIRE_MODEL is enabled but no estimator loaded. "
@@ -904,6 +918,34 @@ class Miner(BaseMinerNeuron):
             except Exception as e:
                 bt.logging.warning(f"Could not validate SSL embedding width: {e}")
 
+    def _maybe_build_feature_hash_map(self) -> None:
+        """Validate that feature obfuscation is active and log status.
+
+        The actual mapping is applied on-the-fly at inference time by hashing
+        each raw feature key with the salt.  ``self._model_features`` already
+        contains hashed names (from the hashed ``feature_cols.json``), so we
+        only need to confirm alignment here, not pre-build a mapping table.
+        """
+        if not self._feature_salt:
+            self._feature_hash_map = None
+            return
+        if not self._model_features:
+            self._feature_hash_map = None
+            return
+        first_feat = self._model_features[0] if self._model_features else ""
+        looks_hashed = first_feat.startswith("f_") and len(first_feat) == 12
+        if not looks_hashed:
+            bt.logging.warning(
+                "POKER44_FEATURE_SALT is set but feature_cols.json does not appear hashed "
+                f"(first feature: {first_feat!r}). Obfuscation will be active — make sure "
+                "bundle feature names are hashed."
+            )
+        self._feature_hash_map = True  # sentinel: on-the-fly hashing enabled
+        bt.logging.info(
+            f"Feature obfuscation active: {len(self._model_features)} features "
+            f"(salt len={len(self._feature_salt)})"
+        )
+
     @staticmethod
     def _build_adapter_encoder(nn: Any, in_dim: int, hidden_dim: int, embed_dim: int, dropout: float) -> Any:
         return nn.Sequential(
@@ -1128,6 +1170,11 @@ class Miner(BaseMinerNeuron):
                 raw_row = aggregate_chunk_from_hands(chunk, skip_sanitize=True)
                 raw_row = _compute_invariant_features(raw_row)
                 row = self._apply_runtime_wgz(raw_row)
+                if self._feature_hash_map and self._feature_salt:
+                    row = {
+                        _hash_feature_name(k, self._feature_salt): v
+                        for k, v in row.items()
+                    }
                 row = self._apply_runtime_transform_meta(row)
                 row = self._append_dbf_features_after_transform(row)
                 row = self._augment_row_with_tbm_adapter(row)
