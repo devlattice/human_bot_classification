@@ -204,6 +204,8 @@ workspace/teacher/train_qc
 # workspace/model/artifacts/
 workspace/test/
 workspace/student
+workspace/hybrid/dataset/
+workspace/hybrid
 
 hands_generator/human_hands/hands_txt/
 hands_generator/human_hands/poker_data/

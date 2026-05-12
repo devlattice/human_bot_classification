@@ -24,11 +24,15 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
 GOLD_DIR="workspace/dataset/source/gold_dataset"
-GOLD_FEATURES="workspace/hybrid/dataset/gold_features.parquet"
-ZENODO_FEATURES="workspace/hybrid/dataset/zenodo_features.parquet"
-PUBLIC_FEATURES="workspace/hybrid/dataset/public_features.parquet"
-FULL_SPECTRUM="workspace/hybrid/full_spectrum_bot_features.parquet"
+TRAIN_DIR="workspace/hybrid/dataset/train"
+TEST_DIR="workspace/hybrid/dataset/test"
+GOLD_FEATURES="$TRAIN_DIR/gold_features.parquet"
+ZENODO_FEATURES="$TRAIN_DIR/zenodo_features.parquet"
+PUBLIC_FEATURES="$TRAIN_DIR/public_features.parquet"
+ACPC_BOT_FEATURES="$TRAIN_DIR/acpc_bot_features.parquet"
+FULL_SPECTRUM="$TRAIN_DIR/full_spectrum_bot_features.parquet"
 MODEL_BUNDLE="workspace/hybrid/model_bundle"
+KS_DIR="workspace/hybrid/KS_test"
 ENV_FILE=".env"
 
 SKIP_BOTS=false
@@ -65,7 +69,7 @@ log "Step 2: Extracting gold features..."
 python3 workspace/hybrid/scripts/extract_gold_features.py
 log "  Gold features: $(python3 -c "import pandas as pd; print(len(pd.read_parquet('$GOLD_FEATURES')))" 2>/dev/null || echo 'N/A') rows"
 
-# ─── Step 3: Extract static human features (zenodo/public) if not present ───
+# ─── Step 3: Extract static features (zenodo/public/acpc) if not present ───
 if [ "$SKIP_EXTRACT_STATIC" = false ]; then
     if [ ! -f "$ZENODO_FEATURES" ]; then
         log "Step 3a: Extracting zenodo features (first time)..."
@@ -79,6 +83,21 @@ if [ "$SKIP_EXTRACT_STATIC" = false ]; then
         python3 workspace/hybrid/scripts/extract_public_features.py
     else
         log "Step 3b: Public features already exist, skipping"
+    fi
+
+    if [ ! -f "$ACPC_BOT_FEATURES" ]; then
+        log "Step 3c: Extracting ACPC bot features (first time)..."
+        python3 workspace/hybrid/scripts/extract_acpc_bot_features.py
+    else
+        log "Step 3c: ACPC bot features already exist, skipping"
+    fi
+
+    # Test sets (only need to extract once)
+    if [ ! -f "$TEST_DIR/zenodo_test_features.parquet" ]; then
+        log "Step 3d: Extracting test set features (first time)..."
+        python3 workspace/hybrid/scripts/extract_test_features.py
+    else
+        log "Step 3d: Test set features already exist, skipping"
     fi
 else
     log "Step 3: SKIPPED (--skip-extract-static)"
@@ -102,11 +121,16 @@ log "Step 5: Training production model..."
 python3 workspace/hybrid/scripts/train_production_model.py \
     --output-dir "$MODEL_BUNDLE"
 
-# ─── Step 6: Update .env for deployment ───
+# ─── Step 6: KS analysis on selected features ───
+log "Step 6: Running KS analysis..."
+python3 workspace/hybrid/scripts/ks_analysis.py || log "WARNING: KS analysis failed (non-critical)"
+log "  KS results: $KS_DIR/"
+
+# ─── Step 7: Update .env for deployment ───
 MODEL_PATH="$(realpath "$MODEL_BUNDLE/model.joblib")"
 TRANSFORM_PATH="$(realpath "$MODEL_BUNDLE/transform_meta.json")"
 
-log "Step 6: Model bundle ready at $MODEL_BUNDLE"
+log "Step 7: Model bundle ready at $MODEL_BUNDLE"
 log ""
 log "═══════════════════════════════════════════════════════════════"
 log "DEPLOYMENT"

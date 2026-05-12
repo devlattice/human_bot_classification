@@ -18,7 +18,7 @@ from poker44.validator.chunk_features import aggregate_chunk_from_hands
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 GOLD_DIR = REPO_ROOT / "workspace" / "dataset" / "source" / "gold_dataset"
-OUTPUT_PATH = REPO_ROOT / "workspace" / "hybrid" / "gold_features.parquet"
+OUTPUT_PATH = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "train" / "gold_features.parquet"
 
 
 def main():
@@ -39,7 +39,7 @@ def main():
             labels = entry.get("groundTruth", [])
 
             for chunk_hands, label in zip(inner_chunks, labels):
-                features = aggregate_chunk_from_hands(chunk_hands, skip_sanitize=True)
+                features = aggregate_chunk_from_hands(chunk_hands, skip_sanitize=False)
                 features["label"] = label  # 0=human, 1=bot
                 features["source"] = "gold"
                 features["date"] = date

@@ -17,29 +17,13 @@
       "low": 0.0,
       "high": 0.25
     },
-    "mean_pot_after_p50": {
-      "low": 0.030533333333333332,
-      "high": 0.7520417142857143
-    },
     "bet_ratio_mean": {
       "low": 0.0,
       "high": 0.2510278719397363
     },
-    "pot_after_over_stack_mean": {
-      "low": 0.020551432831589316,
-      "high": 191478.43619047583
-    },
-    "mean_pot_after_mean": {
-      "low": 0.04800787777777777,
-      "high": 0.7731076516634051
-    },
     "aggression_factor_max": {
       "low": 1.0,
       "high": 8.0
-    },
-    "pot_growth_std": {
-      "low": 0.007762437350872164,
-      "high": 0.16344204889231903
     },
     "action_entropy_p90": {
       "low": 0.7219280948873623,
@@ -49,29 +33,9 @@
       "low": 0.0,
       "high": 0.5
     },
-    "bet_size_mean_std": {
-      "low": 1.4147652832294462,
-      "high": 30.95778825057766
-    },
-    "std_norm_bb_std": {
-      "low": 0.6874852028518996,
-      "high": 13.694747805280384
-    },
-    "mean_pot_after_p90": {
-      "low": 0.07988973333333332,
-      "high": 1.1707762666666666
-    },
     "bet_ratio_std": {
       "low": 0.0,
       "high": 0.19261185180543097
-    },
-    "mean_pot_after_std": {
-      "low": 0.027953217462583016,
-      "high": 0.3969774689780374
-    },
-    "std_pot_after_std": {
-      "low": 0.0135528435545142,
-      "high": 0.3312087209313638
     },
     "aggression_factor_mean": {
       "low": 0.20260511671335202,
@@ -81,37 +45,13 @@
       "low": 0.25173901958879735,
       "high": 1.786083685964853
     },
-    "bet_size_mean_p90": {
-      "low": 2.511983333333334,
-      "high": 60.166260000000015
-    },
     "bet_ratio_max": {
       "low": 0.0,
       "high": 0.8333333333333334
     },
-    "mean_norm_bb_p90": {
-      "low": 0.756904,
-      "high": 19.50794928571428
-    },
     "fold_ratio_p10": {
       "low": 0.0,
       "high": 0.8
-    },
-    "bet_size_max_std": {
-      "low": 1.6030288379733635,
-      "high": 34.463266211077986
-    },
-    "max_norm_bb_std": {
-      "low": 1.6030288379733635,
-      "high": 34.463266211077986
-    },
-    "pot_growth_mean": {
-      "low": 0.0036591514285714286,
-      "high": 0.19165802240775096
-    },
-    "bet_size_mean_mean": {
-      "low": 1.0686177777777777,
-      "high": 25.58069282753775
     },
     "action_entropy_max": {
       "low": 0.9709505944546686,
@@ -145,18 +85,6 @@
       "low": 0.0,
       "high": 0.6666666666666666
     },
-    "bet_size_mean_p50": {
-      "low": 0.0,
-      "high": 23.22959999999999
-    },
-    "bet_size_mean_max": {
-      "low": 5.0284,
-      "high": 126.0
-    },
-    "mean_pot_after_p10": {
-      "low": 0.029266666666666667,
-      "high": 0.5642841142857142
-    },
     "p6p_max": {
       "low": 0.0,
       "high": 1.0
@@ -184,10 +112,6 @@
     "end_turn_std": {
       "low": 0.0,
       "high": 0.48619840486049415
-    },
-    "bet_size_std_max": {
-      "low": 0.7200000000000001,
-      "high": 62.035000000000004
     },
     "end_river_max": {
       "low": 0.0,
@@ -220,37 +144,66 @@
     "fold_position_mean_mean": {
       "low": 0.27639074074074077,
       "high": 1.0
+    },
+    "bet_size_cv_inv": {
+      "low": 0.4482234774526139,
+      "high": 3.357374872154274
+    },
+    "bet_size_p50_ratio_inv": {
+      "low": 0.0,
+      "high": 1.117093523699499
+    },
+    "bet_size_p90_ratio_inv": {
+      "low": 1.0959161432171463,
+      "high": 3.5564530673753803
+    },
+    "bet_to_pot_ratio_inv": {
+      "low": 16.611378338945165,
+      "high": 41.199448925370206
+    },
+    "norm_bb_cv_inv": {
+      "low": 0.2901299109968317,
+      "high": 4.286989435095468
+    },
+    "max_norm_bb_cv_inv": {
+      "low": 0.796717248251009,
+      "high": 10.418592705904446
+    },
+    "pot_growth_relative_inv": {
+      "low": 0.0755548378301579,
+      "high": 0.3724651522944183
+    },
+    "pot_spread_inv": {
+      "low": 0.4841008945631,
+      "high": 3.007660612412557
+    },
+    "pot_growth_consistency_inv": {
+      "low": 0.38335304584572516,
+      "high": 3.814807480399482
+    },
+    "std_pot_cv_inv": {
+      "low": 0.21147679089357457,
+      "high": 1.8657303501908535
     }
   },
-  "clip_features_count": 54,
   "log1p": {
     "enabled": true
   },
   "log1p_selected_features": [
-    "mean_pot_after_p50",
-    "pot_after_over_stack_mean",
-    "mean_pot_after_mean",
-    "pot_growth_std",
-    "bet_size_mean_std",
-    "std_norm_bb_std",
-    "mean_pot_after_p90",
-    "mean_pot_after_std",
-    "std_pot_after_std",
-    "bet_size_mean_p90",
-    "mean_norm_bb_p90",
-    "bet_size_max_std",
-    "max_norm_bb_std",
-    "pot_growth_mean",
-    "bet_size_mean_mean",
-    "bet_size_mean_p50",
-    "bet_size_mean_max",
-    "mean_pot_after_p10",
-    "bet_size_std_max"
+    "bet_size_cv_inv",
+    "bet_size_p50_ratio_inv",
+    "bet_size_p90_ratio_inv",
+    "bet_to_pot_ratio_inv",
+    "norm_bb_cv_inv",
+    "max_norm_bb_cv_inv",
+    "pot_growth_relative_inv",
+    "pot_spread_inv",
+    "pot_growth_consistency_inv",
+    "std_pot_cv_inv"
   ],
-  "log1p_selected_count": 19,
   "robust_scale": {
     "enabled": true,
-    "scaled_clip_abs": 0.0
+    "scaled_clip_abs": 5.0
   },
   "robust_scale_stats": {
     "action_entropy_p50": {
@@ -265,29 +218,13 @@
       "median": 0.15476190476190477,
       "iqr": 0.16666666666666666
     },
-    "mean_pot_after_p50": {
-      "median": 0.055765777905857246,
-      "iqr": 0.0534158488801511
-    },
     "bet_ratio_mean": {
       "median": 0.12436507936507936,
       "iqr": 0.05361111111111111
     },
-    "pot_after_over_stack_mean": {
-      "median": 0.06815296027117905,
-      "iqr": 0.048614098141300105
-    },
-    "mean_pot_after_mean": {
-      "median": 0.11666026802249467,
-      "iqr": 0.0823994709922671
-    },
     "aggression_factor_max": {
       "median": 3.0,
       "iqr": 1.0
-    },
-    "pot_growth_std": {
-      "median": 0.07031950476745748,
-      "iqr": 0.04067760116538817
     },
     "action_entropy_p90": {
       "median": 1.8499634772648468,
@@ -297,29 +234,9 @@
       "median": 0.2535714285714286,
       "iqr": 0.08333333333333331
     },
-    "bet_size_mean_std": {
-      "median": 1.989853219067702,
-      "iqr": 0.690228526342133
-    },
-    "std_norm_bb_std": {
-      "median": 1.730466795191522,
-      "iqr": 0.650896160476987
-    },
-    "mean_pot_after_p90": {
-      "median": 0.24006123685114394,
-      "iqr": 0.19422492475125655
-    },
     "bet_ratio_std": {
       "median": 0.11883327264206302,
       "iqr": 0.02607958076673525
-    },
-    "mean_pot_after_std": {
-      "median": 0.16146451917569923,
-      "iqr": 0.0800234271877317
-    },
-    "std_pot_after_std": {
-      "median": 0.14783256086821228,
-      "iqr": 0.07748498771105773
     },
     "aggression_factor_mean": {
       "median": 0.7918253968253969,
@@ -329,37 +246,13 @@
       "median": 0.8492448988060795,
       "iqr": 0.3541553688836807
     },
-    "bet_size_mean_p90": {
-      "median": 2.160860225340995,
-      "iqr": 0.6895279221756323
-    },
     "bet_ratio_max": {
       "median": 0.5,
       "iqr": 0.16666666666666669
     },
-    "mean_norm_bb_p90": {
-      "median": 1.5688589439361846,
-      "iqr": 0.7232525043893783
-    },
     "fold_ratio_p10": {
       "median": 0.24500000000000002,
       "iqr": 0.12142857142857141
-    },
-    "bet_size_max_std": {
-      "median": 2.5308527977850215,
-      "iqr": 0.7267196954058242
-    },
-    "max_norm_bb_std": {
-      "median": 2.5308527977850215,
-      "iqr": 0.7267196954058242
-    },
-    "pot_growth_mean": {
-      "median": 0.033547907140241355,
-      "iqr": 0.033366993414920276
-    },
-    "bet_size_mean_mean": {
-      "median": 1.506138850766102,
-      "iqr": 0.5229666274361395
     },
     "action_entropy_max": {
       "median": 2.2359263506290326,
@@ -393,18 +286,6 @@
       "median": 0.20500000000000007,
       "iqr": 0.08357142857142857
     },
-    "bet_size_mean_p50": {
-      "median": 1.0724394143640863,
-      "iqr": 0.4056877508787602
-    },
-    "bet_size_mean_max": {
-      "median": 3.647536490579554,
-      "iqr": 0.8680886300562771
-    },
-    "mean_pot_after_p10": {
-      "median": 0.029655884907510657,
-      "iqr": 0.017980131390681768
-    },
     "p6p_max": {
       "median": 1.0,
       "iqr": 1.0
@@ -432,10 +313,6 @@
     "end_turn_std": {
       "median": 0.2494438257849294,
       "iqr": 0.12049450642884993
-    },
-    "bet_size_std_max": {
-      "median": 3.271322789895251,
-      "iqr": 0.9130730539145206
     },
     "end_river_max": {
       "median": 1.0,
@@ -468,40 +345,63 @@
     "fold_position_mean_mean": {
       "median": 0.3954166666666667,
       "iqr": 0.1275555555555556
+    },
+    "bet_size_cv_inv": {
+      "median": 0.9736640120524709,
+      "iqr": 0.28925600967535514
+    },
+    "bet_size_p50_ratio_inv": {
+      "median": 0.4341025512854594,
+      "iqr": 0.17404604178195915
+    },
+    "bet_size_p90_ratio_inv": {
+      "median": 1.1207218093063156,
+      "iqr": 0.23610176680308204
+    },
+    "bet_to_pot_ratio_inv": {
+      "median": 3.314671063406492,
+      "iqr": 0.2305241305374115
+    },
+    "norm_bb_cv_inv": {
+      "median": 0.7110838627509788,
+      "iqr": 0.3766827944683765
+    },
+    "max_norm_bb_cv_inv": {
+      "median": 1.2706225730643324,
+      "iqr": 0.5111784117682754
+    },
+    "pot_growth_relative_inv": {
+      "median": 0.2265847965133584,
+      "iqr": 0.05511738581255077
+    },
+    "pot_spread_inv": {
+      "median": 0.994761282570751,
+      "iqr": 0.2934246756599246
+    },
+    "pot_growth_consistency_inv": {
+      "median": 1.1021557737944958,
+      "iqr": 0.3018623392092552
+    },
+    "std_pot_cv_inv": {
+      "median": 0.7411230863008985,
+      "iqr": 0.3088248395103522
     }
   },
-  "robust_scale_features_count": 54,
   "fillna": {
     "method": "train_median_then_zero",
-    "median_features_count": 54,
     "medians": {
       "action_entropy_p50": 0.0,
       "bet_minus_fold_mean": 0.0,
       "bet_ratio_p50": 0.0,
-      "mean_pot_after_p50": 0.0,
       "bet_ratio_mean": 0.0,
-      "pot_after_over_stack_mean": 0.0,
-      "mean_pot_after_mean": 0.0,
       "aggression_factor_max": 0.0,
-      "pot_growth_std": 0.0,
       "action_entropy_p90": 0.0,
       "bet_ratio_p90": 0.0,
-      "bet_size_mean_std": 0.0,
-      "std_norm_bb_std": 0.0,
-      "mean_pot_after_p90": 0.0,
       "bet_ratio_std": 0.0,
-      "mean_pot_after_std": 0.0,
-      "std_pot_after_std": 0.0,
       "aggression_factor_mean": 0.0,
       "aggression_factor_std": 0.0,
-      "bet_size_mean_p90": 0.0,
       "bet_ratio_max": 0.0,
-      "mean_norm_bb_p90": 0.0,
       "fold_ratio_p10": 0.0,
-      "bet_size_max_std": 0.0,
-      "max_norm_bb_std": 0.0,
-      "pot_growth_mean": 0.0,
-      "bet_size_mean_mean": 0.0,
       "action_entropy_max": 0.0,
       "max_consecutive_max": 0.0,
       "preflop_action_density_std": 0.0,
@@ -510,9 +410,6 @@
       "p5_max": 0.0,
       "end_turn_max": 0.0,
       "call_ratio_p90": 0.0,
-      "bet_size_mean_p50": 0.0,
-      "bet_size_mean_max": 0.0,
-      "mean_pot_after_p10": 0.0,
       "p6p_max": 0.0,
       "n_players_max": 0.0,
       "fold_position_mean_std": 0.0,
@@ -520,7 +417,6 @@
       "raise_minus_call_mean": 0.0,
       "end_flop_max": 0.0,
       "end_turn_std": 0.0,
-      "bet_size_std_max": 0.0,
       "end_river_max": 0.0,
       "n_streets_max": 0.0,
       "unique_actors_ratio_max": 0.0,
@@ -528,7 +424,17 @@
       "n_streets_std": 0.0,
       "end_river_std": 0.0,
       "check_ratio_p90": 0.0,
-      "fold_position_mean_mean": 0.0
+      "fold_position_mean_mean": 0.0,
+      "bet_size_cv_inv": 0.0,
+      "bet_size_p50_ratio_inv": 0.0,
+      "bet_size_p90_ratio_inv": 0.0,
+      "bet_to_pot_ratio_inv": 0.0,
+      "norm_bb_cv_inv": 0.0,
+      "max_norm_bb_cv_inv": 0.0,
+      "pot_growth_relative_inv": 0.0,
+      "pot_spread_inv": 0.0,
+      "pot_growth_consistency_inv": 0.0,
+      "std_pot_cv_inv": 0.0
     }
   }
 }

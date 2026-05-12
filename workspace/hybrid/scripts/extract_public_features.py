@@ -19,7 +19,7 @@ from poker44.validator.chunk_features import aggregate_chunk_from_hands
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 INPUT_PATH = REPO_ROOT / "workspace" / "dataset" / "source" / "data" / "poker_hands_train.json"
-OUTPUT_PATH = REPO_ROOT / "workspace" / "hybrid" / "public_features.parquet"
+OUTPUT_PATH = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "train" / "public_features.parquet"
 CHUNK_SIZE = 60
 MIN_CHUNK_SIZE = 20
 

@@ -34,12 +34,16 @@ from sklearn.model_selection import cross_val_predict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
-GOLD_PATH = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "gold_features.parquet"
-ZENODO_PATH = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "zenodo_features.parquet"
-PUBLIC_PATH = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "public_features.parquet"
-FULL_SPECTRUM_PATH = REPO_ROOT / "workspace" / "hybrid" / "full_spectrum_bot_features.parquet"
-GEN_BOT_PATH = REPO_ROOT / "workspace" / "hybrid" / "generated_bot_features.parquet"
-CAL_BOT_PATH = REPO_ROOT / "workspace" / "hybrid" / "calibrated_bot_features.parquet"
+TRAIN_DIR = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "train"
+TEST_DIR = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "test"
+
+GOLD_PATH = TRAIN_DIR / "gold_features.parquet"
+ZENODO_PATH = TRAIN_DIR / "zenodo_features.parquet"
+PUBLIC_PATH = TRAIN_DIR / "public_features.parquet"
+FULL_SPECTRUM_PATH = TRAIN_DIR / "full_spectrum_bot_features.parquet"
+GEN_BOT_PATH = TRAIN_DIR / "generated_bot_features.parquet"
+CAL_BOT_PATH = TRAIN_DIR / "calibrated_bot_features.parquet"
+ACPC_BOT_PATH = TRAIN_DIR / "acpc_bot_features.parquet"
 
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "workspace" / "hybrid" / "model_bundle"
 
@@ -79,6 +83,7 @@ def load_datasets(feature_cols: list[str]) -> dict[str, pd.DataFrame]:
         ("full_spectrum", FULL_SPECTRUM_PATH),
         ("gen_bot", GEN_BOT_PATH),
         ("cal_bot", CAL_BOT_PATH),
+        ("acpc_bot", ACPC_BOT_PATH),
     ]:
         if path.is_file():
             df = pd.read_parquet(path)
@@ -148,6 +153,13 @@ def build_training_data(
         n = min(len(cb), BOT_SAMPLE_CAP // 2)
         parts_bot.append(cb.sample(n=n, random_state=rng)[feature_cols])
         meta["sources"]["cal_bot"] = n
+
+    # ACPC competition bots: sophisticated AI bots
+    if "acpc_bot" in datasets:
+        acpc = datasets["acpc_bot"]
+        n = min(len(acpc), BOT_SAMPLE_CAP)
+        parts_bot.append(acpc.sample(n=n, random_state=rng)[feature_cols])
+        meta["sources"]["acpc_bot"] = n
 
     human_df = pd.concat(parts_human, ignore_index=True) if parts_human else pd.DataFrame()
     bot_df = pd.concat(parts_bot, ignore_index=True) if parts_bot else pd.DataFrame()
@@ -385,6 +397,8 @@ def main():
             ext_bot_parts.append(datasets["gen_bot"].sample(n=min(len(datasets["gen_bot"]), BOT_SAMPLE_CAP // 2), random_state=rng)[feature_cols].values)
         if "cal_bot" in datasets:
             ext_bot_parts.append(datasets["cal_bot"].sample(n=min(len(datasets["cal_bot"]), BOT_SAMPLE_CAP // 2), random_state=rng)[feature_cols].values)
+        if "acpc_bot" in datasets:
+            ext_bot_parts.append(datasets["acpc_bot"].sample(n=min(len(datasets["acpc_bot"]), BOT_SAMPLE_CAP), random_state=rng)[feature_cols].values)
 
         ext_human = np.vstack(ext_human_parts) if ext_human_parts else np.empty((0, len(feature_cols)))
         ext_bot = np.vstack(ext_bot_parts) if ext_bot_parts else np.empty((0, len(feature_cols)))
@@ -397,16 +411,71 @@ def main():
         min_auc = np.min([r["auc"] for r in cv_results if not np.isnan(r["auc"])])
         print(f"  Mean AUC: {mean_auc:.4f} | Min AUC: {min_auc:.4f}")
 
-    # Cross-domain generalization
-    print("\nCross-domain generalization:")
+    # Cross-domain generalization (training data sanity check)
+    print("\nCross-domain generalization (train data):")
     if "zenodo" in datasets:
         zen_t = apply_transform(datasets["zenodo"][feature_cols].values, feature_cols, transform_meta)
         zen_human = (rf.predict_proba(zen_t)[:, 1] < 0.5).mean()
-        print(f"  Zenodo → human: {zen_human*100:.1f}%")
+        print(f"  Zenodo train → human: {zen_human*100:.1f}%")
     if "public" in datasets:
         pub_t = apply_transform(datasets["public"][feature_cols].values, feature_cols, transform_meta)
         pub_human = (rf.predict_proba(pub_t)[:, 1] < 0.5).mean()
-        print(f"  Public → human: {pub_human*100:.1f}%")
+        print(f"  Public train → human: {pub_human*100:.1f}%")
+
+    # ── Unseen test evaluation ──
+    test_results = {}
+    test_files = {
+        "zenodo_test": ("zenodo_test_features.parquet", 0),
+        "public_test": ("public_test_features.parquet", 0),
+        "acpc_bot_test": ("acpc_bot_test_features.parquet", 1),
+    }
+    any_test = False
+    for tname, (tfile, true_label) in test_files.items():
+        tpath = TEST_DIR / tfile
+        if not tpath.is_file():
+            continue
+        any_test = True
+        tdf = pd.read_parquet(tpath)
+        missing = [c for c in feature_cols if c not in tdf.columns]
+        if missing:
+            print(f"  SKIP {tname}: missing features")
+            continue
+        tX = apply_transform(tdf[feature_cols].values, feature_cols, transform_meta)
+        tproba = rf.predict_proba(tX)[:, 1]
+        if true_label == 0:
+            correct = float((tproba < 0.5).mean())
+            fpr = 1.0 - correct
+            test_results[tname] = {"correct_pct": round(correct * 100, 2), "fpr_pct": round(fpr * 100, 3), "n": len(tdf)}
+        else:
+            recall = float((tproba >= 0.5).mean())
+            test_results[tname] = {"recall_pct": round(recall * 100, 2), "n": len(tdf), "mean_score": round(float(tproba.mean()), 4)}
+
+    if any_test:
+        print("\n" + "=" * 70)
+        print("UNSEEN TEST SET EVALUATION")
+        print("=" * 70)
+        for tname, tres in test_results.items():
+            if "fpr_pct" in tres:
+                print(f"  {tname:20s}: {tres['n']:5d} chunks | human correct={tres['correct_pct']:.1f}% | FPR={tres['fpr_pct']:.3f}%")
+            else:
+                print(f"  {tname:20s}: {tres['n']:5d} chunks | bot recall={tres['recall_pct']:.1f}% | mean_score={tres['mean_score']:.4f}")
+
+    # ── Gold May-8 detailed analysis ──
+    if "gold" in datasets:
+        gold = datasets["gold"]
+        may8 = gold[gold["date"].str.contains("05-08")]
+        if len(may8) > 0:
+            may8_X = apply_transform(may8[feature_cols].values, feature_cols, transform_meta)
+            may8_proba = rf.predict_proba(may8_X)[:, 1]
+            may8_h = may8_proba[may8["label"].values == 0]
+            may8_b = may8_proba[may8["label"].values == 1]
+            print(f"\n  May-8 Gold detail:")
+            if len(may8_h) > 0:
+                print(f"    Human scores: min={may8_h.min():.4f} max={may8_h.max():.4f} mean={may8_h.mean():.4f}")
+            if len(may8_b) > 0:
+                print(f"    Bot   scores: min={may8_b.min():.4f} max={may8_b.max():.4f} mean={may8_b.mean():.4f}")
+                print(f"    Bot recall @0.5:  {(may8_b >= 0.5).mean()*100:.1f}%")
+                print(f"    Bot recall @0.05: {(may8_b >= 0.05).mean()*100:.1f}%")
 
     # Save artifacts
     print(f"\nSaving model bundle to {output_dir}...")
@@ -435,6 +504,7 @@ def main():
         "cv_results": cv_results if "gold" in datasets else [],
         "cv_mean_auc": round(float(mean_auc), 6) if "gold" in datasets else None,
         "cv_min_auc": round(float(min_auc), 6) if "gold" in datasets else None,
+        "unseen_test_results": test_results if any_test else {},
         "model_type": "RandomForestClassifier",
         "model_params": {
             "n_estimators": 300,

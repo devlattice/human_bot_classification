@@ -28,7 +28,177 @@ from poker44.utils.model_manifest import (
 from poker44.validator.synapse import DetectionSynapse
 
 
+class ScoreMonitor:
+    """Rolling window monitor that detects bot profile rotation from unlabeled score distributions.
+
+    How it works (dummy example):
+        Monday — model scores arrive:
+          [0.02, 0.88, 0.01, 0.91, 0.03, 0.85]
+          Two clear clusters: humans near 0.02, bots near 0.88
+          → profile_signature = {"human_peak": 0.02, "bot_peak": 0.88}
+
+        Tuesday — new scores arrive:
+          [0.02, 0.04, 0.01, 0.05, 0.03, 0.06]
+          Still bimodal but gap is tiny: humans ~0.02, bots ~0.05
+          → distribution shifted! Bot peak moved from 0.88 → 0.05
+          → ALERT: "Rotation detected — bots became passive"
+
+    The monitor tracks:
+      1. Rolling score buffer (last N scores)
+      2. Periodically computes bimodal split via largest-gap heuristic
+      3. Compares current profile signature against previous
+      4. Logs alert when shift exceeds threshold
+    """
+
+    def __init__(self, window: int = 200, shift_threshold: float = 0.15):
+        self._window = window
+        self._shift_threshold = shift_threshold
+        self._scores: deque = deque(maxlen=window)
+        self._prev_signature: dict | None = None
+        self._request_count = 0
+        self._check_every = 5  # analyze every N requests
+        self._last_alert: str = ""
+
+    def add_scores(self, scores: list[float]) -> None:
+        self._scores.extend(scores)
+        self._request_count += 1
+        if self._request_count % self._check_every == 0 and len(self._scores) >= 20:
+            self._analyze()
+
+    def _find_largest_gap(self, arr: np.ndarray) -> tuple[float, int]:
+        sorted_s = np.sort(arr)
+        gaps = np.diff(sorted_s)
+        if len(gaps) == 0:
+            return 0.0, -1
+        idx = int(np.argmax(gaps))
+        return float(gaps[idx]), idx
+
+    def _analyze(self) -> None:
+        arr = np.array(list(self._scores))
+        sorted_s = np.sort(arr)
+        max_gap, gap_idx = self._find_largest_gap(arr)
+        median_gap = float(np.median(np.diff(sorted_s))) if len(sorted_s) > 1 else 0.0
+
+        is_bimodal = max_gap > 5 * max(median_gap, 1e-6) and max_gap > 0.01
+        if is_bimodal and gap_idx >= 0:
+            boundary = (sorted_s[gap_idx] + sorted_s[gap_idx + 1]) / 2
+            low_cluster = arr[arr < boundary]
+            high_cluster = arr[arr >= boundary]
+            sig = {
+                "human_peak": round(float(np.median(low_cluster)), 4),
+                "bot_peak": round(float(np.median(high_cluster)), 4),
+                "gap": round(float(max_gap), 4),
+                "n_low": len(low_cluster),
+                "n_high": len(high_cluster),
+                "bimodal": True,
+            }
+        else:
+            sig = {
+                "human_peak": round(float(np.median(arr)), 4),
+                "bot_peak": None,
+                "gap": round(float(max_gap), 4),
+                "n_low": len(arr),
+                "n_high": 0,
+                "bimodal": False,
+            }
+
+        if self._prev_signature is not None:
+            prev_bot = self._prev_signature.get("bot_peak")
+            curr_bot = sig.get("bot_peak")
+            if prev_bot is not None and curr_bot is not None:
+                shift = abs(curr_bot - prev_bot)
+                if shift > self._shift_threshold:
+                    self._last_alert = (
+                        f"ROTATION DETECTED: bot peak shifted {prev_bot:.3f} → {curr_bot:.3f} "
+                        f"(delta={shift:.3f})"
+                    )
+                    bt.logging.warning(f"[ScoreMonitor] {self._last_alert}")
+            elif prev_bot is not None and curr_bot is None:
+                self._last_alert = "ALERT: Lost bimodal structure — bots may be very passive"
+                bt.logging.warning(f"[ScoreMonitor] {self._last_alert}")
+            elif prev_bot is None and curr_bot is not None:
+                self._last_alert = f"Bimodal detected: bot_peak={curr_bot:.3f}"
+                bt.logging.info(f"[ScoreMonitor] {self._last_alert}")
+
+        bt.logging.info(
+            f"[ScoreMonitor] n={len(arr)} bimodal={sig['bimodal']} "
+            f"human_peak={sig['human_peak']} bot_peak={sig['bot_peak']} gap={sig['gap']} "
+            f"low={sig['n_low']} high={sig['n_high']}"
+        )
+        self._prev_signature = sig
+
+    @property
+    def last_alert(self) -> str:
+        return self._last_alert
+
+    @property
+    def current_signature(self) -> dict | None:
+        return self._prev_signature
+
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _compute_invariant_features(row: dict[str, float]) -> dict[str, float]:
+    """Compute domain-invariant ratio features from raw aggregate features.
+
+    Replaces absolute magnitude features (pot, bet_size, norm_bb) with
+    self-referencing ratios that capture behavioral PATTERNS without
+    depending on blind structure, table size, or era.
+    """
+    out = dict(row)
+    eps = 1e-8
+
+    pot_base = max(float(out.get("mean_pot_after_mean", 0.0)), eps)
+
+    if "mean_pot_after_std" in out:
+        out["pot_cv_inv"] = out["mean_pot_after_std"] / pot_base
+    if "mean_pot_after_p90" in out and "mean_pot_after_p10" in out:
+        out["pot_spread_inv"] = (out["mean_pot_after_p90"] - out["mean_pot_after_p10"]) / pot_base
+    if "mean_pot_after_p50" in out and "mean_pot_after_p90" in out and "mean_pot_after_p10" in out:
+        pot_range = max(out["mean_pot_after_p90"] - out["mean_pot_after_p10"], eps)
+        out["pot_median_position_inv"] = (out["mean_pot_after_p50"] - out["mean_pot_after_p10"]) / pot_range
+    if "pot_growth_mean" in out:
+        out["pot_growth_relative_inv"] = out["pot_growth_mean"] / pot_base
+    if "pot_growth_std" in out:
+        out["pot_growth_cv_inv"] = out["pot_growth_std"] / pot_base
+    if "std_pot_after_std" in out:
+        out["std_pot_cv_inv"] = out["std_pot_after_std"] / pot_base
+
+    bet_base = max(float(out.get("bet_size_mean_mean", 0.0)), eps)
+    if "bet_size_mean_std" in out:
+        out["bet_size_cv_inv"] = out["bet_size_mean_std"] / bet_base
+    if "bet_size_mean_p90" in out:
+        out["bet_size_p90_ratio_inv"] = out["bet_size_mean_p90"] / bet_base
+    if "bet_size_mean_p50" in out:
+        out["bet_size_p50_ratio_inv"] = out["bet_size_mean_p50"] / bet_base
+    if "bet_size_mean_max" in out:
+        out["bet_size_max_ratio_inv"] = out["bet_size_mean_max"] / bet_base
+    if "bet_size_max_std" in out:
+        out["bet_size_max_cv_inv"] = out["bet_size_max_std"] / bet_base
+    if "bet_size_std_max" in out:
+        out["bet_size_std_max_ratio_inv"] = out["bet_size_std_max"] / bet_base
+
+    if "mean_norm_bb_p90" in out and "std_norm_bb_std" in out:
+        bb_base = max(float(out["mean_norm_bb_p90"]), eps)
+        out["norm_bb_cv_inv"] = out["std_norm_bb_std"] / bb_base
+    if "max_norm_bb_std" in out and "mean_norm_bb_p90" in out:
+        bb_base = max(float(out["mean_norm_bb_p90"]), eps)
+        out["max_norm_bb_cv_inv"] = out["max_norm_bb_std"] / bb_base
+
+    if "bet_size_mean_mean" in out and "mean_pot_after_mean" in out:
+        out["bet_to_pot_ratio_inv"] = float(out["bet_size_mean_mean"]) / pot_base
+    if "pot_growth_mean" in out and "pot_growth_std" in out:
+        pg_mean = max(float(out["pot_growth_mean"]), eps)
+        out["pot_growth_consistency_inv"] = out["pot_growth_std"] / pg_mean
+
+    for k in list(out.keys()):
+        if k.endswith("_inv"):
+            v = out[k]
+            if not np.isfinite(v):
+                out[k] = 0.0
+
+    return out
 
 
 def _git_head_sha() -> str:
@@ -192,6 +362,7 @@ class Miner(BaseMinerNeuron):
         self._model: Optional[Any] = None
         self._model_features: Optional[list[str]] = None
         self._inference_threshold: float = 0.5
+        self._score_monitor = ScoreMonitor(window=200, shift_threshold=0.15)
         self._transform_meta: Optional[dict[str, Any]] = None
         self._wgz_meta: Optional[dict[str, Any]] = None
         # Optional ``ssl_masked_ae.npz`` — when set, ``emb_*`` columns are filled before LGBM predict.
@@ -349,6 +520,7 @@ class Miner(BaseMinerNeuron):
             scores_raw=raw_scores,
             validator_hotkey=vhk,
         )
+        self._score_monitor.add_scores(smoothed_scores)
         bt.logging.info(f"Miner predictions: {synapse.predictions}")
         bt.logging.info(
             f"Scored {len(chunks)} chunks in {latency_ms:.2f}ms "
@@ -954,6 +1126,7 @@ class Miner(BaseMinerNeuron):
         if self._model is not None and not self._model_infer_failed:
             try:
                 raw_row = aggregate_chunk_from_hands(chunk, skip_sanitize=True)
+                raw_row = _compute_invariant_features(raw_row)
                 row = self._apply_runtime_wgz(raw_row)
                 row = self._apply_runtime_transform_meta(row)
                 row = self._append_dbf_features_after_transform(row)

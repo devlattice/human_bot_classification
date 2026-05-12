@@ -1,0 +1,24 @@
+{
+  "n_features": 45,
+  "train_auc": 0.9999999504323783,
+  "gold_train_dates": [
+    "2026-04-30",
+    "2026-05-01",
+    "2026-05-02",
+    "2026-05-03",
+    "2026-05-04",
+    "2026-05-05",
+    "2026-05-06"
+  ],
+  "gold_test_dates": [
+    "2026-05-07",
+    "2026-05-08"
+  ],
+  "gold_train_count": 3360,
+  "gold_test_count": 880,
+  "gold_test_reward": 0.8870040132702988,
+  "gold_test_fpr": 0.0,
+  "gold_test_recall": 0.6818181818181818,
+  "gold_test_ap": 0.9974886917445156,
+  "scaled_clip_abs": 5.0
+}

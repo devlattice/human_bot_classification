@@ -20,7 +20,7 @@ from poker44.validator.chunk_features import aggregate_chunk_from_hands
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 INPUT_PATH = REPO_ROOT / "workspace" / "dataset" / "source" / "data" / "zenodo_v3" / "poker_hands_zenodo_train.json"
-OUTPUT_PATH = REPO_ROOT / "workspace" / "hybrid" / "zenodo_features.parquet"
+OUTPUT_PATH = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "train" / "zenodo_features.parquet"
 CHUNK_SIZE = 60
 MIN_CHUNK_SIZE = 20
 
