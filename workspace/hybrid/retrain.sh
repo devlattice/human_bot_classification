@@ -6,14 +6,26 @@
 # This script automates the full retrain cycle:
 #   1. Download latest gold data from benchmark API
 #   2. Extract features from gold data
-#   3. (Optional) Generate full-spectrum bot profiles if not present
-#   4. Train production model with mixed data
-#   5. Deploy model to miner
+#   3. (Optional) Extract static / test features if missing
+#   4. (Optional) Generate full-spectrum bot profiles if missing
+#   4b. Optuna RF search (unless --skip-optuna)
+#   5. Train production model
+#   5b. PASS/FAIL gates from retrain_summary (unless --skip-gates)
+#   6. KS analysis
 #
 # Usage:
 #   ./workspace/hybrid/retrain.sh              # full pipeline
 #   ./workspace/hybrid/retrain.sh --skip-bots  # skip bot generation
 #   ./workspace/hybrid/retrain.sh --skip-download  # skip gold download
+#   ./workspace/hybrid/retrain.sh --skip-optuna  # skip RF hyperparameter search
+#   ./workspace/hybrid/retrain.sh --skip-gates   # skip PASS/FAIL gate check
+#
+# Optuna trial count (default 40):  OPTUNA_N_TRIALS=80 ./workspace/hybrid/retrain.sh
+#
+# Gate thresholds (percent points @0.5), after training:
+#   RETRAIN_GATE_MIN_MAY8_RECALL_PCT=80 RETRAIN_GATE_MAX_ZENODO_FPR_PCT=2.0 ...
+# Fail the whole script on gate failure (e.g. CI):
+#   RETRAIN_GATES_STRICT=1 ./workspace/hybrid/retrain.sh
 #
 # Cron example (daily at 2 AM UTC):
 #   0 2 * * * cd /home/dr/Workspace/Poker44-subnet && ./workspace/hybrid/retrain.sh >> workspace/hybrid/retrain.log 2>&1
@@ -38,14 +50,27 @@ ENV_FILE=".env"
 SKIP_BOTS=false
 SKIP_DOWNLOAD=false
 SKIP_EXTRACT_STATIC=false
+SKIP_OPTUNA=false
+SKIP_GATES=false
 
 for arg in "$@"; do
     case "$arg" in
         --skip-bots) SKIP_BOTS=true ;;
         --skip-download) SKIP_DOWNLOAD=true ;;
         --skip-extract-static) SKIP_EXTRACT_STATIC=true ;;
+        --skip-optuna) SKIP_OPTUNA=true ;;
+        --skip-gates) SKIP_GATES=true ;;
     esac
 done
+
+OPTUNA_N_TRIALS="${OPTUNA_N_TRIALS:-40}"
+RETRAIN_GATE_MIN_MAY8_RECALL_PCT="${RETRAIN_GATE_MIN_MAY8_RECALL_PCT:-80}"
+RETRAIN_GATE_MAX_ZENODO_FPR_PCT="${RETRAIN_GATE_MAX_ZENODO_FPR_PCT:-2.0}"
+RETRAIN_GATE_MAX_PUBLIC_FPR_PCT="${RETRAIN_GATE_MAX_PUBLIC_FPR_PCT:-3.0}"
+RETRAIN_GATE_MIN_ACPC_RECALL_PCT="${RETRAIN_GATE_MIN_ACPC_RECALL_PCT:-90}"
+RETRAIN_GATES_STRICT="${RETRAIN_GATES_STRICT:-0}"
+BEST_RF_JSON="$MODEL_BUNDLE/best_rf_params.json"
+EXTRA_RF_ARGS=()
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
@@ -116,10 +141,54 @@ else
     log "Step 4: Full-spectrum bots already exist, skipping"
 fi
 
+# ─── Step 4b: Optuna RF search (writes best_rf_params.json for training) ───
+mkdir -p "$MODEL_BUNDLE"
+if [ "$SKIP_OPTUNA" = false ]; then
+    log "Step 4b: Optuna RandomForest search ($OPTUNA_N_TRIALS trials)..."
+    if python3 workspace/hybrid/scripts/optuna_tune_rf.py \
+        --out-json "$BEST_RF_JSON" \
+        --n-trials "$OPTUNA_N_TRIALS"; then
+        log "  Optuna finished; best params → $BEST_RF_JSON"
+    else
+        log "WARNING: Optuna step failed (missing optuna, data, or error). Training uses CLI defaults unless $BEST_RF_JSON already exists."
+    fi
+else
+    log "Step 4b: SKIPPED (--skip-optuna)"
+fi
+if [ -f "$BEST_RF_JSON" ]; then
+    EXTRA_RF_ARGS+=(--rf-params-json "$BEST_RF_JSON")
+    log "  Training will apply RF patch from $BEST_RF_JSON"
+fi
+
 # ─── Step 5: Train production model ───
 log "Step 5: Training production model..."
+# CLI defaults apply for keys not in best_rf_params.json; override e.g.:
+#   EXTRA_RF_ARGS=(--rf-n-estimators 400)  or edit JSON after Optuna
 python3 workspace/hybrid/scripts/train_production_model.py \
+    "${EXTRA_RF_ARGS[@]}" \
     --output-dir "$MODEL_BUNDLE"
+
+# ─── Step 5b: PASS/FAIL gates (reads retrain_summary.json) ───
+if [ "$SKIP_GATES" = false ]; then
+    log "Step 5b: Checking retrain gates..."
+    _gate_cmd=(python3 workspace/hybrid/scripts/check_retrain_gates.py
+        --summary "$MODEL_BUNDLE/retrain_summary.json"
+        --min-may8-recall-pct "$RETRAIN_GATE_MIN_MAY8_RECALL_PCT"
+        --max-zenodo-fpr-pct "$RETRAIN_GATE_MAX_ZENODO_FPR_PCT"
+        --max-public-fpr-pct "$RETRAIN_GATE_MAX_PUBLIC_FPR_PCT"
+        --min-acpc-recall-pct "$RETRAIN_GATE_MIN_ACPC_RECALL_PCT")
+    if "${_gate_cmd[@]}"; then
+        log "  Retrain gates: PASS"
+    else
+        log "  Retrain gates: FAIL (see block above)"
+        if [ "$RETRAIN_GATES_STRICT" = "1" ]; then
+            log "ERROR: RETRAIN_GATES_STRICT=1 — aborting pipeline."
+            exit 1
+        fi
+    fi
+else
+    log "Step 5b: SKIPPED (--skip-gates)"
+fi
 
 # ─── Step 6: KS analysis on selected features ───
 log "Step 6: Running KS analysis..."

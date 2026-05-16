@@ -13,6 +13,10 @@ Outputs a deployment bundle:
 
 Usage:
     python workspace/hybrid/scripts/train_production_model.py [--output-dir workspace/hybrid/model_bundle]
+
+RandomForest tuning (optional; defaults match previous hard-coded values):
+    --rf-n-estimators, --rf-max-depth, --rf-min-samples-leaf, --rf-min-samples-split,
+    --rf-max-features, --rf-max-samples, --rf-class-weight, --rf-ccp-alpha
 """
 
 import json
@@ -70,6 +74,147 @@ ROBUST_FEATURES = [
 HUMAN_SAMPLE_CAP = 5000
 BOT_SAMPLE_CAP = 8000
 PUBLIC_OVERSAMPLE = 7
+
+
+def add_rf_arguments(ap: argparse.ArgumentParser) -> None:
+    """Add RandomForest hyperparameter CLI flags to an ArgumentParser."""
+    g = ap.add_argument_group("RandomForest hyperparameters")
+    g.add_argument("--rf-n-estimators", type=int, default=300)
+    g.add_argument(
+        "--rf-max-depth",
+        type=str,
+        default="6",
+        help="Max tree depth (integer), or 'none' for unlimited.",
+    )
+    g.add_argument("--rf-min-samples-leaf", type=int, default=15)
+    g.add_argument("--rf-min-samples-split", type=int, default=2)
+    g.add_argument(
+        "--rf-max-features",
+        type=str,
+        default="sqrt",
+        help="sqrt | log2 | none (use all features) | float in (0,1] e.g. 0.35",
+    )
+    g.add_argument(
+        "--rf-max-samples",
+        type=float,
+        default=1.0,
+        help="Bootstrap row fraction per tree; 1.0 = full sample (sklearn default).",
+    )
+    g.add_argument(
+        "--rf-class-weight",
+        type=str,
+        default="balanced",
+        choices=("balanced", "balanced_subsample", "none"),
+    )
+    g.add_argument(
+        "--rf-ccp-alpha",
+        type=float,
+        default=0.0,
+        help="Minimal cost-complexity pruning (0 = disabled).",
+    )
+
+
+def rf_kwargs_from_namespace(ns: argparse.Namespace, seed: int) -> dict:
+    """Build kwargs for sklearn RandomForestClassifier from argparse namespace."""
+    md = str(ns.rf_max_depth).strip().lower()
+    if md in ("none", "full", "null", ""):
+        max_depth = None
+    else:
+        max_depth = int(ns.rf_max_depth)
+
+    mfs = str(ns.rf_max_features).strip().lower()
+    if mfs in ("sqrt", "log2"):
+        max_features: str | float | None = mfs
+    elif mfs in ("none", "null", "all"):
+        max_features = None
+    else:
+        max_features = float(ns.rf_max_features)
+        if not (0.0 < max_features <= 1.0):
+            raise ValueError(
+                "--rf-max-features must be sqrt, log2, none, or a float in (0, 1]"
+            )
+
+    cw = None if ns.rf_class_weight == "none" else ns.rf_class_weight
+
+    kw: dict = {
+        "n_estimators": int(ns.rf_n_estimators),
+        "max_depth": max_depth,
+        "min_samples_leaf": int(ns.rf_min_samples_leaf),
+        "min_samples_split": int(ns.rf_min_samples_split),
+        "max_features": max_features,
+        "random_state": int(seed),
+        "n_jobs": -1,
+        "class_weight": cw,
+        "ccp_alpha": float(ns.rf_ccp_alpha),
+    }
+    ms = float(ns.rf_max_samples)
+    if 0.0 < ms < 1.0:
+        kw["max_samples"] = ms
+    return kw
+
+
+def rf_params_for_summary(rf_kwargs: dict) -> dict:
+    """JSON-serializable copy of RF kwargs (for retrain_summary.json)."""
+    out = {}
+    for k, v in rf_kwargs.items():
+        if k == "n_jobs":
+            continue
+        out[k] = v
+    return out
+
+
+# Keys allowed in ``best_rf_params.json`` from ``optuna_tune_rf.py``.
+_RF_PATCH_KEYS = frozenset({
+    "n_estimators", "max_depth", "min_samples_leaf", "min_samples_split",
+    "max_features", "max_samples", "class_weight", "ccp_alpha",
+})
+
+
+def load_rf_params_json(path: Path) -> dict:
+    """Load patch dict; supports ``{\"rf_params\": {...}}`` or flat dict."""
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return raw["rf_params"] if isinstance(raw.get("rf_params"), dict) else raw
+
+
+def apply_rf_params_patch(base_kwargs: dict, patch: dict) -> dict:
+    """Merge Optuna / JSON patch into full sklearn kwargs (random_state / n_jobs preserved)."""
+    out = dict(base_kwargs)
+    for k, v in patch.items():
+        if k not in _RF_PATCH_KEYS:
+            continue
+        if k == "max_depth":
+            if v is None or (isinstance(v, str) and str(v).strip().lower() in ("none", "null", "")):
+                out[k] = None
+            else:
+                out[k] = int(v)
+        elif k == "max_features":
+            if isinstance(v, str):
+                vl = v.strip().lower()
+                if vl in ("sqrt", "log2"):
+                    out[k] = vl
+                elif vl in ("none", "null", "all"):
+                    out[k] = None
+                else:
+                    out[k] = float(v)
+            elif v is None:
+                out[k] = None
+            else:
+                out[k] = float(v)
+        elif k == "class_weight":
+            if v is None or (isinstance(v, str) and str(v).strip().lower() in ("none", "null")):
+                out[k] = None
+            else:
+                out[k] = str(v)
+        elif k == "max_samples":
+            if v is None or float(v) >= 0.999:
+                out.pop("max_samples", None)
+            else:
+                out[k] = float(v)
+        elif k == "ccp_alpha":
+            out[k] = float(v)
+        elif k in ("n_estimators", "min_samples_leaf", "min_samples_split"):
+            out[k] = int(v)
+    return out
 
 
 def load_datasets(feature_cols: list[str]) -> dict[str, pd.DataFrame]:
@@ -269,6 +414,7 @@ def evaluate_gold_loocv(
     external_bot: np.ndarray,
     feature_cols: list[str],
     transform_meta: dict,
+    rf_kwargs: dict,
 ) -> list[dict]:
     """Leave-one-day-out evaluation on gold data."""
     dates = sorted(gold["date"].unique())
@@ -292,10 +438,7 @@ def evaluate_gold_loocv(
         X_t = apply_transform(train_X, feature_cols, transform_meta)
         test_X_t = apply_transform(test[feature_cols].values, feature_cols, transform_meta)
 
-        rf = RandomForestClassifier(
-            n_estimators=300, max_depth=6, min_samples_leaf=15,
-            random_state=42, n_jobs=-1, class_weight="balanced",
-        )
+        rf = RandomForestClassifier(**rf_kwargs)
         rf.fit(X_t, train_y)
         proba = rf.predict_proba(test_X_t)[:, 1]
 
@@ -330,6 +473,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument(
+        "--rf-params-json",
+        type=Path,
+        default=None,
+        help="JSON from optuna_tune_rf.py (rf_params); overrides RF CLI flags for same keys.",
+    )
+    add_rf_arguments(ap)
     args = ap.parse_args()
 
     output_dir = args.output_dir
@@ -362,12 +512,15 @@ def main():
     print(f"  Log1p: {transform_meta['log1p_selected_count']} features")
     print(f"  Robust scaled: {transform_meta['robust_scale_features_count']} features")
 
+    rf_kwargs = rf_kwargs_from_namespace(args, args.seed)
+    if args.rf_params_json is not None and args.rf_params_json.is_file():
+        patch = load_rf_params_json(args.rf_params_json)
+        rf_kwargs = apply_rf_params_patch(rf_kwargs, patch)
+        print(f"\n  RF patch from {args.rf_params_json}")
     print("\nTraining RandomForest...")
+    print(f"  RF params: {rf_params_for_summary(rf_kwargs)}")
     t0 = time.time()
-    rf = RandomForestClassifier(
-        n_estimators=300, max_depth=6, min_samples_leaf=15,
-        random_state=args.seed, n_jobs=-1, class_weight="balanced",
-    )
+    rf = RandomForestClassifier(**rf_kwargs)
     rf.fit(X_transformed, y)
     train_time = time.time() - t0
     print(f"  Training time: {train_time:.1f}s")
@@ -380,6 +533,8 @@ def main():
     print(f"  Train Acc: {train_acc:.6f}")
     print(f"  Optimal threshold: {optimal_threshold}")
 
+    cv_results: list = []
+    mean_auc = min_auc = None
     # Leave-one-day-out on gold
     if "gold" in datasets:
         print("\nLeave-one-day-out validation on gold...")
@@ -403,7 +558,9 @@ def main():
         ext_human = np.vstack(ext_human_parts) if ext_human_parts else np.empty((0, len(feature_cols)))
         ext_bot = np.vstack(ext_bot_parts) if ext_bot_parts else np.empty((0, len(feature_cols)))
 
-        cv_results = evaluate_gold_loocv(datasets["gold"], ext_human, ext_bot, feature_cols, transform_meta)
+        cv_results = evaluate_gold_loocv(
+            datasets["gold"], ext_human, ext_bot, feature_cols, transform_meta, rf_kwargs
+        )
         for r in cv_results:
             marker = " <-- diff bot" if "05-08" in r["date"] else ""
             print(f"  {r['date']}: AUC={r['auc']:.4f}  Acc={r['accuracy']:.4f}  BotDetect={r['bot_detect_rate']:.3f}{marker}")
@@ -506,12 +663,7 @@ def main():
         "cv_min_auc": round(float(min_auc), 6) if "gold" in datasets else None,
         "unseen_test_results": test_results if any_test else {},
         "model_type": "RandomForestClassifier",
-        "model_params": {
-            "n_estimators": 300,
-            "max_depth": 6,
-            "min_samples_leaf": 15,
-            "class_weight": "balanced",
-        },
+        "model_params": rf_params_for_summary(rf_kwargs),
     }
     (output_dir / "retrain_summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"

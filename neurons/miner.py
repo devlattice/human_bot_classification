@@ -376,6 +376,9 @@ class Miner(BaseMinerNeuron):
         self._score_monitor = ScoreMonitor(window=200, shift_threshold=0.15)
         self._feature_salt = os.getenv("POKER44_FEATURE_SALT", "").strip()
         self._feature_hash_map: Optional[dict[str, str]] = None
+        self._score_remap_path = os.getenv("POKER44_SCORE_REMAP_PATH", "").strip()
+        self._score_remap_anchors: Optional[list[tuple[float, float]]] = None
+        self._maybe_load_score_remap()
         self._transform_meta: Optional[dict[str, Any]] = None
         self._wgz_meta: Optional[dict[str, Any]] = None
         # Optional ``ssl_masked_ae.npz`` — when set, ``emb_*`` columns are filled before LGBM predict.
@@ -514,28 +517,37 @@ class Miner(BaseMinerNeuron):
         t0 = time.perf_counter()
         raw_scores = [float(self._score_chunk_runtime(chunk)) for chunk in chunks]
         smoothed_scores = self._smooth_scores_if_enabled(raw_scores)
+        # Monotonic remap (no-op unless POKER44_SCORE_REMAP_PATH points to an
+        # active config). Applied after smoothing so logged raw_scores and the
+        # ScoreMonitor still see the model's native distribution.
+        final_scores = self._remap_scores_if_enabled(smoothed_scores)
         latency_ms = (time.perf_counter() - t0) * 1000.0
         vhk = self._validator_hotkey_from_synapse(synapse)
         self._record_latency(latency_ms)
-        synapse.risk_scores = smoothed_scores
-        synapse.predictions = [s >= self._inference_threshold for s in smoothed_scores]
+        synapse.risk_scores = final_scores
+        synapse.predictions = [s >= self._inference_threshold for s in final_scores]
         synapse.model_manifest = dict(self.model_manifest)
         self._maybe_log_request(
             synapse=synapse,
             chunks=chunks,
-            scores=smoothed_scores,
+            scores=final_scores,
             scores_raw=raw_scores,
             predictions=synapse.predictions,
             latency_ms=latency_ms,
         )
         self._maybe_log_score_diagnostics(
             chunks=chunks,
-            scores=smoothed_scores,
+            scores=final_scores,
             scores_raw=raw_scores,
             validator_hotkey=vhk,
         )
+        # ScoreMonitor watches the model's native (pre-remap) distribution so
+        # bimodality detection is not affected by the remap.
         self._score_monitor.add_scores(smoothed_scores)
-        bt.logging.info(f"Miner predictions: {synapse.predictions}")
+        bt.logging.info(
+            "Miner predictions (True=bot, False=human vs "
+            f"threshold={self._inference_threshold:g}): {synapse.predictions}"
+        )
         bt.logging.info(
             f"Scored {len(chunks)} chunks in {latency_ms:.2f}ms "
             f"({int(sum(len(c) for c in chunks))} hands)."
@@ -1201,11 +1213,11 @@ class Miner(BaseMinerNeuron):
                     aligned = {k: float(row_for_model.get(k, 0.0)) for k in self._model_features}
                     X = pd.DataFrame([aligned], columns=self._model_features)
                 # Hard guarantee for GBDT: only finite floats reach the estimator.
-                X = X.astype(np.float64)
+                X = X.astype(np.float64).values
                 proba = self._model.predict_proba(X)
                 if self._debug_first_model_infer and not self._first_model_infer_debug_done:
                     self._first_model_infer_debug_done = True
-                    xflat = X.to_numpy(dtype=np.float64).ravel()
+                    xflat = np.asarray(X, dtype=np.float64).ravel()
                     n_nan = int(np.isnan(xflat).sum())
                     n_inf = int(np.isinf(xflat).sum())
                     feat_names = self._model_features or []
@@ -1449,6 +1461,80 @@ class Miner(BaseMinerNeuron):
         if not (0.0 <= a < b <= 1.0) or gamma <= 0.0:
             return scores
         return [self._clamp01(self._smooth_uncertain_score(float(s), a, b, gamma)) for s in scores]
+
+    def _maybe_load_score_remap(self) -> None:
+        """Load a piecewise-linear monotonic remap config (anchors)."""
+        self._score_remap_anchors = None
+        if not self._score_remap_path:
+            return
+        path = Path(self._score_remap_path).expanduser().resolve()
+        if not path.is_file():
+            bt.logging.warning(f"POKER44_SCORE_REMAP_PATH set but file missing: {path}")
+            return
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as e:
+            bt.logging.warning(f"Failed to parse score remap config {path}: {e}")
+            return
+        if not bool(payload.get("active", False)):
+            bt.logging.info(
+                f"Score remap config {path} loaded but inactive (reason="
+                f"{payload.get('reason', '')!r}); scores will not be remapped."
+            )
+            return
+        anchors_raw = payload.get("anchors")
+        if not isinstance(anchors_raw, list) or len(anchors_raw) < 2:
+            bt.logging.warning(f"Score remap config {path} has invalid anchors; ignoring.")
+            return
+        anchors: list[tuple[float, float]] = []
+        last_x = -1.0
+        last_y = -1.0
+        for pair in anchors_raw:
+            try:
+                x = float(pair[0])
+                y = float(pair[1])
+            except (TypeError, ValueError, IndexError):
+                bt.logging.warning(f"Score remap config {path} has malformed anchor {pair!r}.")
+                return
+            if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0):
+                bt.logging.warning(f"Score remap anchor out of [0,1]: {pair!r}")
+                return
+            if x < last_x or y < last_y:
+                bt.logging.warning(
+                    f"Score remap anchors not monotonic at {pair!r} "
+                    f"(last_x={last_x}, last_y={last_y}); ignoring."
+                )
+                return
+            anchors.append((x, y))
+            last_x, last_y = x, y
+        self._score_remap_anchors = anchors
+        bt.logging.info(
+            f"Score remap loaded ({len(anchors)} anchors) from {path}: {anchors}"
+        )
+
+    def _apply_score_remap(self, s: float) -> float:
+        anchors = self._score_remap_anchors
+        if not anchors:
+            return s
+        s = 0.0 if s < 0.0 else (1.0 if s > 1.0 else s)
+        if s <= anchors[0][0]:
+            return anchors[0][1]
+        if s >= anchors[-1][0]:
+            return anchors[-1][1]
+        for i in range(len(anchors) - 1):
+            x0, y0 = anchors[i]
+            x1, y1 = anchors[i + 1]
+            if x0 <= s <= x1:
+                if x1 <= x0:
+                    return y1
+                t = (s - x0) / (x1 - x0)
+                return y0 + t * (y1 - y0)
+        return s
+
+    def _remap_scores_if_enabled(self, scores: list[float]) -> list[float]:
+        if not self._score_remap_anchors:
+            return scores
+        return [self._clamp01(self._apply_score_remap(float(s))) for s in scores]
 
     @staticmethod
     def _stable_chunk_hash(chunk: list[dict]) -> str:
