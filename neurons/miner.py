@@ -640,8 +640,8 @@ class Miner(BaseMinerNeuron):
     def _init_threshold_policy(self) -> None:
         static_sel: float | None = None
         prod_path = Path(
-            os.getenv("POKER44_PRODUCTION_THRESHOLD_JSON", "")
-        ).strip()
+            os.getenv("POKER44_PRODUCTION_THRESHOLD_JSON", "").strip()
+        )
         if prod_path.is_file():
             try:
                 static_sel = float(json.loads(prod_path.read_text(encoding="utf-8")).get("selected_threshold"))
