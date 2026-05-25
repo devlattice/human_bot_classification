@@ -193,7 +193,7 @@ hands_generator/human_hands/raw_files_hands/
 # workspace/ssl_data
 # workspace/preprocess
 # workspace/docs
-workspace/dataset/source
+# workspace/dataset/source
 workspace/dataset/raw_dataset/
 workspace/real_distribution
 # workspace/utils
