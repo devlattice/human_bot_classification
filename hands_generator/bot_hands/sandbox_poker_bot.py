@@ -129,6 +129,13 @@ class BotProfile:
     postflop_continue_bias: float = 0.0   # lower -> fold/check more often after flop
     trap_frequency: float = 0.0           # lower -> fewer slowplays/call-downs with strong hands
 
+    # Phase-2/3: May-8 passive bot policy (see _decide_passive_may8)
+    passive_may8_mode: bool = False
+    passive_check_bias: float = 0.90      # P(check | can_check, no bet facing)
+    passive_bet_scale: float = 0.50       # multiply bet/raise sizes
+    passive_raise_rate: float = 0.0       # Phase-3: micro-raise frequency when can_raise
+    passive_pot_build_mult: float = 1.0   # Phase-3: extra sizing for pot growth
+
 
 @dataclass
 class BotDecision:
@@ -236,8 +243,10 @@ class SandboxPokerBot:
 
         strength_bucket = self._bucket_strength(hs, pos_factor)
 
-        # Decide action via street-specific logic
-        if state.street == Street.PREFLOP:
+        # Phase-2: May-8 passive policy overrides default rule chains
+        if self.profile.passive_may8_mode:
+            decision = self._decide_passive_may8(state, legal, strength_bucket, pos_factor, pot_odds)
+        elif state.street == Street.PREFLOP:
             decision = self._decide_preflop(state, legal, strength_bucket, pos_factor, pot_odds)
         else:
             decision = self._decide_postflop(state, legal, strength_bucket, pos_factor, pot_odds)
@@ -265,6 +274,131 @@ class SandboxPokerBot:
     def export_session_stats(self) -> Dict[str, Any]:
         return dict(self.session_stats)
 
+
+    # --------- Phase-2/3: May-8 passive policy ---------
+
+    def _passive_scale(self) -> float:
+        if not self.profile.passive_may8_mode:
+            return 1.0
+        return max(0.25, min(1.0, float(self.profile.passive_bet_scale)))
+
+    def _passive_sizing_mult(self) -> float:
+        mult = self._passive_scale()
+        if self.profile.passive_may8_mode and self.profile.passive_pot_build_mult > 1.0:
+            mult *= float(self.profile.passive_pot_build_mult)
+        return max(0.30, min(2.0, mult))
+
+    def _size_micro_raise(
+        self, state: GameState, legal: LegalActions, *, pot_frac: float = 0.38
+    ) -> int:
+        if not legal.can_raise:
+            return 0
+        pot = max(1, state.pot)
+        bb = max(1, state.big_blind)
+        min_amt = max(legal.min_raise, state.to_call + bb)
+        extra = int(pot * pot_frac)
+        amt = int((state.to_call + extra) * self._passive_sizing_mult())
+        amt = max(min_amt, amt)
+        return self._clamp(amt, legal.min_raise, legal.max_raise)
+
+    def _passive_try_micro_raise(
+        self,
+        state: GameState,
+        legal: LegalActions,
+        hs: float,
+        base_prob: float,
+        *,
+        reason: str = "passive_may8_micro_raise",
+    ) -> Optional[BotDecision]:
+        if not legal.can_raise or self.profile.passive_raise_rate <= 0:
+            return None
+        p = base_prob * (0.55 + 1.8 * float(self.profile.passive_raise_rate))
+        p *= 0.65 + 0.70 * min(1.0, hs)
+        if self.rng.random() >= min(0.92, p):
+            return None
+        amt = self._size_micro_raise(state, legal)
+        if amt <= 0:
+            return None
+        return BotDecision(ActionType.RAISE, amt, {"reason": reason})
+
+    def _decide_passive_may8(
+        self,
+        state: GameState,
+        legal: LegalActions,
+        strength_bucket: str,
+        pos_factor: float,
+        pot_odds: float,
+    ) -> BotDecision:
+        """Check/call-heavy policy aligned with May-8 hard gold bots (miner-visible passivity)."""
+        hs = state.hand_strength if state.hand_strength is not None else 0.45
+        bb = max(1, state.big_blind)
+        threat_bb = state.to_call / bb if state.to_call > 0 else 0.0
+        can_check_free = state.to_call == 0 and legal.can_check
+        check_p = float(self.profile.passive_check_bias)
+        # Blend toward gold May-8: not every free spot is a check (keeps aggression_factor up).
+        check_p = max(0.55, min(0.88, check_p - 0.12 * self.profile.aggression))
+
+        if state.street == Street.PREFLOP:
+            if can_check_free:
+                if legal.can_bet and hs > 0.72 and self.rng.random() < 0.18 * max(0.15, self.profile.aggression):
+                    amt = self._size_open_raise(state, legal, strong=hs > 0.82)
+                    return BotDecision(ActionType.BET, amt, {"reason": "passive_may8_open_rare"})
+                if self.rng.random() < check_p:
+                    return BotDecision(ActionType.CHECK, 0, {"reason": "passive_may8_preflop_check"})
+            if state.to_call > 0:
+                micro = self._passive_try_micro_raise(
+                    state, legal, hs, 0.22, reason="passive_may8_preflop_iso_raise",
+                )
+                if micro is not None:
+                    return micro
+                if threat_bb <= 2.5 and hs > 0.58 and legal.can_call:
+                    if self.rng.random() < 0.52:
+                        return BotDecision(ActionType.CALL, state.to_call, {"reason": "passive_may8_limp_call"})
+                if legal.can_fold and (threat_bb > 3.5 or hs < 0.50):
+                    return BotDecision(ActionType.FOLD, 0, {"reason": "passive_may8_preflop_fold"})
+                if legal.can_call and threat_bb <= 5 and hs > 0.48 and self.rng.random() < 0.38:
+                    return BotDecision(ActionType.CALL, state.to_call, {"reason": "passive_may8_preflop_cheap_call"})
+            if legal.can_check:
+                return BotDecision(ActionType.CHECK, 0, {"reason": "passive_may8_preflop_default_check"})
+            if legal.can_call:
+                return BotDecision(ActionType.CALL, state.to_call, {"reason": "passive_may8_preflop_default_call"})
+            return BotDecision(ActionType.FOLD, 0, {"reason": "passive_may8_preflop_fold"})
+
+        # Postflop: checks, pot-building bets, micro-raises
+        if can_check_free:
+            bet_p = 0.12 + 0.16 * self.profile.aggression
+            use_medium = self.profile.passive_pot_build_mult > 1.0 and self.rng.random() < 0.45
+            if strength_bucket == "strong" and legal.can_bet and self.rng.random() < bet_p * 1.4:
+                amt = self._size_bet(state, legal, small=not use_medium)
+                return BotDecision(ActionType.BET, amt, {"reason": "passive_may8_small_value"})
+            if legal.can_bet and self.rng.random() < bet_p:
+                amt = self._size_bet(state, legal, small=not use_medium, large=use_medium)
+                return BotDecision(ActionType.BET, amt, {"reason": "passive_may8_probe_bet"})
+            if self.rng.random() < check_p:
+                return BotDecision(ActionType.CHECK, 0, {"reason": "passive_may8_postflop_check"})
+
+        if state.to_call > 0:
+            micro = self._passive_try_micro_raise(
+                state, legal, hs, 0.28, reason="passive_may8_postflop_raise",
+            )
+            if micro is not None:
+                return micro
+            if threat_bb <= 2.0 and pot_odds < 0.28 and hs > 0.48 and legal.can_call:
+                if self.rng.random() < 0.58:
+                    return BotDecision(ActionType.CALL, state.to_call, {"reason": "passive_may8_micro_call"})
+            if strength_bucket == "strong" and threat_bb <= 6 and legal.can_call:
+                if self.rng.random() < 0.62:
+                    return BotDecision(ActionType.CALL, state.to_call, {"reason": "passive_may8_strong_call"})
+            if legal.can_fold and threat_bb > 4.0 and hs < 0.42:
+                return BotDecision(ActionType.FOLD, 0, {"reason": "passive_may8_fold_to_bet"})
+            if legal.can_call and threat_bb <= 4 and self.rng.random() < 0.35:
+                return BotDecision(ActionType.CALL, state.to_call, {"reason": "passive_may8_reluctant_call"})
+
+        if legal.can_check:
+            return BotDecision(ActionType.CHECK, 0, {"reason": "passive_may8_fallback_check"})
+        if legal.can_call:
+            return BotDecision(ActionType.CALL, state.to_call, {"reason": "passive_may8_fallback_call"})
+        return BotDecision(ActionType.FOLD, 0, {"reason": "passive_may8_fallback_fold"})
 
     # --------- Core Logic (IF-based) ---------
 
@@ -575,6 +709,7 @@ class SandboxPokerBot:
         base = int((2.5 if not strong else 3.0) * bb)
         # Add small randomness so bots aren't identical
         base += self.rng.randint(0, int(0.6 * bb))
+        base = int(base * self._passive_sizing_mult())
         if legal.can_bet:
             return self._clamp(base, legal.min_bet, legal.max_bet)
         return base
@@ -593,7 +728,7 @@ class SandboxPokerBot:
         else:
             frac = self.profile.bet_pot_fraction_medium
 
-        amt = int(pot * frac)
+        amt = int(pot * frac * self._passive_sizing_mult())
         amt += self.rng.randint(0, max(1, int(0.08 * pot)))
         return self._clamp(amt, legal.min_bet, legal.max_bet)
 
@@ -606,7 +741,7 @@ class SandboxPokerBot:
         pot = max(1, state.pot)
         # Simple: raise bigger when "large", otherwise moderate
         extra = int(pot * (0.68 if large else 0.48))
-        amt = state.to_call + extra
+        amt = int((state.to_call + extra) * self._passive_sizing_mult())
         amt += self.rng.randint(0, max(1, int(0.08 * pot)))
         return self._clamp(amt, legal.min_raise, legal.max_raise)
 
@@ -660,3 +795,4 @@ def example():
 
 if __name__ == "__main__":
     example()
+

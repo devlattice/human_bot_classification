@@ -42,6 +42,8 @@ TRAIN_DIR = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "train"
 TEST_DIR = REPO_ROOT / "workspace" / "hybrid" / "dataset" / "test"
 
 GOLD_PATH = TRAIN_DIR / "gold_features.parquet"
+MAY8_GOLD_TEST_PATH = TEST_DIR / "may8_gold_test_features.parquet"
+MAY8_DATE = "2026-05-08"
 ZENODO_PATH = TRAIN_DIR / "zenodo_features.parquet"
 PUBLIC_PATH = TRAIN_DIR / "public_features.parquet"
 FULL_SPECTRUM_PATH = TRAIN_DIR / "full_spectrum_bot_features.parquet"
@@ -215,6 +217,13 @@ def apply_rf_params_patch(base_kwargs: dict, patch: dict) -> dict:
         elif k in ("n_estimators", "min_samples_leaf", "min_samples_split"):
             out[k] = int(v)
     return out
+
+
+def load_may8_gold_test() -> pd.DataFrame | None:
+    """Rotation hold-out gold (May-8); lives under dataset/test after split."""
+    if not MAY8_GOLD_TEST_PATH.is_file():
+        return None
+    return pd.read_parquet(MAY8_GOLD_TEST_PATH)
 
 
 def load_datasets(feature_cols: list[str]) -> dict[str, pd.DataFrame]:
@@ -585,6 +594,7 @@ def main():
         "zenodo_test": ("zenodo_test_features.parquet", 0),
         "public_test": ("public_test_features.parquet", 0),
         "acpc_bot_test": ("acpc_bot_test_features.parquet", 1),
+        "may8_gold_test": ("may8_gold_test_features.parquet", None),
     }
     any_test = False
     for tname, (tfile, true_label) in test_files.items():
@@ -599,7 +609,18 @@ def main():
             continue
         tX = apply_transform(tdf[feature_cols].values, feature_cols, transform_meta)
         tproba = rf.predict_proba(tX)[:, 1]
-        if true_label == 0:
+        if tname == "may8_gold_test":
+            labels = tdf["label"].values
+            may8_h = tproba[labels == 0]
+            may8_b = tproba[labels == 1]
+            test_results[tname] = {
+                "n": len(tdf),
+                "human_fpr_pct": round(float((may8_h >= 0.5).mean()) * 100, 3) if len(may8_h) else None,
+                "bot_recall_pct": round(float((may8_b >= 0.5).mean()) * 100, 2) if len(may8_b) else None,
+                "bot_mean_score": round(float(may8_b.mean()), 4) if len(may8_b) else None,
+                "human_mean_score": round(float(may8_h.mean()), 4) if len(may8_h) else None,
+            }
+        elif true_label == 0:
             correct = float((tproba < 0.5).mean())
             fpr = 1.0 - correct
             test_results[tname] = {"correct_pct": round(correct * 100, 2), "fpr_pct": round(fpr * 100, 3), "n": len(tdf)}
@@ -612,27 +633,32 @@ def main():
         print("UNSEEN TEST SET EVALUATION")
         print("=" * 70)
         for tname, tres in test_results.items():
-            if "fpr_pct" in tres:
+            if tname == "may8_gold_test":
+                print(
+                    f"  {tname:20s}: {tres['n']:5d} chunks | "
+                    f"bot recall={tres['bot_recall_pct']:.1f}% | "
+                    f"human FPR={tres['human_fpr_pct']:.3f}%"
+                )
+            elif "fpr_pct" in tres:
                 print(f"  {tname:20s}: {tres['n']:5d} chunks | human correct={tres['correct_pct']:.1f}% | FPR={tres['fpr_pct']:.3f}%")
             else:
                 print(f"  {tname:20s}: {tres['n']:5d} chunks | bot recall={tres['recall_pct']:.1f}% | mean_score={tres['mean_score']:.4f}")
 
-    # ── Gold May-8 detailed analysis ──
-    if "gold" in datasets:
-        gold = datasets["gold"]
-        may8 = gold[gold["date"].str.contains("05-08")]
-        if len(may8) > 0:
-            may8_X = apply_transform(may8[feature_cols].values, feature_cols, transform_meta)
+    may8_holdout = load_may8_gold_test()
+    if may8_holdout is not None and len(may8_holdout) and "may8_gold_test" not in test_results:
+        missing = [c for c in feature_cols if c not in may8_holdout.columns]
+        if not missing:
+            may8_X = apply_transform(may8_holdout[feature_cols].values, feature_cols, transform_meta)
             may8_proba = rf.predict_proba(may8_X)[:, 1]
-            may8_h = may8_proba[may8["label"].values == 0]
-            may8_b = may8_proba[may8["label"].values == 1]
-            print(f"\n  May-8 Gold detail:")
+            may8_h = may8_proba[may8_holdout["label"].values == 0]
+            may8_b = may8_proba[may8_holdout["label"].values == 1]
+            print(f"\n  May-8 gold hold-out (dataset/test):")
             if len(may8_h) > 0:
                 print(f"    Human scores: min={may8_h.min():.4f} max={may8_h.max():.4f} mean={may8_h.mean():.4f}")
+                print(f"    Human FPR @0.5: {(may8_h >= 0.5).mean()*100:.1f}%")
             if len(may8_b) > 0:
                 print(f"    Bot   scores: min={may8_b.min():.4f} max={may8_b.max():.4f} mean={may8_b.mean():.4f}")
                 print(f"    Bot recall @0.5:  {(may8_b >= 0.5).mean()*100:.1f}%")
-                print(f"    Bot recall @0.05: {(may8_b >= 0.05).mean()*100:.1f}%")
 
     # Save artifacts
     print(f"\nSaving model bundle to {output_dir}...")

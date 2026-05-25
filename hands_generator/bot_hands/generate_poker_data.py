@@ -27,6 +27,10 @@ DEFAULT_PLAYER_COUNT_DISTRIBUTION: List[Tuple[int, int]] = [
     (2, 2),
 ]
 DEFAULT_STACK_BB_RANGE: Tuple[float, float] = (60.0, 160.0)
+# Micro-stakes typical of gold / May-8 benchmark tables
+GOLD_MICRO_STAKE_DISTRIBUTION: List[Tuple[float, float, int]] = [
+    (0.01, 0.02, 1),
+]
 
 
 def _weighted_choice(weighted_values, rng: random.Random):
@@ -55,6 +59,37 @@ def _build_reference_distribution(hands: List[Dict[str, Any]]) -> Dict[str, List
         "stakes": stakes or DEFAULT_STAKE_DISTRIBUTION,
         "player_counts": players or DEFAULT_PLAYER_COUNT_DISTRIBUTION,
     }
+
+
+def load_gold_bot_reference_hands(
+    gold_dir: Path,
+    *,
+    date_substr: str = "2026-05-08",
+    max_hands: int = 8000,
+) -> List[Dict[str, Any]]:
+    """Flatten bot-labeled hands from gold benchmark JSON for table-config sampling."""
+    hands_out: List[Dict[str, Any]] = []
+    gold_dir = Path(gold_dir)
+    for path in sorted(gold_dir.glob("2026-*.json")):
+        if date_substr and date_substr not in path.stem:
+            continue
+        try:
+            with open(path, encoding="utf-8") as fh:
+                payload = json.load(fh)
+        except (OSError, json.JSONDecodeError):
+            continue
+        for entry in (payload.get("data") or {}).get("chunks") or []:
+            inner = entry.get("chunks") or []
+            labels = entry.get("groundTruth") or []
+            for chunk_hands, label in zip(inner, labels):
+                if int(label) != 1:
+                    continue
+                for hand in chunk_hands or []:
+                    if isinstance(hand, dict):
+                        hands_out.append(hand)
+                        if len(hands_out) >= max_hands:
+                            return hands_out
+    return hands_out
 
 
 def _load_reference_distribution() -> Dict[str, List]:
@@ -109,6 +144,15 @@ def _mutate_profile(profile: BotProfile, rng: random.Random) -> BotProfile:
         trap_frequency=_clamp_float(
             profile.trap_frequency + rng.uniform(-0.20, 0.20), -1.0, 1.0
         ),
+        passive_may8_mode=profile.passive_may8_mode,
+        passive_check_bias=profile.passive_check_bias,
+        passive_bet_scale=_clamp_float(
+            profile.passive_bet_scale + rng.uniform(-0.06, 0.06), 0.25, 0.75
+        ) if profile.passive_may8_mode else profile.passive_bet_scale,
+        passive_raise_rate=profile.passive_raise_rate,
+        passive_pot_build_mult=_clamp_float(
+            profile.passive_pot_build_mult + rng.uniform(-0.12, 0.12), 1.0, 2.4
+        ) if profile.passive_may8_mode else profile.passive_pot_build_mult,
     )
 
 @dataclass
@@ -136,6 +180,7 @@ class TableSession:
         bot_profiles: List[BotProfile] = None,
         target_player_count: Optional[int] = None,
         rng: Optional[random.Random] = None,
+        stack_bb_range: Optional[Tuple[float, float]] = None,
     ):
         self.rng = rng or random.Random()
         self.table_id = table_id
@@ -143,6 +188,7 @@ class TableSession:
         self.bb = bb
         self.max_seats = max_seats
         self.rake_rate = rake_rate
+        self.stack_bb_range = stack_bb_range or DEFAULT_STACK_BB_RANGE
         self.bot_profiles = bot_profiles or []
         self.target_player_count = max(2, min(max_seats, target_player_count or max_seats))
         self.players: List[Optional[Player]] = [None] * max_seats
@@ -186,7 +232,8 @@ class TableSession:
         self.button_position = self.rng.choice(occupied)
 
     def _sample_stack(self) -> float:
-        stack_bb = self.rng.uniform(*DEFAULT_STACK_BB_RANGE)
+        lo, hi = self.stack_bb_range
+        stack_bb = self.rng.uniform(lo, hi)
         return round(stack_bb * self.bb, 2)
 
     def _add_player_to_seat(self, seat_index: int):
@@ -259,6 +306,10 @@ class PokerHandGenerator:
         rake_rate=0.05,
         reference_hands: Optional[List[Dict[str, Any]]] = None,
         seed: Optional[int] = None,
+        *,
+        lock_table_config: bool = False,
+        target_players: Optional[int] = None,
+        stack_bb_range: Optional[Tuple[float, float]] = None,
     ):
         self.seed = BOT_RNG_SEED if seed is None else seed
         self.rng = random.Random(self.seed)
@@ -266,6 +317,13 @@ class PokerHandGenerator:
         self.bb = bb
         self.max_seats = max_seats
         self.rake_rate = rake_rate
+        self.lock_table_config = bool(lock_table_config)
+        self.fixed_target_players = (
+            max(2, min(max_seats, int(target_players)))
+            if target_players is not None
+            else None
+        )
+        self.stack_bb_range = stack_bb_range or DEFAULT_STACK_BB_RANGE
         self.reference_distribution = (
             _build_reference_distribution(reference_hands)
             if reference_hands
@@ -276,6 +334,10 @@ class PokerHandGenerator:
         self.ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 
     def _sample_table_config(self) -> Tuple[float, float, int]:
+        if self.lock_table_config:
+            tp = self.fixed_target_players or self.max_seats
+            return float(self.sb), float(self.bb), int(tp)
+
         stakes = self.reference_distribution["stakes"]
         player_counts = self.reference_distribution["player_counts"]
 
@@ -365,6 +427,7 @@ class PokerHandGenerator:
                 bot_profiles=bot_profiles,
                 target_player_count=target_players,
                 rng=self.rng,
+                stack_bb_range=self.stack_bb_range,
             )
             session.initialize_table()
             session_length = self.rng.randint(min_session_hands, max_session_hands)
@@ -430,7 +493,7 @@ class PokerHandGenerator:
             hero_player = Player(
                 uid=HERO_UID,
                 seat=session.hero_seat or 1,
-                stack=round(self.rng.uniform(8.0, 12.0), 2),
+                stack=session._sample_stack(),
                 is_bot=True,
                 hands_played=0,
             )

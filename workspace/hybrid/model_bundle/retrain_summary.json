@@ -1,20 +1,18 @@
 {
-  "trained_at": "2026-05-12T07:56:15.251812Z",
+  "trained_at": "2026-05-16T18:01:21.694425Z",
   "n_features": 54,
-  "n_training_samples": 29569,
+  "n_training_samples": 15057,
   "data_sources": {
     "gold_human": 2120,
     "gold_bot": 2120,
     "zenodo_human": 5000,
     "public_human": 2996,
-    "full_spectrum_bot": 8000,
-    "gen_bot": 4000,
-    "cal_bot": 4000,
+    "full_spectrum_bot": 1488,
     "acpc_bot": 1333
   },
-  "train_auc": 0.999996,
-  "train_accuracy": 0.997261,
-  "selected_threshold": 0.34,
+  "train_auc": 0.999992,
+  "train_accuracy": 0.999203,
+  "selected_threshold": 0.52,
   "cv_results": [
     {
       "date": "2026-04-30",
@@ -74,36 +72,41 @@
     },
     {
       "date": "2026-05-08",
-      "auc": 0.997831,
+      "auc": 0.99938,
       "accuracy": 0.681818,
       "bot_detect_rate": 0.3636,
       "n_samples": 440
     }
   ],
-  "cv_mean_auc": 0.999759,
-  "cv_min_auc": 0.997831,
+  "cv_mean_auc": 0.999931,
+  "cv_min_auc": 0.99938,
   "unseen_test_results": {
     "zenodo_test": {
-      "correct_pct": 99.63,
-      "fpr_pct": 0.374,
+      "correct_pct": 99.5,
+      "fpr_pct": 0.499,
       "n": 4006
     },
     "public_test": {
-      "correct_pct": 99.07,
-      "fpr_pct": 0.935,
+      "correct_pct": 100.0,
+      "fpr_pct": 0.0,
       "n": 107
     },
     "acpc_bot_test": {
       "recall_pct": 100.0,
       "n": 334,
-      "mean_score": 0.9429
+      "mean_score": 0.9796
     }
   },
   "model_type": "RandomForestClassifier",
   "model_params": {
-    "n_estimators": 300,
+    "n_estimators": 450,
     "max_depth": 6,
-    "min_samples_leaf": 15,
-    "class_weight": "balanced"
+    "min_samples_leaf": 35,
+    "min_samples_split": 5,
+    "max_features": 0.25,
+    "random_state": 42,
+    "class_weight": "balanced",
+    "ccp_alpha": 0.00488665465661176,
+    "max_samples": 0.6583184924996148
   }
 }

@@ -9,9 +9,12 @@ Usage:
     python workspace/hybrid/scripts/feature_selection.py
 
 Inputs:
-    workspace/hybrid/dataset/gold_features.parquet
-    workspace/hybrid/zenodo_features.parquet
-    workspace/hybrid/generated_bot_features.parquet
+    workspace/hybrid/dataset/train/gold_features.parquet   (Apr30–May7)
+    workspace/hybrid/dataset/train/zenodo_features.parquet
+    workspace/hybrid/dataset/train/generated_bot_features.parquet
+
+Hold-out (not used in this script yet; for v3 selection):
+    workspace/hybrid/dataset/test/may8_gold_test_features.parquet
 
 Outputs:
     workspace/hybrid/selected_features.json

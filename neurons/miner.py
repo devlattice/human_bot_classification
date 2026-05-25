@@ -17,6 +17,15 @@ from typing import Any, Optional, Tuple
 import bittensor as bt
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_env_file = os.getenv("MINER_ENV_FILE", "").strip()
+if _env_file:
+    load_dotenv(_env_file, override=False)
+else:
+    load_dotenv(_REPO_ROOT / ".env", override=False)
+load_dotenv(override=False)
 
 from poker44.base.miner import BaseMinerNeuron
 from poker44.validator.chunk_features import aggregate_chunk_from_hands
@@ -25,6 +34,7 @@ from poker44.utils.model_manifest import (
     evaluate_manifest_compliance,
     manifest_digest,
 )
+from poker44.miner.dynamic_threshold import DynamicThresholdPolicy, ThresholdConfig
 from poker44.validator.synapse import DetectionSynapse
 
 
@@ -373,6 +383,10 @@ class Miner(BaseMinerNeuron):
         self._model: Optional[Any] = None
         self._model_features: Optional[list[str]] = None
         self._inference_threshold: float = 0.5
+        self._dynamic_threshold_enabled = os.getenv(
+            "POKER44_DYNAMIC_THRESHOLD", "0"
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        self._threshold_policy: DynamicThresholdPolicy | None = None
         self._score_monitor = ScoreMonitor(window=200, shift_threshold=0.15)
         self._feature_salt = os.getenv("POKER44_FEATURE_SALT", "").strip()
         self._feature_hash_map: Optional[dict[str, str]] = None
@@ -415,6 +429,7 @@ class Miner(BaseMinerNeuron):
             if self._log_async:
                 self._start_async_log_worker()
         self._maybe_load_model()
+        self._init_threshold_policy()
         self._maybe_load_wgz_meta()
         self._maybe_load_transform_meta()
         self._maybe_load_ssl_artifact()
@@ -525,7 +540,12 @@ class Miner(BaseMinerNeuron):
         vhk = self._validator_hotkey_from_synapse(synapse)
         self._record_latency(latency_ms)
         synapse.risk_scores = final_scores
-        synapse.predictions = [s >= self._inference_threshold for s in final_scores]
+        if self._dynamic_threshold_enabled and self._threshold_policy is not None:
+            dec = self._threshold_policy.decide_and_observe(final_scores)
+            request_threshold = dec.threshold
+        else:
+            request_threshold = self._inference_threshold
+        synapse.predictions = [s >= request_threshold for s in final_scores]
         synapse.model_manifest = dict(self.model_manifest)
         self._maybe_log_request(
             synapse=synapse,
@@ -544,10 +564,18 @@ class Miner(BaseMinerNeuron):
         # ScoreMonitor watches the model's native (pre-remap) distribution so
         # bimodality detection is not affected by the remap.
         self._score_monitor.add_scores(smoothed_scores)
-        bt.logging.info(
-            "Miner predictions (True=bot, False=human vs "
-            f"threshold={self._inference_threshold:g}): {synapse.predictions}"
-        )
+        if self._dynamic_threshold_enabled and self._threshold_policy is not None:
+            last = self._threshold_policy._last
+            mode = last.mode if last else "?"
+            bt.logging.info(
+                "Miner predictions (dynamic threshold "
+                f"t={request_threshold:g} mode={mode}): {synapse.predictions}"
+            )
+        else:
+            bt.logging.info(
+                "Miner predictions (True=bot, False=human vs "
+                f"threshold={request_threshold:g}): {synapse.predictions}"
+            )
         bt.logging.info(
             f"Scored {len(chunks)} chunks in {latency_ms:.2f}ms "
             f"({int(sum(len(c) for c in chunks))} hands)."
@@ -600,11 +628,51 @@ class Miner(BaseMinerNeuron):
             self._model = None
             self._model_features = None
 
+    def _init_threshold_policy(self) -> None:
+        static_sel: float | None = None
+        prod_path = Path(
+            os.getenv("POKER44_PRODUCTION_THRESHOLD_JSON", "")
+        ).strip()
+        if prod_path.is_file():
+            try:
+                static_sel = float(json.loads(prod_path.read_text(encoding="utf-8")).get("selected_threshold"))
+            except Exception:
+                pass
+        if static_sel is None and self._inference_threshold != 0.5:
+            static_sel = self._inference_threshold
+        cfg = ThresholdConfig(
+            fixed_fallback=float(os.getenv("POKER44_THRESHOLD_FALLBACK", "0.5")),
+            static_selected=static_sel,
+            clamp_min=float(os.getenv("POKER44_THRESHOLD_CLAMP_MIN", "0.10")),
+            clamp_max=float(os.getenv("POKER44_THRESHOLD_CLAMP_MAX", "0.45")),
+            min_scores=int(os.getenv("POKER44_THRESHOLD_MIN_SCORES", "20")),
+            rolling_window=int(os.getenv("POKER44_THRESHOLD_ROLLING_WINDOW", "500")),
+        )
+        self._threshold_policy = DynamicThresholdPolicy(cfg)
+        if self._dynamic_threshold_enabled:
+            bt.logging.info(
+                f"Dynamic threshold ON (POKER44_DYNAMIC_THRESHOLD=1) "
+                f"fallback={cfg.fixed_fallback:g} static={cfg.static_selected} "
+                f"clamp=[{cfg.clamp_min:g},{cfg.clamp_max:g}]"
+            )
+        else:
+            bt.logging.info(
+                f"Dynamic threshold OFF (POKER44_DYNAMIC_THRESHOLD=0); "
+                f"using fixed threshold={self._inference_threshold:g}"
+            )
+
     def _maybe_load_bundle_runtime(self, bundle_dir: Path) -> None:
         """Load optional bundle metadata (threshold + adapter) for tbm_v5-style runtime."""
         # Inference threshold from retrain summary (fallback 0.5).
         summary_path = bundle_dir / "retrain_summary.json"
-        if summary_path.is_file():
+        prod_path = bundle_dir / "production_threshold.json"
+        if prod_path.is_file():
+            try:
+                payload = json.loads(prod_path.read_text(encoding="utf-8"))
+                self._inference_threshold = float(payload.get("selected_threshold", 0.5))
+            except Exception as e:
+                bt.logging.warning(f"Failed to read production_threshold.json ({e}); threshold=0.5")
+        elif summary_path.is_file():
             try:
                 payload = json.loads(summary_path.read_text(encoding="utf-8"))
                 self._inference_threshold = float(payload.get("selected_threshold", 0.5))

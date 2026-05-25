@@ -23,7 +23,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 import pandas as pd
 from hands_generator.data_generator import generate_bot_chunk
 from hands_generator.bot_hands.generate_poker_data import BotProfile, _mutate_profile, _clamp_float
-from poker44.validator.chunk_features import aggregate_chunk_from_hands
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from chunk_pipeline import aggregate_chunk_from_raw_hands
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 OUTPUT_PATH = REPO_ROOT / "workspace" / "hybrid" / "calibrated_bot_features.parquet"
@@ -163,7 +164,7 @@ def generate_profile_chunks(args: tuple) -> list[dict]:
         chunk_seed = rng.randint(0, 10**9)
         try:
             chunk_hands = generate_bot_chunk(chunk_size, [profile], seed=chunk_seed)
-            features = aggregate_chunk_from_hands(chunk_hands, skip_sanitize=False)
+            features = aggregate_chunk_from_raw_hands(chunk_hands)
             features["label"] = 1  # bot
             features["source"] = "calibrated"
             features["date"] = profile_name

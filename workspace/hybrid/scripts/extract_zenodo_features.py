@@ -16,7 +16,8 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from poker44.validator.chunk_features import aggregate_chunk_from_hands
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from chunk_pipeline import aggregate_chunk_from_raw_hands
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 INPUT_PATH = REPO_ROOT / "workspace" / "dataset" / "source" / "data" / "zenodo_v3" / "poker_hands_zenodo_train.json"
@@ -69,7 +70,7 @@ def main():
         total_hands += 1
 
         if len(buffer) >= CHUNK_SIZE:
-            features = aggregate_chunk_from_hands(buffer, skip_sanitize=False)
+            features = aggregate_chunk_from_raw_hands(buffer)
             features["label"] = 0  # human
             features["source"] = "zenodo"
             features["date"] = "zenodo"
@@ -83,7 +84,7 @@ def main():
 
     # Handle remaining buffer
     if len(buffer) >= MIN_CHUNK_SIZE:
-        features = aggregate_chunk_from_hands(buffer, skip_sanitize=False)
+        features = aggregate_chunk_from_raw_hands(buffer)
         features["label"] = 0
         features["source"] = "zenodo"
         features["date"] = "zenodo"

@@ -19,6 +19,7 @@
 #   ./workspace/hybrid/retrain.sh --skip-download  # skip gold download
 #   ./workspace/hybrid/retrain.sh --skip-optuna  # skip RF hyperparameter search
 #   ./workspace/hybrid/retrain.sh --skip-gates   # skip PASS/FAIL gate check
+#   ./workspace/hybrid/retrain.sh --force-reextract  # drop cached parquets after payload_view change
 #
 # Optuna trial count (default 40):  OPTUNA_N_TRIALS=80 ./workspace/hybrid/retrain.sh
 #
@@ -52,6 +53,11 @@ SKIP_DOWNLOAD=false
 SKIP_EXTRACT_STATIC=false
 SKIP_OPTUNA=false
 SKIP_GATES=false
+FORCE_REEXTRACT=false
+
+FEATURE_PIPELINE_STAMP="workspace/hybrid/.feature_pipeline_version"
+# Keep in sync with workspace/hybrid/chunk_pipeline.py FEATURE_PIPELINE_VERSION
+FEATURE_PIPELINE_EXPECTED="payload-view-action-leak-tighten-2026-05"
 
 for arg in "$@"; do
     case "$arg" in
@@ -60,8 +66,28 @@ for arg in "$@"; do
         --skip-extract-static) SKIP_EXTRACT_STATIC=true ;;
         --skip-optuna) SKIP_OPTUNA=true ;;
         --skip-gates) SKIP_GATES=true ;;
+        --force-reextract) FORCE_REEXTRACT=true ;;
     esac
 done
+
+invalidate_stale_feature_parquets() {
+    local current=""
+    if [ -f "$FEATURE_PIPELINE_STAMP" ]; then
+        current=$(cat "$FEATURE_PIPELINE_STAMP")
+    fi
+    if [ "$FORCE_REEXTRACT" = true ] || [ "$current" != "$FEATURE_PIPELINE_EXPECTED" ]; then
+        log "Feature pipeline version change ($current -> $FEATURE_PIPELINE_EXPECTED); removing cached parquets..."
+        rm -f "$ZENODO_FEATURES" "$PUBLIC_FEATURES" "$ACPC_BOT_FEATURES"
+        rm -f "$TEST_DIR/zenodo_test_features.parquet"
+        rm -f "$TEST_DIR/public_test_features.parquet"
+        rm -f "$TEST_DIR/acpc_bot_test_features.parquet"
+        rm -f "$FULL_SPECTRUM"
+        rm -f "$TRAIN_DIR/generated_bot_features.parquet"
+        rm -f "$TRAIN_DIR/calibrated_bot_features.parquet"
+        mkdir -p "$(dirname "$FEATURE_PIPELINE_STAMP")"
+        echo "$FEATURE_PIPELINE_EXPECTED" > "$FEATURE_PIPELINE_STAMP"
+    fi
+}
 
 OPTUNA_N_TRIALS="${OPTUNA_N_TRIALS:-40}"
 RETRAIN_GATE_MIN_MAY8_RECALL_PCT="${RETRAIN_GATE_MIN_MAY8_RECALL_PCT:-80}"
@@ -93,6 +119,8 @@ fi
 log "Step 2: Extracting gold features..."
 python3 workspace/hybrid/scripts/extract_gold_features.py
 log "  Gold features: $(python3 -c "import pandas as pd; print(len(pd.read_parquet('$GOLD_FEATURES')))" 2>/dev/null || echo 'N/A') rows"
+
+invalidate_stale_feature_parquets
 
 # ─── Step 3: Extract static features (zenodo/public/acpc) if not present ───
 if [ "$SKIP_EXTRACT_STATIC" = false ]; then

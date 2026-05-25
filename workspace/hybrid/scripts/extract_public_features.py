@@ -15,7 +15,8 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from poker44.validator.chunk_features import aggregate_chunk_from_hands
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from chunk_pipeline import aggregate_chunk_from_raw_hands
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 INPUT_PATH = REPO_ROOT / "workspace" / "dataset" / "source" / "data" / "poker_hands_train.json"
@@ -43,7 +44,7 @@ def main():
     t0 = time.time()
     rows = []
     for i, chunk_hands in enumerate(chunks):
-        features = aggregate_chunk_from_hands(chunk_hands, skip_sanitize=False)
+        features = aggregate_chunk_from_raw_hands(chunk_hands)
         features["label"] = 0  # all human
         features["source"] = "public"
         features["date"] = "public"
