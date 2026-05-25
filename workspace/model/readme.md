@@ -1,8 +1,8 @@
 # Model training + deployment
 
-**Production v11 miner bundle:** see [DEPLOY.md](DEPLOY.md) and run `./workspace/model/deploy_v11_prod.sh`.
+**Production miner bundle (v12):** see [DEPLOY.md](DEPLOY.md) and run `./workspace/model/deploy_prod.sh`.
 
-Artifacts directory: `workspace/model/artifacts/model_bundle_v11_prod/`
+Artifacts directory: `workspace/model/artifacts/model_bundle_v12_prod/`
 
 ---
 

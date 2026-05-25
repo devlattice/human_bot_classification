@@ -22,6 +22,13 @@ HYBRID_DIR = REPO_ROOT / "workspace" / "hybrid"
 TRAIN_DIR = HYBRID_DIR / "dataset" / "train"
 TEST_DIR = HYBRID_DIR / "dataset" / "test"
 
+# Feature selection v4 (May-8 in FIT + unlabeled live coverage)
+MAY8_FS_TRAIN_PATH = TRAIN_DIR / "may8_fs_train.parquet"
+MAY8_FS_LOCKBOX_PATH = TEST_DIR / "may8_fs_lockbox.parquet"
+LIVE_FINNEY_UNLABELED_PATH = TRAIN_DIR / "live_finney_unlabeled.parquet"
+LIVE_FINNEY_MONITOR_PATH = TEST_DIR / "live_finney_monitor.parquet"
+LIVE_MIN_STD = 1e-8
+
 BANNED_PREFIXES = ("other_ratio", "n_actions")
 CORR_THRESHOLD = 0.95
 META_COLS = frozenset({"label", "source", "date", "chunk_idx", "chunk_hash"})
@@ -69,6 +76,48 @@ def load_train_tables(feature_cols: list[str] | None = None) -> dict[str, pd.Dat
     gold = load_gold_train()
     cols = prefilter_candidates(gold)
     return tpm.load_datasets(cols)
+
+
+def load_may8_fs_train() -> pd.DataFrame | None:
+    if not MAY8_FS_TRAIN_PATH.is_file():
+        return None
+    return pd.read_parquet(MAY8_FS_TRAIN_PATH)
+
+
+def load_live_finney_unlabeled() -> pd.DataFrame | None:
+    if not LIVE_FINNEY_UNLABELED_PATH.is_file():
+        return None
+    return pd.read_parquet(LIVE_FINNEY_UNLABELED_PATH)
+
+
+def filter_live_coverage(
+    candidates: list[str],
+    live_df: pd.DataFrame,
+    *,
+    min_std: float = LIVE_MIN_STD,
+) -> tuple[list[str], list[str]]:
+    """Drop features constant/degenerate on unlabeled live Finney chunks."""
+    dropped: list[str] = []
+    kept: list[str] = []
+    for c in candidates:
+        if c not in live_df.columns:
+            dropped.append(c)
+            continue
+        if not pd.api.types.is_numeric_dtype(live_df[c]):
+            dropped.append(c)
+            continue
+        if float(live_df[c].astype(float).std()) < min_std:
+            dropped.append(c)
+            continue
+        kept.append(c)
+    return kept, dropped
+
+
+def may8_fs_lockbox_path() -> Path:
+    """Prefer v4 half-holdout; fall back to full May-8 test."""
+    if MAY8_FS_LOCKBOX_PATH.is_file():
+        return MAY8_FS_LOCKBOX_PATH
+    return TEST_DIR / "may8_gold_test_features.parquet"
 
 
 def intersect_train_columns(
@@ -153,6 +202,8 @@ class SelectionContext:
         gold_train: pd.DataFrame,
         candidates: list[str],
         seed: int = 42,
+        *,
+        use_may8_fs_train: bool = True,
     ) -> None:
         self.gold = gold_train
         self.candidates = list(candidates)
@@ -161,6 +212,9 @@ class SelectionContext:
         self.rng = np.random.RandomState(seed)
 
         self.datasets = tpm.load_datasets(self.candidates)
+        self.may8_fs_train: pd.DataFrame | None = None
+        if use_may8_fs_train:
+            self.may8_fs_train = load_may8_fs_train()
         self.zen_sub_full = self._subsample_human("zenodo", 1500)
         self.pub_sub_full = self._subsample_human("public", 800)
 
@@ -201,6 +255,17 @@ class SelectionContext:
             ac = self.datasets["acpc_bot"]
             n = min(len(ac), tpm.BOT_SAMPLE_CAP)
             parts_b.append(ac.sample(n=n, random_state=self.rng)[cols].values)
+
+        if self.may8_fs_train is not None and len(self.may8_fs_train):
+            m8 = self.may8_fs_train
+            miss = [c for c in cols if c not in m8.columns]
+            if not miss:
+                bots = m8[m8["label"].astype(int) == 1]
+                humans = m8[m8["label"].astype(int) == 0]
+                if len(bots):
+                    parts_b.append(bots[cols].values)
+                if len(humans):
+                    parts_h.append(humans[cols].values)
 
         ext_h = np.vstack(parts_h) if parts_h else np.empty((0, len(cols)))
         ext_b = np.vstack(parts_b) if parts_b else np.empty((0, len(cols)))
@@ -292,18 +357,39 @@ def evaluate_feature_subset(
         if (ac["label"].values == 1).any():
             acpc_recall = float((pa >= thresh).mean())
 
-    max_fpr = max(fpr_zen, fpr_pub, max_fpr_gold)
-    score = (
-        0.50 * min_recall
-        + 0.30 * mean_recall
-        + 0.15 * acpc_recall
-        - 0.20 * max_fpr
-    )
+    may8_train_recall = 0.0
+    may8_train_fpr = 0.0
+    if ctx.may8_fs_train is not None and len(ctx.may8_fs_train):
+        m8 = ctx.may8_fs_train
+        miss = [f for f in features if f not in m8.columns]
+        if not miss:
+            X_m = tpm.apply_transform(m8[features].values, features, tm)
+            pm = rf_full.predict_proba(X_m)[:, 1]
+            may8_train_recall, may8_train_fpr = _bot_recall_fpr(m8["label"].values, pm, thresh)
+
+    max_fpr = max(fpr_zen, fpr_pub, max_fpr_gold, may8_train_fpr)
+    # v4 weights when may8_fs_train exists; else legacy v3 mix
+    if ctx.may8_fs_train is not None and len(ctx.may8_fs_train):
+        score = (
+            0.30 * min_recall
+            + 0.20 * mean_recall
+            + 0.25 * may8_train_recall
+            + 0.10 * acpc_recall
+            - 0.20 * max_fpr
+        )
+    else:
+        score = (
+            0.50 * min_recall
+            + 0.30 * mean_recall
+            + 0.15 * acpc_recall
+            - 0.20 * max_fpr
+        )
 
     valid = (
         fpr_zen <= FPR_ZENODO_CAP
         and fpr_pub <= FPR_PUBLIC_CAP
         and max_fpr_gold <= FPR_GOLD_CAP
+        and may8_train_fpr <= FPR_GOLD_CAP
     )
 
     return {
@@ -312,6 +398,8 @@ def evaluate_feature_subset(
         "min_recall": min_recall,
         "mean_recall": mean_recall,
         "acpc_recall": acpc_recall,
+        "may8_fs_train_recall": may8_train_recall,
+        "may8_fs_train_fpr": may8_train_fpr,
         "max_fpr_gold": max_fpr_gold,
         "fpr_zenodo": fpr_zen,
         "fpr_public": fpr_pub,
@@ -435,6 +523,36 @@ def composite_score(metrics: dict[str, Any], *, pool_penalty_x: int | None = Non
     if pool_penalty_x is not None:
         s -= 0.002 * pool_penalty_x
     return s
+
+
+def eval_live_monitor_parquet(
+    path: Path,
+    features: list[str],
+    rf: RandomForestClassifier,
+    transform_meta: dict,
+    *,
+    thresh: float = THRESHOLD,
+) -> dict[str, Any]:
+    """Unlabeled live monitor: score shape only (no recall/FPR)."""
+    df = pd.read_parquet(path)
+    miss = [c for c in features if c not in df.columns]
+    if miss:
+        return {"error": f"missing {len(miss)} cols", "n": len(df), "unlabeled": True}
+    Xt = tpm.apply_transform(df[features].values, features, transform_meta)
+    proba = rf.predict_proba(Xt)[:, 1]
+    out: dict[str, Any] = {
+        "n": int(len(df)),
+        "unlabeled": True,
+        "mean_score": round(float(proba.mean()), 4),
+        "median_score": round(float(np.median(proba)), 4),
+        "pct_scores_0.5_1.0": round(float((proba >= 0.5).mean()) * 100, 2),
+        "pct_scores_ge_threshold": round(float((proba >= thresh).mean()) * 100, 2),
+    }
+    if "risk_score_logged" in df.columns:
+        lg = df["risk_score_logged"].dropna().astype(float)
+        if len(lg):
+            out["logged_risk_mean"] = round(float(lg.mean()), 4)
+    return out
 
 
 def eval_test_parquet(

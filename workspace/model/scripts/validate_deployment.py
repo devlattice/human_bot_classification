@@ -12,7 +12,9 @@ sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "workspace" / "hybrid"))
 sys.path.insert(0, str(REPO / "workspace" / "hybrid" / "scripts"))
 
-BUNDLE = REPO / "workspace/model/artifacts/model_bundle_v11_prod"
+BUNDLE = REPO / "workspace/model/artifacts/model_bundle_v12_prod"
+if not (BUNDLE / "model.joblib").is_file():
+    BUNDLE = REPO / "workspace/model/artifacts/model_bundle_v11_prod"
 ENV_FILE = REPO / ".env"
 HOLDOUT = REPO / "workspace/hybrid/dataset/test/may8_holdout_20pct.parquet"
 
@@ -41,7 +43,7 @@ def check(name: str, ok: bool, detail: str = "") -> bool:
 
 def main() -> int:
     print("=" * 70)
-    print("DEPLOYMENT VALIDATION — v11 prod")
+    print("DEPLOYMENT VALIDATION — production bundle (v12 default)")
     print("=" * 70)
     all_ok = True
 
@@ -81,7 +83,7 @@ def main() -> int:
     print("\n3) Threshold (miner static path)")
     thr_payload = json.loads(paths["threshold"].read_text(encoding="utf-8"))
     thr = float(thr_payload.get("selected_threshold", 0.5))
-    all_ok &= check("selected_threshold", abs(thr - 0.55) < 1e-6, f"{thr}")
+    all_ok &= check("selected_threshold", 0.0 < thr <= 1.0, f"{thr}")
 
     print("\n4) Model + features load")
     import joblib
@@ -149,7 +151,7 @@ def main() -> int:
             inference_thr = float(
                 json.loads(p.read_text(encoding="utf-8")).get("selected_threshold", inference_thr)
             )
-    all_ok &= check("miner _inference_threshold", abs(inference_thr - 0.55) < 1e-6, f"{inference_thr}")
+    all_ok &= check("miner _inference_threshold", abs(inference_thr - thr) < 1e-6, f"{inference_thr}")
     fc_path = bundle_dir / "feature_cols.json"
     if fc_path.is_file():
         miner_feats = json.loads(fc_path.read_text(encoding="utf-8")).get("feature_cols", [])
@@ -161,8 +163,8 @@ def main() -> int:
     salt = env.get("POKER44_FEATURE_SALT", "")
     all_ok &= check("feature salt disabled", not salt.strip(), salt or "empty")
 
-    print("\n8) deploy_v11_prod.sh (validate-only, no retrain)")
-    deploy = REPO / "workspace/model/deploy_v11_prod.sh"
+    print("\n8) deploy_prod.sh (validate-only, no retrain)")
+    deploy = REPO / "workspace/model/deploy_prod.sh"
     all_ok &= check("deploy script executable", os.access(deploy, os.X_OK))
     for f in ("model.joblib", "feature_cols.json", "transform_meta.json", "production_threshold.json", "retrain_summary.json"):
         all_ok &= check(f"deploy would pass: {f}", (bundle / f).is_file())

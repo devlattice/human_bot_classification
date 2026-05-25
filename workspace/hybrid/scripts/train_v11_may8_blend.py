@@ -1,10 +1,11 @@
-"""Train v11 production model: full train + 80% May-8 (×3 repeat), eval 20% May-8 + real_distribution.
+"""Train production RF: gold mix + May-8 blend + optional live Finney synthetic bots.
 
 Usage:
   python workspace/hybrid/scripts/train_v11_may8_blend.py \\
-    --output-dir workspace/model/artifacts/model_bundle_v11_prod
+    --output-dir workspace/model/artifacts/model_bundle_v12_prod \\
+    --live-bot-parquet workspace/hybrid/bot_system/data/live_finney_bot_features.parquet
 
-Or: ./workspace/model/deploy_v11_prod.sh
+Or: ./workspace/hybrid/run_live_finney_retrain.sh
 """
 
 from __future__ import annotations
@@ -35,8 +36,10 @@ REAL_DIST = REPO / "workspace/dataset/real_distribution"
 FEATURES_JSON = REPO / "workspace/hybrid/selected_features_v3.json"
 MAY8_PATH = tpm.MAY8_GOLD_TEST_PATH
 HOLDOUT_PATH = tpm.TEST_DIR / "may8_holdout_20pct.parquet"
-DEFAULT_OUT = REPO / "workspace/model/artifacts/model_bundle_v11_prod"
-EVAL_JSON = REPO / "workspace/hybrid/bot_system/data/v11_prod_eval.json"
+DEFAULT_OUT = REPO / "workspace/model/artifacts/model_bundle_v12_prod"
+EVAL_JSON = REPO / "workspace/hybrid/bot_system/data/v12_prod_eval.json"
+MAY8_FS_LOCKBOX = tpm.TEST_DIR / "may8_fs_lockbox.parquet"
+LIVE_MONITOR = tpm.TEST_DIR / "live_finney_monitor.parquet"
 
 
 def load_feature_cols(path: Path) -> list[str]:
@@ -51,19 +54,49 @@ def build_training_with_may8(
     *,
     may8_repeat: int,
     seed: int,
+    live_bot: pd.DataFrame | None = None,
+    live_bot_repeat: int = 2,
+    live_bot_cap: int = 4000,
 ) -> tuple[np.ndarray, np.ndarray, dict]:
     X, y, meta = tpm.build_training_data(datasets, feature_cols, seed)
+    rng = np.random.RandomState(seed)
+    extra_bot_parts: list[pd.DataFrame] = []
+
     m8 = may8_train
     n_base = len(m8)
     parts = [m8] * max(1, may8_repeat)
     may8_up = pd.concat(parts, ignore_index=True)
-    X_m = may8_up[feature_cols].values
+    extra_bot_parts.append(may8_up[feature_cols])
     y_m = may8_up["label"].values.astype(int)
-    X_out = np.vstack([X, X_m])
-    y_out = np.concatenate([y, y_m])
     meta["sources"]["may8_train_base"] = int(n_base)
     meta["sources"]["may8_train_effective"] = int(len(may8_up))
     meta["may8_repeat"] = int(may8_repeat)
+
+    if live_bot is not None and len(live_bot):
+        miss = [c for c in feature_cols if c not in live_bot.columns]
+        if miss:
+            print(f"  WARNING: live_bot missing {len(miss)} features, skipping live bots")
+        else:
+            lb = live_bot
+            if "label" in lb.columns:
+                lb = lb[lb["label"].astype(int) == 1]
+            n_cap = min(len(lb), live_bot_cap)
+            lb = lb.sample(n=n_cap, random_state=rng) if len(lb) > n_cap else lb
+            lb_parts = [lb] * max(1, live_bot_repeat)
+            lb_up = pd.concat(lb_parts, ignore_index=True)
+            extra_bot_parts.append(lb_up[feature_cols])
+            meta["sources"]["live_finney_bot_base"] = int(n_cap)
+            meta["sources"]["live_finney_bot_effective"] = int(len(lb_up))
+            meta["live_bot_repeat"] = int(live_bot_repeat)
+
+    if extra_bot_parts:
+        X_bots = pd.concat(extra_bot_parts, ignore_index=True).values
+        y_bots = np.ones(len(X_bots), dtype=int)
+        X_out = np.vstack([X, X_bots])
+        y_out = np.concatenate([y, y_bots])
+    else:
+        X_out, y_out = X, y
+
     meta["total"] = int(len(X_out))
     meta["total_bot"] = int((y_out == 1).sum())
     meta["total_human"] = int((y_out == 0).sum())
@@ -77,18 +110,26 @@ def eval_labeled(
     feature_cols: list[str],
     transform_meta: dict,
     thresh: float = 0.5,
+    *,
+    unlabeled: bool = False,
 ) -> dict:
     miss = [c for c in feature_cols if c not in df.columns]
     if miss:
         return {"error": f"missing {len(miss)} features"}
     Xt = tpm.apply_transform(df[feature_cols].values, feature_cols, transform_meta)
     p = rf.predict_proba(Xt)[:, 1]
-    y = df["label"].values.astype(int)
     out: dict = {
         "n": int(len(df)),
         "mean_score": round(float(p.mean()), 4),
+        "median_score": round(float(np.median(p)), 4),
         "pct_scores_0.5_1.0": round(float(((p >= 0.5) & (p <= 1.0)).mean()) * 100, 2),
+        "pct_pred_bot": round(float((p >= thresh).mean()) * 100, 2),
+        "threshold": thresh,
     }
+    if unlabeled or "label" not in df.columns:
+        out["unlabeled"] = True
+        return out
+    y = df["label"].values.astype(int)
     if (y == 0).any():
         out["human_fpr_pct"] = round(float((p[y == 0] >= thresh).mean()) * 100, 3)
     if (y == 1).any():
@@ -168,6 +209,16 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--real-dist-dir", type=Path, default=REAL_DIST)
     p.add_argument("--eval-json", type=Path, default=EVAL_JSON)
+    p.add_argument(
+        "--live-bot-parquet",
+        type=Path,
+        default=None,
+        help="Synthetic live-profile bot features (label=1)",
+    )
+    p.add_argument("--live-bot-repeat", type=int, default=2)
+    p.add_argument("--live-bot-cap", type=int, default=4000)
+    p.add_argument("--eval-threshold", type=float, default=None,
+                   help="Report metrics at this threshold (default: train optimal)")
     return p.parse_args()
 
 
@@ -178,7 +229,7 @@ def main() -> int:
 
     feature_cols = load_feature_cols(args.features_json)
     print("=" * 70)
-    print("V11 PRODUCTION TRAIN — May-8 80% blend × repeat")
+    print("PRODUCTION TRAIN — May-8 blend + optional live Finney bots")
     print("=" * 70)
     print(f"Features: {len(feature_cols)}")
     print(f"Output: {args.output_dir}")
@@ -196,6 +247,13 @@ def main() -> int:
     print(f"  holdout saved: {HOLDOUT_PATH}")
     print(f"  train effective rows: {len(may8_train) * args.may8_repeat} (×{args.may8_repeat})")
 
+    live_bot_df = None
+    if args.live_bot_parquet is not None and args.live_bot_parquet.is_file():
+        live_bot_df = pd.read_parquet(args.live_bot_parquet)
+        print(f"\nLive bot parquet: {args.live_bot_parquet}  rows={len(live_bot_df)}")
+    elif args.live_bot_parquet is not None:
+        print(f"\nWARNING: live-bot-parquet not found: {args.live_bot_parquet}")
+
     datasets = tpm.load_datasets(feature_cols)
     X_raw, y, data_meta = build_training_with_may8(
         datasets,
@@ -203,12 +261,18 @@ def main() -> int:
         may8_train,
         may8_repeat=args.may8_repeat,
         seed=args.seed,
+        live_bot=live_bot_df,
+        live_bot_repeat=args.live_bot_repeat,
+        live_bot_cap=args.live_bot_cap,
     )
     print(f"\nTraining mix: {data_meta['total']} rows "
           f"({data_meta['total_human']} human, {data_meta['total_bot']} bot)")
     src = data_meta.get("sources", {})
     print(f"  may8 in mix: {src.get('may8_train_effective')} "
           f"(base {src.get('may8_train_base')}, ×{data_meta.get('may8_repeat')})")
+    if src.get("live_finney_bot_effective"):
+        print(f"  live bots: {src.get('live_finney_bot_effective')} "
+              f"(base {src.get('live_finney_bot_base')}, ×{data_meta.get('live_bot_repeat')})")
 
     X_t, transform_meta = tpm.fit_transform_pipeline(X_raw, feature_cols)
     rf_kwargs = tpm.rf_kwargs_from_namespace(
@@ -237,6 +301,7 @@ def main() -> int:
     print(f"  train AUC={roc_auc_score(y, train_p):.4f}  acc={accuracy_score(y, train_p>=0.5):.4f}")
 
     optimal_t = tpm.find_optimal_threshold(y, train_p)
+    eval_thresh = float(args.eval_threshold) if args.eval_threshold is not None else optimal_t
     joblib.dump(rf, args.output_dir / "model.joblib")
     (args.output_dir / "feature_cols.json").write_text(
         json.dumps({"feature_cols": feature_cols}, indent=2), encoding="utf-8"
@@ -247,7 +312,7 @@ def main() -> int:
     (args.output_dir / "production_threshold.json").write_text(
         json.dumps({
             "selected_threshold": optimal_t,
-            "source": "train_v11_may8_blend",
+            "source": "train_may8_live_blend",
         }, indent=2),
         encoding="utf-8",
     )
@@ -269,31 +334,42 @@ def main() -> int:
         },
         "training_meta": data_meta,
         "optimal_threshold_train": optimal_t,
+        "eval_threshold": eval_thresh,
+        "live_bot_parquet": str(args.live_bot_parquet) if args.live_bot_parquet else None,
         "tests": {},
     }
 
-    tests = [
-        ("may8_holdout_20pct", may8_holdout),
-        ("may8_full_test_parquet", pd.read_parquet(MAY8_PATH)),
+    tests: list[tuple[str, pd.DataFrame, bool]] = [
+        ("may8_holdout_20pct", may8_holdout, False),
+        ("may8_full_test_parquet", pd.read_parquet(MAY8_PATH), False),
     ]
+    if MAY8_FS_LOCKBOX.is_file():
+        tests.append(("may8_fs_lockbox", pd.read_parquet(MAY8_FS_LOCKBOX), False))
     for tname, tpath in [
         ("zenodo_test", tpm.TEST_DIR / "zenodo_test_features.parquet"),
         ("public_test", tpm.TEST_DIR / "public_test_features.parquet"),
         ("acpc_bot_test", tpm.TEST_DIR / "acpc_bot_test_features.parquet"),
     ]:
         if tpath.is_file():
-            tests.append((tname, pd.read_parquet(tpath)))
+            tests.append((tname, pd.read_parquet(tpath), False))
+    if LIVE_MONITOR.is_file():
+        tests.append(("live_finney_monitor", pd.read_parquet(LIVE_MONITOR), True))
 
-    for name, df in tests:
-        block = eval_labeled(name, df, rf, feature_cols, transform_meta)
+    for name, df, unlabeled in tests:
+        block = eval_labeled(
+            name, df, rf, feature_cols, transform_meta, eval_thresh, unlabeled=unlabeled
+        )
         eval_out["tests"][name] = block
-        if "bot_recall_pct" in block:
+        if block.get("unlabeled"):
+            print(f"  {name:24s} mean={block['mean_score']}  "
+                  f"pct>={eval_thresh}={block.get('pct_pred_bot')}%  (unlabeled)")
+        elif "bot_recall_pct" in block:
             print(f"  {name:24s} bot_recall={block['bot_recall_pct']}%  "
                   f"human_fpr={block.get('human_fpr_pct')}%  mean={block['mean_score']}")
         elif "human_fpr_pct" in block:
             print(f"  {name:24s} human_fpr={block['human_fpr_pct']}%")
 
-    rd = eval_real_distribution(rf, feature_cols, transform_meta, args.real_dist_dir)
+    rd = eval_real_distribution(rf, feature_cols, transform_meta, args.real_dist_dir, eval_thresh)
     eval_out["tests"]["real_distribution"] = rd
     print(f"\n  real_distribution: n={rd.get('n')}  mean={rd.get('mean_score')}  "
           f"in[0.5,1]={rd.get('pct_scores_0.5_1.0')}%  pred@0.5={rd.get('pct_pred_bot_0.5')}%")
@@ -308,11 +384,18 @@ def main() -> int:
         "n_training_samples": data_meta["total"],
         "data_sources": data_meta.get("sources", {}),
         "may8_blend": {
-            "train_base": data_meta.get("may8_train_base"),
-            "train_effective": data_meta.get("may8_train_effective"),
+            "train_base": data_meta.get("sources", {}).get("may8_train_base"),
+            "train_effective": data_meta.get("sources", {}).get("may8_train_effective"),
             "repeat": args.may8_repeat,
             "holdout_n": len(may8_holdout),
         },
+        "live_bot_blend": {
+            "parquet": str(args.live_bot_parquet) if args.live_bot_parquet else None,
+            "base": data_meta.get("sources", {}).get("live_finney_bot_base"),
+            "effective": data_meta.get("sources", {}).get("live_finney_bot_effective"),
+            "repeat": data_meta.get("live_bot_repeat"),
+        },
+        "eval_threshold": eval_thresh,
         "selected_threshold": optimal_t,
         "test_results": eval_out["tests"],
     }

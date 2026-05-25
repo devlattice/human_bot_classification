@@ -49,10 +49,10 @@ COARSE_X_GRID = [15, 25, 35, 45]
 FULL_X_GRID = [10, 15, 20, 25, 30, 35, 40]
 
 
-def _load_state() -> dict:
+def _load_state(*, fs_v4: bool = False) -> dict:
     gold = fsl.load_gold_train()
     candidates = fsl.prefilter_candidates(gold)
-    ctx = fsl.SelectionContext(gold, candidates)
+    ctx = fsl.SelectionContext(gold, candidates, use_may8_fs_train=fs_v4)
     ranked: list[str] = []
     pool: list[str] = list(candidates)
     best_x = 30
@@ -88,12 +88,33 @@ def phase_prefilter(args: argparse.Namespace) -> None:
     raw = fsl.prefilter_candidates(gold)
     datasets_probe = fsl.load_train_tables(raw)
     candidates = fsl.intersect_train_columns(raw, datasets_probe)
+    live_dropped: list[str] = []
+    if args.fs_v4:
+        live = fsl.load_live_finney_unlabeled()
+        if live is not None:
+            candidates, live_dropped = fsl.filter_live_coverage(candidates, live)
+            print(
+                f"[prefilter v4] live coverage filter: kept={len(candidates)}  "
+                f"dropped={len(live_dropped)}  live_n={len(live)}"
+            )
+        else:
+            print(
+                "[prefilter v4] WARN: no live_finney_unlabeled.parquet — "
+                "run extract_live_finney_features.py first"
+            )
+        if not fsl.MAY8_FS_TRAIN_PATH.is_file():
+            print(
+                "[prefilter v4] WARN: no may8_fs_train.parquet — "
+                "run split_may8_for_feature_selection.py first"
+            )
     print(
         f"[prefilter] gold rows={len(gold)}  raw={len(raw)}  "
         f"after intersect(gold,zenodo,acpc)={len(candidates)}"
     )
 
-    ctx = fsl.SelectionContext(gold, candidates, seed=args.seed)
+    ctx = fsl.SelectionContext(
+        gold, candidates, seed=args.seed, use_may8_fs_train=args.fs_v4
+    )
     rank_list = candidates
     if args.max_rank and args.max_rank < len(candidates):
         rank_list = candidates[: args.max_rank]
@@ -117,7 +138,13 @@ def phase_prefilter(args: argparse.Namespace) -> None:
             "n_candidates": len(candidates),
             "n_raw_prefilter": len(raw),
             "candidates": candidates,
-            "rank_objective": "0.50*min_gold_loocv + 0.30*mean_gold_loocv + 0.15*acpc_recall - 0.20*max_fpr",
+            "rank_objective": (
+                "v4: 0.30*min_gold + 0.20*mean_gold + 0.25*may8_fs_train + 0.10*acpc - 0.20*fpr"
+                if args.fs_v4
+                else "0.50*min_gold_loocv + 0.30*mean_gold_loocv + 0.15*acpc_recall - 0.20*max_fpr"
+            ),
+            "fs_v4": bool(args.fs_v4),
+            "live_dropped": live_dropped,
             "fit_data": "train/gold_loocv_folds + train/zenodo,public,full_spectrum,acpc",
         },
     )
@@ -133,7 +160,7 @@ def phase_prefilter(args: argparse.Namespace) -> None:
 
 
 def phase_pair_rescue(args: argparse.Namespace) -> None:
-    st = _load_state()
+    st = _load_state(fs_v4=args.fs_v4)
     if not st["ranked"]:
         print("[pair_rescue] missing ranked list — run --phase prefilter first")
         sys.exit(1)
@@ -185,7 +212,7 @@ def _optuna_objective(
 
 
 def phase_search_x(args: argparse.Namespace) -> None:
-    st = _load_state()
+    st = _load_state(fs_v4=args.fs_v4)
     ranked = st["ranked"] or st["candidates"]
     ctx = st["ctx"]
     grid = COARSE_X_GRID if args.coarse_only else FULL_X_GRID
@@ -282,7 +309,7 @@ def phase_search_x(args: argparse.Namespace) -> None:
 
 
 def phase_optuna(args: argparse.Namespace) -> None:
-    st = _load_state()
+    st = _load_state(fs_v4=args.fs_v4)
     ranked = st["ranked"] or st["candidates"]
     pool_full = st["pool"] if st["pool"] else ranked
     x = args.pool_x or st["best_x"]
@@ -393,29 +420,42 @@ def phase_lockbox(args: argparse.Namespace) -> None:
 
         block = {"features": features, "n_features": len(features), "tests": {}}
 
+        may8_lock = fsl.may8_fs_lockbox_path()
         tests = [
-            ("may8_gold_test", tpm.MAY8_GOLD_TEST_PATH),
+            ("may8_fs_lockbox" if may8_lock == fsl.MAY8_FS_LOCKBOX_PATH else "may8_gold_test", may8_lock),
             ("zenodo_test", tpm.TEST_DIR / "zenodo_test_features.parquet"),
             ("public_test", tpm.TEST_DIR / "public_test_features.parquet"),
             ("acpc_bot_test", tpm.TEST_DIR / "acpc_bot_test_features.parquet"),
         ]
+        if fsl.LIVE_FINNEY_MONITOR_PATH.is_file():
+            tests.append(("live_finney_monitor", fsl.LIVE_FINNEY_MONITOR_PATH))
         for name, path in tests:
-            if path.is_file():
+            if not path.is_file():
+                continue
+            if name == "live_finney_monitor":
+                block["tests"][name] = fsl.eval_live_monitor_parquet(
+                    path, features, rf, transform_meta
+                )
+            else:
                 block["tests"][name] = fsl.eval_test_parquet(path, features, rf, transform_meta)
 
         lockbox_results.append(block)
-        may8 = block["tests"].get("may8_gold_test", {})
+        may8 = block["tests"].get("may8_fs_lockbox") or block["tests"].get("may8_gold_test", {})
+        live_m = block["tests"].get("live_finney_monitor", {})
         report_lines.append(
             f"#{i + 1} n={len(features)} may8_recall={may8.get('bot_recall_pct')}% "
-            f"may8_fpr={may8.get('human_fpr_pct')}%"
+            f"may8_fpr={may8.get('human_fpr_pct')}% "
+            f"live_mean={live_m.get('mean_score')}"
         )
         print(f"  may8: {may8}")
+        if live_m:
+            print(f"  live_monitor: {live_m}")
 
     def pick_winner(rows: list[dict]) -> int:
         best_i = 0
         best_rec = -1.0
         for i, row in enumerate(rows):
-            m8 = row["tests"].get("may8_gold_test", {})
+            m8 = row["tests"].get("may8_fs_lockbox") or row["tests"].get("may8_gold_test", {})
             rec = m8.get("bot_recall_pct")
             if rec is None:
                 continue
@@ -435,7 +475,8 @@ def phase_lockbox(args: argparse.Namespace) -> None:
     win_features = winner["features"]
 
     final = {
-        "version": 3,
+        "version": 4 if args.fs_v4 else 3,
+        "fs_v4": bool(args.fs_v4),
         "selected_features": win_features,
         "winner_index": win_i,
         "pool_x": cand.get("pool_x"),
@@ -481,6 +522,11 @@ def parse_args() -> argparse.Namespace:
         "--quiet",
         action="store_true",
         help="Minimal progress (no tqdm bars; fewer trial logs)",
+    )
+    p.add_argument(
+        "--fs-v4",
+        action="store_true",
+        help="May-8 50%% in FIT + live unlabeled coverage filter (run prep scripts first)",
     )
     return p.parse_args()
 
