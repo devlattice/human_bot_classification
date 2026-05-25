@@ -1,0 +1,30 @@
+{
+  "bundle": "workspace/model/artifacts/model_bundle_v11_prod",
+  "recommendation": "static_threshold_0.55",
+  "deploy_dynamic_threshold": false,
+  "reason": "gap_dynamic raises May-8 human FPR (holdout 6.8% vs 2.3% fixed) with no recall gain on holdout; static@0.55 passes FPR gates with 89% recall on full May-8.",
+  "may8_holdout_20pct": {
+    "fixed_0.5": {"bot_recall_pct": 90.91, "human_fpr_pct": 2.273},
+    "gap_dynamic_batch20": {"bot_recall_pct": 90.91, "human_fpr_pct": 6.818, "threshold_median": 0.45},
+    "static_0.55": {"bot_recall_pct": 88.64, "human_fpr_pct": 0.0}
+  },
+  "may8_full": {
+    "fixed_0.5": {"bot_recall_pct": 92.73, "human_fpr_pct": 2.727},
+    "gap_dynamic_batch20": {"bot_recall_pct": 95.0, "human_fpr_pct": 12.273, "threshold_median": 0.45},
+    "static_0.55": {"bot_recall_pct": 89.09, "human_fpr_pct": 0.455}
+  },
+  "real_distribution": {
+    "mean_score": 0.546,
+    "pct_scores_in_0.5_1.0": 65.28,
+    "fixed_0.5_pred_bot_pct": 65.28,
+    "gap_dynamic_pred_bot_pct": 67.5,
+    "static_0.55_pred_bot_pct": 61.67
+  },
+  "nine_method_benchmark_winner_passing_gates": "static_bundle",
+  "benchmark_file": "workspace/hybrid/bot_system/data/threshold_benchmark_v11_prod.json",
+  "miner_env": {
+    "POKER44_MINER_MODEL_PATH": "workspace/model/artifacts/model_bundle_v11_prod/model.joblib",
+    "POKER44_DYNAMIC_THRESHOLD": "0",
+    "POKER44_PRODUCTION_THRESHOLD_JSON": "workspace/model/artifacts/model_bundle_v11_prod/production_threshold.json"
+  }
+}

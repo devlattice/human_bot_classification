@@ -1,3 +1,11 @@
+# Model training + deployment
+
+**Production v11 miner bundle:** see [DEPLOY.md](DEPLOY.md) and run `./workspace/model/deploy_v11_prod.sh`.
+
+Artifacts directory: `workspace/model/artifacts/model_bundle_v11_prod/`
+
+---
+
 # Model training + calibration (56-feature robust path)
 
 ## Train `lgbm_2` — **v4 ultralow** (`lgbm_feature56_v4_ultralow`)

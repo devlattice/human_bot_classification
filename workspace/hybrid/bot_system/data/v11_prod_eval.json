@@ -1,0 +1,89 @@
+{
+  "trained_at": "2026-05-25T15:52:58.221728Z",
+  "bundle": "/home/dr/Workspace/Poker44-subnet/workspace/model/artifacts/model_bundle_v11_prod",
+  "n_features": 11,
+  "features": [
+    "bet_ratio_std",
+    "bet_size_std_mean",
+    "end_flop_max",
+    "unique_actors_ratio_max",
+    "end_river_mean",
+    "late_minus_early_mean",
+    "bet_ratio_p10",
+    "mean_norm_bb_p10",
+    "end_river_std",
+    "stack_mean_mean",
+    "end_turn_mean"
+  ],
+  "may8_split": {
+    "train_n": 352,
+    "holdout_n": 88,
+    "train_frac": 0.8,
+    "repeat": 3
+  },
+  "training_meta": {
+    "sources": {
+      "gold_human": 1900,
+      "gold_bot": 1900,
+      "zenodo_human": 5000,
+      "public_human": 2996,
+      "full_spectrum_bot": 1488,
+      "acpc_bot": 1333,
+      "may8_train_base": 352,
+      "may8_train_effective": 1056
+    },
+    "total_human": 10424,
+    "total_bot": 5249,
+    "total": 15673,
+    "may8_repeat": 3
+  },
+  "optimal_threshold_train": 0.55,
+  "tests": {
+    "may8_holdout_20pct": {
+      "n": 88,
+      "mean_score": 0.5463,
+      "pct_scores_0.5_1.0": 46.59,
+      "human_fpr_pct": 2.273,
+      "bot_recall_pct": 90.91,
+      "bot_mean_score": 0.7737
+    },
+    "may8_full_test_parquet": {
+      "n": 440,
+      "mean_score": 0.5381,
+      "pct_scores_0.5_1.0": 47.73,
+      "human_fpr_pct": 2.727,
+      "bot_recall_pct": 92.73,
+      "bot_mean_score": 0.7494
+    },
+    "zenodo_test": {
+      "n": 4006,
+      "mean_score": 0.0384,
+      "pct_scores_0.5_1.0": 0.52,
+      "human_fpr_pct": 0.524
+    },
+    "public_test": {
+      "n": 107,
+      "mean_score": 0.0846,
+      "pct_scores_0.5_1.0": 0.0,
+      "human_fpr_pct": 0.0
+    },
+    "acpc_bot_test": {
+      "n": 334,
+      "mean_score": 0.941,
+      "pct_scores_0.5_1.0": 100.0,
+      "bot_recall_pct": 100.0,
+      "bot_mean_score": 0.941
+    },
+    "real_distribution": {
+      "n": 1440,
+      "parse_fail": 0,
+      "mean_score": 0.5463,
+      "median_score": 0.5944,
+      "pct_scores_0.5_1.0": 65.28,
+      "pct_pred_bot_0.5": 65.28,
+      "logged_risk_mean": 0.0853,
+      "logged_pct_ge_0.5": 0.0,
+      "corr_vs_logged_risk": -0.0091
+    }
+  }
+}

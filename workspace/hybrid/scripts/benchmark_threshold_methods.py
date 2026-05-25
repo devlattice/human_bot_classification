@@ -301,10 +301,11 @@ def pick_winner(results: dict[str, Any], *, max_human_fpr: float = 1.0) -> dict[
     """Rank by May-8 bot recall with FPR caps on May-8 human + zenodo."""
     rows: list[dict[str, Any]] = []
     for mname, block in results.get("methods", {}).items():
-        may8 = block.get("may8_all", {})
+        may8b = block.get("may8_bot_all", {})
         may8h = block.get("may8_human", {})
         zen = block.get("zenodo_test", {})
-        rec = may8.get("bot_recall_pct")
+        rd = block.get("real_distribution", {})
+        rec = may8b.get("bot_recall_pct")
         fpr_m = may8h.get("human_fpr_pct")
         fpr_z = zen.get("human_fpr_pct")
         if rec is None:
@@ -321,11 +322,37 @@ def pick_winner(results: dict[str, Any], *, max_human_fpr: float = 1.0) -> dict[
             "zenodo_fpr_pct": fpr_z,
             "passes_gates": ok,
             "may8_hard_recall": block.get("may8_hard", {}).get("bot_recall_pct"),
+            "real_dist_pct_scores_0.5_1.0": rd.get("pct_scores_in_0.5_1.0"),
+            "real_dist_pct_pred_bot": rd.get("pct_pred_bot"),
         })
     passing = [r for r in rows if r["passes_gates"]]
     pool = passing if passing else rows
-    pool.sort(key=lambda r: (-(r["may8_bot_recall_pct"] or 0), r.get("may8_human_fpr_pct") or 999))
-    return {"ranking": rows, "recommended": pool[0]["method"] if pool else None}
+    pool.sort(
+        key=lambda r: (
+            -(r["may8_bot_recall_pct"] or 0),
+            r.get("may8_human_fpr_pct") or 999,
+            r.get("zenodo_fpr_pct") or 999,
+            r.get("real_dist_pct_pred_bot") or 999,
+        )
+    )
+    all_ranked = sorted(
+        rows,
+        key=lambda r: (
+            not r["passes_gates"],
+            -(r["may8_bot_recall_pct"] or 0),
+            r.get("may8_human_fpr_pct") or 999,
+        ),
+    )
+    return {
+        "ranking": all_ranked,
+        "passing_only": pool,
+        "recommended": pool[0]["method"] if pool else None,
+        "n_methods_tested": len(rows),
+        "selection_rule": (
+            "Maximize May-8 bot recall; require May-8 human FPR <= 1% "
+            "and zenodo FPR <= 2%; tie-break lower human/zenodo FPR and real_dist pred_bot."
+        ),
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -397,73 +424,108 @@ def main() -> int:
     print(f"THRESHOLD BENCHMARK  bundle={args.bundle.name}  batch={args.batch_size}")
     print("=" * 72)
 
+    print("\n[score] May-8 + zenodo...")
+    scored: dict[str, tuple[np.ndarray, np.ndarray | None]] = {}
+    for dname, df, labels in datasets:
+        s = score_df(df, cols, rf, tm)
+        scored[dname] = (s, labels)
+
+    print("[score] real_distribution (once)...")
+    scores_list: list[float] = []
+    for fp in sorted(args.real_dist_dir.glob("*.jsonl")):
+        with fp.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    chunk = obj.get("chunk")
+                    if not isinstance(chunk, list):
+                        continue
+                    raw = aggregate_chunk_from_miner_payload(chunk)
+                    if not raw or any(c not in raw for c in cols):
+                        continue
+                    Xv = tpm.apply_transform(
+                        np.asarray([raw[c] for c in cols], dtype=np.float64)[None, :],
+                        cols, tm,
+                    )
+                    scores_list.append(float(rf.predict_proba(Xv)[0, 1]))
+                except Exception:
+                    continue
+    if scores_list:
+        scored["real_distribution"] = (np.asarray(scores_list, dtype=np.float64), None)
+
     for spec in specs:
         print(f"\n--- {spec.name}: {spec.description} ---")
         method = spec.factory()
         block: dict[str, Any] = {}
 
-        for dname, df, labels in datasets:
-            scores = score_df(df, cols, rf, tm)
+        for dname, (scores, labels) in scored.items():
             block[dname] = simulate_method(scores, labels, method, args.batch_size)
-            if dname == "may8_bot_all":
-                print(
-                    f"  may8_bot recall={block[dname].get('bot_recall_pct')}%  "
-                    f"hard={block.get('may8_hard', {}).get('bot_recall_pct')}%  "
-                    f"human_fpr={block.get('may8_human', {}).get('human_fpr_pct')}%"
-                )
 
-        # real_distribution
-        scores_list: list[float] = []
-        for fp in sorted(args.real_dist_dir.glob("*.jsonl")):
-            with fp.open(encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        obj = json.loads(line)
-                        chunk = obj.get("chunk")
-                        if not isinstance(chunk, list):
-                            continue
-                        raw = aggregate_chunk_from_miner_payload(chunk)
-                        if not raw or any(c not in raw for c in cols):
-                            continue
-                        Xv = tpm.apply_transform(
-                            np.asarray([raw[c] for c in cols], dtype=np.float64)[None, :],
-                            cols, tm,
-                        )
-                        scores_list.append(float(rf.predict_proba(Xv)[0, 1]))
-                    except Exception:
-                        continue
-
-        if scores_list:
-            rd_scores = np.asarray(scores_list, dtype=np.float64)
-            block["real_distribution"] = simulate_method(rd_scores, None, spec.factory(), args.batch_size)
+        if "may8_bot_all" in block:
+            print(
+                f"  may8_bot recall={block['may8_bot_all'].get('bot_recall_pct')}%  "
+                f"hard={block.get('may8_hard', {}).get('bot_recall_pct')}%  "
+                f"human_fpr={block.get('may8_human', {}).get('human_fpr_pct')}%"
+            )
+        if "real_distribution" in block:
             rd = block["real_distribution"]
             print(
-                f"  real_dist n={rd['n_chunks']}  "
-                f"scores in [0.5,1]={rd['pct_scores_in_0.5_1.0']}%  "
-                f"pred_bot={rd['pct_pred_bot']}%  thr_med={rd['threshold_median']}"
+                f"  real_dist n={rd.get('n_chunks')}  "
+                f"scores in [0.5,1]={rd.get('pct_scores_in_0.5_1.0')}%  "
+                f"pred_bot={rd.get('pct_pred_bot')}%  thr_med={rd.get('threshold_median')}"
             )
-        else:
-            block["real_distribution"] = {"error": "no scores"}
 
         results["methods"][spec.name] = block
 
+    expected = len(specs)
+    if len(results["methods"]) != expected:
+        print(f"[warn] expected {expected} methods, got {len(results['methods'])}")
+
     winner = pick_winner(results)
     results["winner"] = winner
+    report_path = args.out.with_name("threshold_method_benchmark_report.txt")
+
     print("\n" + "=" * 72)
-    print(f"RECOMMENDED (May-8 recall, FPR gates): {winner.get('recommended')}")
-    for r in winner.get("ranking", [])[:5]:
-        print(
-            f"  {r['method']:22s}  may8_rec={r['may8_bot_recall_pct']}%  "
-            f"may8_fpr={r['may8_human_fpr_pct']}%  zen_fpr={r['zenodo_fpr_pct']}%  "
-            f"hard={r.get('may8_hard_recall')}%  ok={r['passes_gates']}"
+    print(f"ALL {winner.get('n_methods_tested')} METHODS — ranked")
+    print("=" * 72)
+    hdr = (
+        f"{'#':<3} {'method':<22} {'may8_rec':>8} {'may8_fpr':>8} {'zen_fpr':>8} "
+        f"{'hard':>8} {'rd_0.5-1':>8} {'pred_bot':>8} {'ok':>4}"
+    )
+    print(hdr)
+    print("-" * len(hdr))
+    lines = [
+        "THRESHOLD METHOD BENCHMARK — ALL METHODS",
+        f"bundle: {results['bundle']}",
+        f"methods_tested: {winner.get('n_methods_tested')} / {expected}",
+        f"rule: {winner.get('selection_rule')}",
+        f"BEST: {winner.get('recommended')}",
+        "",
+        hdr,
+        "-" * len(hdr),
+    ]
+    for i, r in enumerate(winner.get("ranking", []), start=1):
+        line = (
+            f"{i:<3} {r['method']:<22} {r['may8_bot_recall_pct']:>7.2f}% "
+            f"{(r['may8_human_fpr_pct'] or 0):>7.3f}% {(r['zenodo_fpr_pct'] or 0):>7.3f}% "
+            f"{(r.get('may8_hard_recall') or 0):>7.2f}% "
+            f"{(r.get('real_dist_pct_scores_0.5_1.0') or 0):>7.2f}% "
+            f"{(r.get('real_dist_pct_pred_bot') or 0):>7.2f}% "
+            f"{'Y' if r['passes_gates'] else 'N':>4}"
         )
+        print(line)
+        lines.append(line)
+
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\n[done] {args.out}")
+    print(f"[done] {report_path}")
     return 0
 
 

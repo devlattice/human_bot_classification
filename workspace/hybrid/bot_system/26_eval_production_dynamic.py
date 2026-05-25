@@ -37,7 +37,15 @@ FIXED_T = 0.5
 
 
 def load_bundle(bundle: Path) -> tuple[RandomForestClassifier, list[str], dict, float | None]:
-    rf = joblib.load(bundle / "lgbm_student.joblib")
+    model_path = None
+    for name in ("model.joblib", "lgbm_student.joblib"):
+        p = bundle / name
+        if p.is_file():
+            model_path = p
+            break
+    if model_path is None:
+        raise FileNotFoundError(f"no model.joblib in {bundle}")
+    rf = joblib.load(model_path)
     cols = json.loads((bundle / "feature_cols.json").read_text(encoding="utf-8"))["feature_cols"]
     tm = json.loads((bundle / "transform_meta.json").read_text(encoding="utf-8"))
     static_t: float | None = None

@@ -586,13 +586,19 @@ class Miner(BaseMinerNeuron):
     def _maybe_load_model(self) -> None:
         if self._model_bundle_dir:
             bundle_dir = Path(self._model_bundle_dir).expanduser().resolve()
-            model_path = bundle_dir / "lgbm_student.joblib"
-            if model_path.is_file():
+            model_path = None
+            for name in ("model.joblib", "lgbm_student.joblib", "lgbm_classifier.joblib"):
+                candidate = bundle_dir / name
+                if candidate.is_file():
+                    model_path = candidate
+                    break
+            if model_path is not None:
                 self._model_path = str(model_path)
                 self._maybe_load_bundle_runtime(bundle_dir)
             else:
                 bt.logging.warning(
-                    f"POKER44_MINER_MODEL_BUNDLE_DIR set but missing joblib: {model_path}"
+                    f"POKER44_MINER_MODEL_BUNDLE_DIR set but no joblib in {bundle_dir} "
+                    "(expected model.joblib or lgbm_student.joblib)"
                 )
         if not self._model_path:
             bt.logging.info("Miner scoring mode: heuristic (POKER44_MINER_MODEL_PATH not set)")
@@ -614,6 +620,9 @@ class Miner(BaseMinerNeuron):
                 else "unknown feature order"
             )
             bt.logging.info(f"Miner scoring mode: model ({model_path}, {feat_info})")
+            # Colocated bundle metadata (threshold, adapter) next to model.joblib.
+            if model_path.parent.is_dir():
+                self._maybe_load_bundle_runtime(model_path.parent)
             if self._model_features is None:
                 bt.logging.warning(
                     "Model feature list unknown: predict_proba will receive every key from "
@@ -640,6 +649,8 @@ class Miner(BaseMinerNeuron):
                 pass
         if static_sel is None and self._inference_threshold != 0.5:
             static_sel = self._inference_threshold
+        if static_sel is not None:
+            self._inference_threshold = float(static_sel)
         cfg = ThresholdConfig(
             fixed_fallback=float(os.getenv("POKER44_THRESHOLD_FALLBACK", "0.5")),
             static_selected=static_sel,

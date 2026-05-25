@@ -1,0 +1,120 @@
+{
+  "real_dist_dir": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/real_distribution",
+  "n_aligned": 1440,
+  "note": "risk_score in JSONL = scores from previous 54-feature miner at log time. v54_rescore = same 54-feat model re-applied to chunks today (sanity). v11 = new 11-feature model_bundle_v3_11.",
+  "logged_risk_score_only": {
+    "label": "jsonl_risk_score",
+    "n": 1440,
+    "mean": 0.0853,
+    "median": 0.0475,
+    "p10": 0.0096,
+    "p90": 0.3198,
+    "pct_in_0.5_1.0": 0.0,
+    "pct_ge_0.5": 0.0,
+    "pct_lt_0.1": 81.18
+  },
+  "compare_logged_vs_v11": {
+    "name": "v11",
+    "n": 1440,
+    "corr": 0.1811,
+    "mean_abs_diff": 0.4084,
+    "mean_diff_model_minus_logged": 0.4066,
+    "pct_model_higher": 98.33,
+    "logged": {
+      "label": "logged_risk_54",
+      "n": 1440,
+      "mean": 0.0853,
+      "median": 0.0475,
+      "p10": 0.0096,
+      "p90": 0.3198,
+      "pct_in_0.5_1.0": 0.0,
+      "pct_ge_0.5": 0.0,
+      "pct_lt_0.1": 81.18
+    },
+    "model": {
+      "label": "rescored_v11",
+      "n": 1440,
+      "mean": 0.4919,
+      "median": 0.5414,
+      "p10": 0.3144,
+      "p90": 0.6568,
+      "pct_in_0.5_1.0": 52.78,
+      "pct_ge_0.5": 52.78,
+      "pct_lt_0.1": 0.0
+    }
+  },
+  "compare_logged_vs_v54_rescore": {
+    "name": "v54_rescore",
+    "n": 1440,
+    "corr": 0.9244,
+    "mean_abs_diff": 0.0583,
+    "mean_diff_model_minus_logged": 0.0541,
+    "pct_model_higher": 91.94,
+    "logged": {
+      "label": "logged_risk_54",
+      "n": 1440,
+      "mean": 0.0853,
+      "median": 0.0475,
+      "p10": 0.0096,
+      "p90": 0.3198,
+      "pct_in_0.5_1.0": 0.0,
+      "pct_ge_0.5": 0.0,
+      "pct_lt_0.1": 81.18
+    },
+    "model": {
+      "label": "rescored_v54_rescore",
+      "n": 1440,
+      "mean": 0.1394,
+      "median": 0.1004,
+      "p10": 0.0618,
+      "p90": 0.3898,
+      "pct_in_0.5_1.0": 1.11,
+      "pct_ge_0.5": 1.11,
+      "pct_lt_0.1": 50.0
+    }
+  },
+  "compare_v11_vs_v54_rescore": {
+    "name": "v11_vs_v54_rescore",
+    "n": 1440,
+    "corr": 0.2591,
+    "mean_abs_diff": 0.3605,
+    "mean_diff_model_minus_logged": -0.3525,
+    "pct_model_higher": 2.78,
+    "logged": {
+      "label": "logged_risk_54",
+      "n": 1440,
+      "mean": 0.4919,
+      "median": 0.5414,
+      "p10": 0.3144,
+      "p90": 0.6568,
+      "pct_in_0.5_1.0": 52.78,
+      "pct_ge_0.5": 52.78,
+      "pct_lt_0.1": 0.0
+    },
+    "model": {
+      "label": "rescored_v11_vs_v54_rescore",
+      "n": 1440,
+      "mean": 0.1394,
+      "median": 0.1004,
+      "p10": 0.0618,
+      "p90": 0.3898,
+      "pct_in_0.5_1.0": 1.11,
+      "pct_ge_0.5": 1.11,
+      "pct_lt_0.1": 50.0
+    }
+  },
+  "threshold_0.5": {
+    "logged_risk_pct_bot": 0.0,
+    "v11_pct_bot": 52.78,
+    "v54_rescore_pct_bot": 1.11
+  },
+  "files": {
+    "3_0.jsonl": 320,
+    "5_0.jsonl": 200,
+    "5_1.jsonl": 160,
+    "6_0.jsonl": 280,
+    "6_1.jsonl": 80,
+    "7_0.jsonl": 240,
+    "7_1.jsonl": 160
+  }
+}

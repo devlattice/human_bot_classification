@@ -488,6 +488,12 @@ def main():
         default=None,
         help="JSON from optuna_tune_rf.py (rf_params); overrides RF CLI flags for same keys.",
     )
+    ap.add_argument(
+        "--features-json",
+        type=Path,
+        default=None,
+        help="JSON with selected_features or feature_cols list (e.g. selected_features_v3.json).",
+    )
     add_rf_arguments(ap)
     args = ap.parse_args()
 
@@ -500,7 +506,17 @@ def main():
     print(f"Output: {output_dir}")
     print()
 
-    feature_cols = list(ROBUST_FEATURES)
+    if args.features_json is not None and args.features_json.is_file():
+        feat_data = json.loads(args.features_json.read_text(encoding="utf-8"))
+        if "selected_features" in feat_data:
+            feature_cols = list(feat_data["selected_features"])
+        elif "feature_cols" in feat_data:
+            feature_cols = list(feat_data["feature_cols"])
+        else:
+            raise ValueError(f"{args.features_json}: need selected_features or feature_cols")
+        print(f"Features from {args.features_json} ({len(feature_cols)} cols)")
+    else:
+        feature_cols = list(ROBUST_FEATURES)
 
     print("Loading datasets...")
     datasets = load_datasets(feature_cols)

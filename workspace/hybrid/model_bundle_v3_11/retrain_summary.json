@@ -1,0 +1,112 @@
+{
+  "trained_at": "2026-05-25T15:29:05.221233Z",
+  "n_features": 11,
+  "n_training_samples": 14617,
+  "data_sources": {
+    "gold_human": 1900,
+    "gold_bot": 1900,
+    "zenodo_human": 5000,
+    "public_human": 2996,
+    "full_spectrum_bot": 1488,
+    "acpc_bot": 1333
+  },
+  "train_auc": 0.99987,
+  "train_accuracy": 0.991517,
+  "selected_threshold": 0.59,
+  "cv_results": [
+    {
+      "date": "2026-04-30",
+      "auc": 1.0,
+      "accuracy": 0.995833,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-01",
+      "auc": 1.0,
+      "accuracy": 0.99375,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-02",
+      "auc": 1.0,
+      "accuracy": 0.997917,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-03",
+      "auc": 1.0,
+      "accuracy": 0.997917,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-04",
+      "auc": 1.0,
+      "accuracy": 0.99375,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-05",
+      "auc": 0.999931,
+      "accuracy": 0.99375,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-06",
+      "auc": 0.999948,
+      "accuracy": 0.991667,
+      "bot_detect_rate": 1.0,
+      "n_samples": 480
+    },
+    {
+      "date": "2026-05-07",
+      "auc": 1.0,
+      "accuracy": 0.993182,
+      "bot_detect_rate": 1.0,
+      "n_samples": 440
+    }
+  ],
+  "cv_mean_auc": 0.999985,
+  "cv_min_auc": 0.999931,
+  "unseen_test_results": {
+    "zenodo_test": {
+      "correct_pct": 99.5,
+      "fpr_pct": 0.499,
+      "n": 4006
+    },
+    "public_test": {
+      "correct_pct": 100.0,
+      "fpr_pct": 0.0,
+      "n": 107
+    },
+    "acpc_bot_test": {
+      "recall_pct": 100.0,
+      "n": 334,
+      "mean_score": 0.9438
+    },
+    "may8_gold_test": {
+      "n": 440,
+      "human_fpr_pct": 0.0,
+      "bot_recall_pct": 36.36,
+      "bot_mean_score": 0.4914,
+      "human_mean_score": 0.2335
+    }
+  },
+  "model_type": "RandomForestClassifier",
+  "model_params": {
+    "n_estimators": 450,
+    "max_depth": 6,
+    "min_samples_leaf": 35,
+    "min_samples_split": 5,
+    "max_features": 0.25,
+    "random_state": 42,
+    "class_weight": "balanced",
+    "ccp_alpha": 0.00488665465661176,
+    "max_samples": 0.6583184924996148
+  }
+}

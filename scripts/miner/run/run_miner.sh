@@ -69,9 +69,15 @@ if [ -z "$MINER_PYTHON" ] || [ ! -x "$MINER_PYTHON" ]; then
   exit 1
 fi
 if ! "$MINER_PYTHON" -c "import lightgbm" 2>/dev/null; then
-  echo "Error: $MINER_PYTHON cannot import lightgbm — model .joblib will not load."
-  echo "Install: $MINER_PYTHON -m pip install lightgbm"
-  exit 1
+  _model_path="${POKER44_MINER_MODEL_PATH:-}"
+  if [[ "$_model_path" == *model.joblib* ]] || [[ "${POKER44_MINER_MODEL_BUNDLE_DIR:-}" == *model_bundle_v11* ]]; then
+    echo "Note: lightgbm not installed; v11 RF bundle uses sklearn RandomForest (model.joblib)."
+  else
+    echo "Error: $MINER_PYTHON cannot import lightgbm — LGBM .joblib will not load."
+    echo "Install: $MINER_PYTHON -m pip install lightgbm"
+    echo "Or set POKER44_MINER_MODEL_PATH to workspace/model/artifacts/model_bundle_v11_prod/model.joblib"
+    exit 1
+  fi
 fi
 if [ "$NETWORK" = "local" ] && [ -z "${BT_AXON_EXTERNAL_IP:-}" ]; then
   BT_AXON_EXTERNAL_IP="$(hostname -I 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i !~ /^127\./) {print $i; exit}}')"
