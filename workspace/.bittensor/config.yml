@@ -1,0 +1,24 @@
+disk_cache: false
+metagraph_cols:
+  ACTIVE: true
+  AXON: true
+  COLDKEY: true
+  CONSENSUS: true
+  DIVIDENDS: true
+  EMISSION: true
+  GLOBAL_STAKE: true
+  HOTKEY: true
+  INCENTIVE: true
+  LOCAL_STAKE: true
+  RANK: true
+  STAKE_WEIGHT: true
+  TRUST: true
+  UID: true
+  UPDATED: true
+  VAL: true
+  VTRUST: true
+network: null
+use_cache: true
+wallet_hotkey: null
+wallet_name: null
+wallet_path: null
