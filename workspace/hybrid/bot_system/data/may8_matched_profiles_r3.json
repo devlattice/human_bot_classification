@@ -1,0 +1,759 @@
+{
+  "n_candidates": 900,
+  "top_k": 30,
+  "elapsed_seconds": 200.2,
+  "best_distance": 58.73741326112535,
+  "worst_kept_distance": 66.51527568801458,
+  "top": [
+    {
+      "id": 80,
+      "distance": 58.73741326112535,
+      "candidate": {
+        "id": 80,
+        "profile": {
+          "tightness": 0.6015515833114398,
+          "aggression": 0.43080889400121036,
+          "bluff_freq": 0.17361567320101332,
+          "max_risk_fraction_of_stack": 0.18975522088927665,
+          "tilt_factor": 0.28419713533411783,
+          "bet_pot_fraction_small": 0.4787192571517257,
+          "bet_pot_fraction_medium": 0.6102033385601058,
+          "bet_pot_fraction_large": 0.6909540064877485,
+          "preflop_defend_bias": 0.2662524368990885,
+          "postflop_continue_bias": -0.2790950198192166,
+          "trap_frequency": 0.3770083999758762
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 295,
+      "distance": 59.277245698447985,
+      "candidate": {
+        "id": 295,
+        "profile": {
+          "tightness": 0.6862784814457255,
+          "aggression": 0.43133728015562445,
+          "bluff_freq": 0.10865798086897947,
+          "max_risk_fraction_of_stack": 0.21653080947368747,
+          "tilt_factor": 0.08551594389473512,
+          "bet_pot_fraction_small": 0.48163242762624664,
+          "bet_pot_fraction_medium": 0.5252926253910124,
+          "bet_pot_fraction_large": 0.776108236376826,
+          "preflop_defend_bias": -0.30889309213825267,
+          "postflop_continue_bias": -0.2191776836181174,
+          "trap_frequency": 0.4216650596315381
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 891,
+      "distance": 59.45647778126054,
+      "candidate": {
+        "id": 891,
+        "profile": {
+          "tightness": 0.4915031784280819,
+          "aggression": 0.6448764055351148,
+          "bluff_freq": 0.15078867651248215,
+          "max_risk_fraction_of_stack": 0.36701352573295454,
+          "tilt_factor": 0.177268008791764,
+          "bet_pot_fraction_small": 0.4963103848170635,
+          "bet_pot_fraction_medium": 0.5845185755457347,
+          "bet_pot_fraction_large": 0.7886970150002444,
+          "preflop_defend_bias": 0.28422872892060247,
+          "postflop_continue_bias": 0.10236524557502513,
+          "trap_frequency": 0.4487449486233129
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 308,
+      "distance": 60.27719753671867,
+      "candidate": {
+        "id": 308,
+        "profile": {
+          "tightness": 0.4184029915470753,
+          "aggression": 0.6151672010548019,
+          "bluff_freq": 0.028566651291292128,
+          "max_risk_fraction_of_stack": 0.1889024731456257,
+          "tilt_factor": 0.2716104019092315,
+          "bet_pot_fraction_small": 0.25112517919679417,
+          "bet_pot_fraction_medium": 0.503930627650738,
+          "bet_pot_fraction_large": 0.8724137932960068,
+          "preflop_defend_bias": 0.41933075278033494,
+          "postflop_continue_bias": -0.19087385335143003,
+          "trap_frequency": 0.1314723222543929
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 445,
+      "distance": 61.85375573493462,
+      "candidate": {
+        "id": 445,
+        "profile": {
+          "tightness": 0.6156129249147408,
+          "aggression": 0.6273976343142096,
+          "bluff_freq": 0.008819481040009928,
+          "max_risk_fraction_of_stack": 0.18658902192604232,
+          "tilt_factor": 0.18536950473334332,
+          "bet_pot_fraction_small": 0.3006226109364196,
+          "bet_pot_fraction_medium": 0.4658666729730586,
+          "bet_pot_fraction_large": 0.8093853345059057,
+          "preflop_defend_bias": -0.11469268369642449,
+          "postflop_continue_bias": -0.0381763436264248,
+          "trap_frequency": 0.07968750560093146
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 741,
+      "distance": 61.892826226499274,
+      "candidate": {
+        "id": 741,
+        "profile": {
+          "tightness": 0.3172761586681852,
+          "aggression": 0.49647590163599037,
+          "bluff_freq": 0.18014165714623487,
+          "max_risk_fraction_of_stack": 0.15820019958890516,
+          "tilt_factor": 0.06698810006996582,
+          "bet_pot_fraction_small": 0.4505757811136085,
+          "bet_pot_fraction_medium": 0.6331789740040866,
+          "bet_pot_fraction_large": 0.701957456817501,
+          "preflop_defend_bias": -0.41663853789724004,
+          "postflop_continue_bias": -0.30732309006706754,
+          "trap_frequency": 0.2999453108445012
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 350,
+      "distance": 61.901403667005894,
+      "candidate": {
+        "id": 350,
+        "profile": {
+          "tightness": 0.752218292581166,
+          "aggression": 0.35556682582711874,
+          "bluff_freq": 0.06421492945213834,
+          "max_risk_fraction_of_stack": 0.11150538384110782,
+          "tilt_factor": 0.0006979182025079828,
+          "bet_pot_fraction_small": 0.47845786561361925,
+          "bet_pot_fraction_medium": 0.4548821078820398,
+          "bet_pot_fraction_large": 0.6900179978848604,
+          "preflop_defend_bias": 0.4327730931379902,
+          "postflop_continue_bias": -0.4444431882634968,
+          "trap_frequency": 0.005119884385884341
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 356,
+      "distance": 61.91569305393994,
+      "candidate": {
+        "id": 356,
+        "profile": {
+          "tightness": 0.5118962955570542,
+          "aggression": 0.2819156425396788,
+          "bluff_freq": 0.10738294244933815,
+          "max_risk_fraction_of_stack": 0.31007790597890056,
+          "tilt_factor": 0.1616893810577085,
+          "bet_pot_fraction_small": 0.47215648619656736,
+          "bet_pot_fraction_medium": 0.6341636393529834,
+          "bet_pot_fraction_large": 0.8799770389182465,
+          "preflop_defend_bias": -0.011555453924006365,
+          "postflop_continue_bias": 0.09955910180277283,
+          "trap_frequency": 0.47848288966801134
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 485,
+      "distance": 62.448066392338355,
+      "candidate": {
+        "id": 485,
+        "profile": {
+          "tightness": 0.6027460745671128,
+          "aggression": 0.4851091122562007,
+          "bluff_freq": 0.2722254756285774,
+          "max_risk_fraction_of_stack": 0.2629856978275435,
+          "tilt_factor": 0.030683534861102136,
+          "bet_pot_fraction_small": 0.23167893032671422,
+          "bet_pot_fraction_medium": 0.5471590191400401,
+          "bet_pot_fraction_large": 0.7935718926329905,
+          "preflop_defend_bias": -0.28025841342959423,
+          "postflop_continue_bias": -0.13563980664012265,
+          "trap_frequency": 0.12273429314153995
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 863,
+      "distance": 62.99282971399831,
+      "candidate": {
+        "id": 863,
+        "profile": {
+          "tightness": 0.7306683937155467,
+          "aggression": 0.5909297706018184,
+          "bluff_freq": 0.1682270496563193,
+          "max_risk_fraction_of_stack": 0.4411708255965455,
+          "tilt_factor": 0.25929116562528043,
+          "bet_pot_fraction_small": 0.45659770590412574,
+          "bet_pot_fraction_medium": 0.6901447300221194,
+          "bet_pot_fraction_large": 0.6576314328497179,
+          "preflop_defend_bias": 0.4604431938487027,
+          "postflop_continue_bias": -0.4633623554195169,
+          "trap_frequency": 0.17071562444474445
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 773,
+      "distance": 63.259441473017695,
+      "candidate": {
+        "id": 773,
+        "profile": {
+          "tightness": 0.7266485177504047,
+          "aggression": 0.5222567311064545,
+          "bluff_freq": 0.13671664823346313,
+          "max_risk_fraction_of_stack": 0.4995436792775032,
+          "tilt_factor": 0.25163729601883755,
+          "bet_pot_fraction_small": 0.3975836445280069,
+          "bet_pot_fraction_medium": 0.6269028561807714,
+          "bet_pot_fraction_large": 0.9268695151983125,
+          "preflop_defend_bias": 0.021889125479200522,
+          "postflop_continue_bias": -0.3733992286206478,
+          "trap_frequency": 0.038257704708755905
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 63,
+      "distance": 63.34675178471763,
+      "candidate": {
+        "id": 63,
+        "profile": {
+          "tightness": 0.6140599347125955,
+          "aggression": 0.507790205719169,
+          "bluff_freq": 0.19152495749400375,
+          "max_risk_fraction_of_stack": 0.33809446056738146,
+          "tilt_factor": 0.09906135512958861,
+          "bet_pot_fraction_small": 0.25384192495355334,
+          "bet_pot_fraction_medium": 0.5272557698852642,
+          "bet_pot_fraction_large": 0.8628541776839734,
+          "preflop_defend_bias": 0.07277734675284897,
+          "postflop_continue_bias": -0.3137444401431968,
+          "trap_frequency": 0.2989956296337873
+        },
+        "max_seats": 6,
+        "sb": 0.05,
+        "bb": 0.1
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 602,
+      "distance": 63.37060833754558,
+      "candidate": {
+        "id": 602,
+        "profile": {
+          "tightness": 0.315241292342956,
+          "aggression": 0.29716834303448375,
+          "bluff_freq": 0.27702681316035044,
+          "max_risk_fraction_of_stack": 0.1398003734331003,
+          "tilt_factor": 0.15136975526899685,
+          "bet_pot_fraction_small": 0.440047453998543,
+          "bet_pot_fraction_medium": 0.47517465545483395,
+          "bet_pot_fraction_large": 0.8594177778890956,
+          "preflop_defend_bias": 0.08546068049959421,
+          "postflop_continue_bias": 0.3934277362743487,
+          "trap_frequency": 0.1693081900418703
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 761,
+      "distance": 63.37159610630895,
+      "candidate": {
+        "id": 761,
+        "profile": {
+          "tightness": 0.8159501088084804,
+          "aggression": 0.6248707345174958,
+          "bluff_freq": 0.2112872966186316,
+          "max_risk_fraction_of_stack": 0.2979748526817199,
+          "tilt_factor": 0.040971377751656705,
+          "bet_pot_fraction_small": 0.3313151011756903,
+          "bet_pot_fraction_medium": 0.6409083507232871,
+          "bet_pot_fraction_large": 0.8000797759339369,
+          "preflop_defend_bias": 0.16283675215427462,
+          "postflop_continue_bias": 0.2936589584534871,
+          "trap_frequency": 0.04886785220846265
+        },
+        "max_seats": 6,
+        "sb": 0.05,
+        "bb": 0.1
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 134,
+      "distance": 63.5090224331096,
+      "candidate": {
+        "id": 134,
+        "profile": {
+          "tightness": 0.4816152431144063,
+          "aggression": 0.7911176149031844,
+          "bluff_freq": 0.18047677310057564,
+          "max_risk_fraction_of_stack": 0.08906239168120172,
+          "tilt_factor": 0.2571172891814325,
+          "bet_pot_fraction_small": 0.23301939233519237,
+          "bet_pot_fraction_medium": 0.5910755571150859,
+          "bet_pot_fraction_large": 0.9813469545157174,
+          "preflop_defend_bias": 0.27391258047900713,
+          "postflop_continue_bias": 0.03475456636104135,
+          "trap_frequency": 0.11349652174055448
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 14,
+      "distance": 63.67919769383371,
+      "candidate": {
+        "id": 14,
+        "profile": {
+          "tightness": 0.7805212125892378,
+          "aggression": 0.4752588551724159,
+          "bluff_freq": 0.07525272063970684,
+          "max_risk_fraction_of_stack": 0.20239583942909561,
+          "tilt_factor": 0.1803649431054752,
+          "bet_pot_fraction_small": 0.4383006405578067,
+          "bet_pot_fraction_medium": 0.416132826435366,
+          "bet_pot_fraction_large": 0.8018748491571213,
+          "preflop_defend_bias": -0.13544370846269493,
+          "postflop_continue_bias": 0.46629932426119114,
+          "trap_frequency": 0.38338398776038857
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 759,
+      "distance": 63.70311350462958,
+      "candidate": {
+        "id": 759,
+        "profile": {
+          "tightness": 0.516406528030052,
+          "aggression": 0.34444483997685205,
+          "bluff_freq": 0.04427497584098227,
+          "max_risk_fraction_of_stack": 0.5183424093642769,
+          "tilt_factor": 0.08720296220634009,
+          "bet_pot_fraction_small": 0.24572538021644497,
+          "bet_pot_fraction_medium": 0.42939702303025773,
+          "bet_pot_fraction_large": 0.897274939316567,
+          "preflop_defend_bias": -0.1726001646938481,
+          "postflop_continue_bias": 0.41706027853333427,
+          "trap_frequency": 0.0895033952522467
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 304,
+      "distance": 63.952675093694175,
+      "candidate": {
+        "id": 304,
+        "profile": {
+          "tightness": 0.6686528921775423,
+          "aggression": 0.29453039550321525,
+          "bluff_freq": 0.18584591166806175,
+          "max_risk_fraction_of_stack": 0.264851166275799,
+          "tilt_factor": 0.2002105568336688,
+          "bet_pot_fraction_small": 0.3971732276696478,
+          "bet_pot_fraction_medium": 0.5227983166392207,
+          "bet_pot_fraction_large": 0.824644069256653,
+          "preflop_defend_bias": -0.46984551869791735,
+          "postflop_continue_bias": -0.05637354799897609,
+          "trap_frequency": 0.2225008969226918
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 884,
+      "distance": 64.13849562587329,
+      "candidate": {
+        "id": 884,
+        "profile": {
+          "tightness": 0.6053910326395473,
+          "aggression": 0.6699028566260745,
+          "bluff_freq": 0.2066029253421824,
+          "max_risk_fraction_of_stack": 0.22281602472412687,
+          "tilt_factor": 0.2653497470803765,
+          "bet_pot_fraction_small": 0.46699717782366157,
+          "bet_pot_fraction_medium": 0.5430596164837083,
+          "bet_pot_fraction_large": 0.9110519224143204,
+          "preflop_defend_bias": -0.15365881261774228,
+          "postflop_continue_bias": 0.1267190450120983,
+          "trap_frequency": 0.14691169907373722
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 371,
+      "distance": 64.17214675771989,
+      "candidate": {
+        "id": 371,
+        "profile": {
+          "tightness": 0.6627256869713384,
+          "aggression": 0.2899273193557308,
+          "bluff_freq": 0.25826989290948826,
+          "max_risk_fraction_of_stack": 0.42730889947797374,
+          "tilt_factor": 0.13326291598211798,
+          "bet_pot_fraction_small": 0.3453398857961293,
+          "bet_pot_fraction_medium": 0.4338687235684276,
+          "bet_pot_fraction_large": 0.999685661049272,
+          "preflop_defend_bias": -0.36763025613614164,
+          "postflop_continue_bias": 0.34492953174722996,
+          "trap_frequency": 0.2781268257567417
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 302,
+      "distance": 64.28603049841733,
+      "candidate": {
+        "id": 302,
+        "profile": {
+          "tightness": 0.5724363520270643,
+          "aggression": 0.5139262280338978,
+          "bluff_freq": 0.29452614598272586,
+          "max_risk_fraction_of_stack": 0.37481091251809023,
+          "tilt_factor": 0.21247313316723077,
+          "bet_pot_fraction_small": 0.3439821053054447,
+          "bet_pot_fraction_medium": 0.4042997681805935,
+          "bet_pot_fraction_large": 0.8743069652279509,
+          "preflop_defend_bias": 0.4834148401611409,
+          "postflop_continue_bias": 0.27827088957798796,
+          "trap_frequency": 0.2210791855543986
+        },
+        "max_seats": 6,
+        "sb": 0.05,
+        "bb": 0.1
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 469,
+      "distance": 64.826744075735,
+      "candidate": {
+        "id": 469,
+        "profile": {
+          "tightness": 0.3614194396596209,
+          "aggression": 0.2927788015763143,
+          "bluff_freq": 0.27809370704069397,
+          "max_risk_fraction_of_stack": 0.48165724700246904,
+          "tilt_factor": 0.24640839079842636,
+          "bet_pot_fraction_small": 0.30779521860032444,
+          "bet_pot_fraction_medium": 0.6420106970345507,
+          "bet_pot_fraction_large": 0.6631240912602728,
+          "preflop_defend_bias": -0.13936569416562344,
+          "postflop_continue_bias": 0.4387584563235749,
+          "trap_frequency": 0.26906542868948813
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 268,
+      "distance": 64.90184898523395,
+      "candidate": {
+        "id": 268,
+        "profile": {
+          "tightness": 0.5424586376192676,
+          "aggression": 0.3681009503688051,
+          "bluff_freq": 0.0515745972252426,
+          "max_risk_fraction_of_stack": 0.18705622664755295,
+          "tilt_factor": 0.2736356447765912,
+          "bet_pot_fraction_small": 0.4702134756254502,
+          "bet_pot_fraction_medium": 0.4607515743922081,
+          "bet_pot_fraction_large": 0.6713052569233455,
+          "preflop_defend_bias": 0.03961314922225634,
+          "postflop_continue_bias": 0.3215880025858282,
+          "trap_frequency": 0.3545991931777276
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 480,
+      "distance": 64.98887160951574,
+      "candidate": {
+        "id": 480,
+        "profile": {
+          "tightness": 0.7232864962408808,
+          "aggression": 0.28598845975847353,
+          "bluff_freq": 0.0653364014922415,
+          "max_risk_fraction_of_stack": 0.5813693619999664,
+          "tilt_factor": 0.23419891954437325,
+          "bet_pot_fraction_small": 0.41768274179887854,
+          "bet_pot_fraction_medium": 0.4351897603274106,
+          "bet_pot_fraction_large": 0.7096061732040164,
+          "preflop_defend_bias": -0.010791867649470765,
+          "postflop_continue_bias": 0.13971717223104885,
+          "trap_frequency": 0.36346638013172716
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 38,
+      "distance": 65.23506779471636,
+      "candidate": {
+        "id": 38,
+        "profile": {
+          "tightness": 0.726324553570327,
+          "aggression": 0.4477848533327832,
+          "bluff_freq": 0.10087815693965867,
+          "max_risk_fraction_of_stack": 0.5948405541115268,
+          "tilt_factor": 0.23288518288416582,
+          "bet_pot_fraction_small": 0.40157142856882544,
+          "bet_pot_fraction_medium": 0.5741363260588719,
+          "bet_pot_fraction_large": 0.8731728321352805,
+          "preflop_defend_bias": -0.04546749524370253,
+          "postflop_continue_bias": -0.04379370785127462,
+          "trap_frequency": 0.13849607615814546
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 331,
+      "distance": 65.36881539225408,
+      "candidate": {
+        "id": 331,
+        "profile": {
+          "tightness": 0.8353281462911202,
+          "aggression": 0.4700903509646514,
+          "bluff_freq": 0.011319523632107665,
+          "max_risk_fraction_of_stack": 0.053888046345699235,
+          "tilt_factor": 0.14659371602436122,
+          "bet_pot_fraction_small": 0.3453268169891536,
+          "bet_pot_fraction_medium": 0.47436633081669544,
+          "bet_pot_fraction_large": 0.9622766672289751,
+          "preflop_defend_bias": 0.16587256121052807,
+          "postflop_continue_bias": 0.09291697387623121,
+          "trap_frequency": 0.22995515387977378
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 39,
+      "distance": 65.70599788927352,
+      "candidate": {
+        "id": 39,
+        "profile": {
+          "tightness": 0.3810737611140324,
+          "aggression": 0.848291336186412,
+          "bluff_freq": 0.02783344742245467,
+          "max_risk_fraction_of_stack": 0.4021350501852883,
+          "tilt_factor": 0.061374280745665435,
+          "bet_pot_fraction_small": 0.4067969116378122,
+          "bet_pot_fraction_medium": 0.630524079123006,
+          "bet_pot_fraction_large": 0.7853650896180542,
+          "preflop_defend_bias": -0.39739082521882935,
+          "postflop_continue_bias": -0.11880981832594767,
+          "trap_frequency": 0.1605516674080232
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 606,
+      "distance": 65.97618867726197,
+      "candidate": {
+        "id": 606,
+        "profile": {
+          "tightness": 0.3709307640326013,
+          "aggression": 0.6971833648738337,
+          "bluff_freq": 0.22687745138164112,
+          "max_risk_fraction_of_stack": 0.06432620630669589,
+          "tilt_factor": 0.2640471527837326,
+          "bet_pot_fraction_small": 0.2550309429478666,
+          "bet_pot_fraction_medium": 0.6944267158507254,
+          "bet_pot_fraction_large": 0.8504196505934993,
+          "preflop_defend_bias": -0.47886345088188786,
+          "postflop_continue_bias": -0.24939701955519955,
+          "trap_frequency": 0.08296041206557438
+        },
+        "max_seats": 9,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 292,
+      "distance": 66.28890527333336,
+      "candidate": {
+        "id": 292,
+        "profile": {
+          "tightness": 0.6129183757690314,
+          "aggression": 0.20701267540282334,
+          "bluff_freq": 0.23919665735202938,
+          "max_risk_fraction_of_stack": 0.20620411203069744,
+          "tilt_factor": 0.23786234953726604,
+          "bet_pot_fraction_small": 0.34801199951933803,
+          "bet_pot_fraction_medium": 0.59722232482521,
+          "bet_pot_fraction_large": 0.9296276374190202,
+          "preflop_defend_bias": -0.3755539398695611,
+          "postflop_continue_bias": -0.05916761757663008,
+          "trap_frequency": 0.2964311904224357
+        },
+        "max_seats": 9,
+        "sb": 0.05,
+        "bb": 0.1
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    },
+    {
+      "id": 221,
+      "distance": 66.51527568801458,
+      "candidate": {
+        "id": 221,
+        "profile": {
+          "tightness": 0.5211266162319529,
+          "aggression": 0.835238707183966,
+          "bluff_freq": 0.18866271009773006,
+          "max_risk_fraction_of_stack": 0.2359893348112605,
+          "tilt_factor": 0.15830237264460706,
+          "bet_pot_fraction_small": 0.4018206987019972,
+          "bet_pot_fraction_medium": 0.5682274904313599,
+          "bet_pot_fraction_large": 0.7551105533254877,
+          "preflop_defend_bias": 0.3873301932090636,
+          "postflop_continue_bias": 0.24713124159969613,
+          "trap_frequency": 0.14488168428940365
+        },
+        "max_seats": 6,
+        "sb": 0.01,
+        "bb": 0.02
+      },
+      "n_hands": 90,
+      "n_chunks_scored": 3
+    }
+  ]
+}

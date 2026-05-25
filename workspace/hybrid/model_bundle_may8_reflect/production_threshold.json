@@ -1,0 +1,5 @@
+{
+  "selected_threshold": 0.18,
+  "source": "threshold_sweep_model_bundle_may8_reflect",
+  "note": "Offline pick: max May-8 recall with zenodo FPR <= 4% on reflect bundle; deploy fallback when not bimodal."
+}

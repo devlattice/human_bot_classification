@@ -1,0 +1,276 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "n_candidates": 80,
+      "best_match_distance": 5.147511657011083,
+      "n_probe_chunks": 144,
+      "median_ks": 0.4837,
+      "weighted_median_ks": 0.4924,
+      "mean_ks": 0.5235,
+      "profile_pass": false,
+      "elapsed_sec": 15.8,
+      "worst_3": [
+        {
+          "feature": "mean_norm_bb_p50",
+          "ks_gen_vs_hard": 0.9818,
+          "gen_mean": 1.755778,
+          "hard_mean": 6.564899,
+          "weight": 0.7488
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 0.9885,
+          "gen_mean": 6.357176,
+          "hard_mean": 7.322325,
+          "weight": 0.9404
+        },
+        {
+          "feature": "bet_size_mean_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 7.644802,
+          "hard_mean": 17.628509,
+          "weight": 0.7102
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "n_candidates": 120,
+      "best_match_distance": 4.846224484781263,
+      "n_probe_chunks": 144,
+      "median_ks": 0.4969,
+      "weighted_median_ks": 0.5232,
+      "mean_ks": 0.5368,
+      "profile_pass": false,
+      "elapsed_sec": 18.4,
+      "worst_3": [
+        {
+          "feature": "check_ratio_std",
+          "ks_gen_vs_hard": 0.984,
+          "gen_mean": 0.239086,
+          "hard_mean": 0.151417,
+          "weight": 0.9719
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 0.9931,
+          "gen_mean": 6.353241,
+          "hard_mean": 7.322325,
+          "weight": 1.0798
+        },
+        {
+          "feature": "bet_size_mean_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 7.277295,
+          "hard_mean": 17.628509,
+          "weight": 0.8167
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "n_candidates": 160,
+      "best_match_distance": 4.625313770603967,
+      "n_probe_chunks": 144,
+      "median_ks": 0.4854,
+      "weighted_median_ks": 0.539,
+      "mean_ks": 0.5399,
+      "profile_pass": false,
+      "elapsed_sec": 20.4,
+      "worst_3": [
+        {
+          "feature": "mean_norm_bb_p50",
+          "ks_gen_vs_hard": 0.9885,
+          "gen_mean": 1.710755,
+          "hard_mean": 6.564899,
+          "weight": 0.9856
+        },
+        {
+          "feature": "bet_size_mean_mean",
+          "ks_gen_vs_hard": 0.9931,
+          "gen_mean": 7.528048,
+          "hard_mean": 17.628509,
+          "weight": 0.9392
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 6.329398,
+          "hard_mean": 7.322325,
+          "weight": 1.2407
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "n_candidates": 200,
+      "best_match_distance": 4.760999983670616,
+      "n_probe_chunks": 144,
+      "median_ks": 0.4825,
+      "weighted_median_ks": 0.501,
+      "mean_ks": 0.5362,
+      "profile_pass": false,
+      "elapsed_sec": 22.7,
+      "worst_3": [
+        {
+          "feature": "check_ratio_std",
+          "ks_gen_vs_hard": 0.9931,
+          "gen_mean": 0.237852,
+          "hard_mean": 0.151417,
+          "weight": 1.2804
+        },
+        {
+          "feature": "bet_size_mean_mean",
+          "ks_gen_vs_hard": 0.9931,
+          "gen_mean": 6.990444,
+          "hard_mean": 17.628509,
+          "weight": 1.0792
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 6.317824,
+          "hard_mean": 7.322325,
+          "weight": 1.4268
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "n_candidates": 240,
+      "best_match_distance": 4.709629398565567,
+      "n_probe_chunks": 144,
+      "median_ks": 0.5098,
+      "weighted_median_ks": 0.6039,
+      "mean_ks": 0.546,
+      "profile_pass": false,
+      "elapsed_sec": 25.4,
+      "worst_3": [
+        {
+          "feature": "bet_size_mean_mean",
+          "ks_gen_vs_hard": 0.9931,
+          "gen_mean": 8.002256,
+          "hard_mean": 17.628509,
+          "weight": 1.2399
+        },
+        {
+          "feature": "check_ratio_std",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 0.239854,
+          "hard_mean": 0.151417,
+          "weight": 1.4711
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 6.322454,
+          "hard_mean": 7.322325,
+          "weight": 1.6408
+        }
+      ]
+    },
+    {
+      "round": 6,
+      "n_candidates": 280,
+      "best_match_distance": 4.877882545427456,
+      "n_probe_chunks": 144,
+      "median_ks": 0.4918,
+      "weighted_median_ks": 0.6086,
+      "mean_ks": 0.529,
+      "profile_pass": false,
+      "elapsed_sec": 28.1,
+      "worst_3": [
+        {
+          "feature": "mean_norm_bb_p50",
+          "ks_gen_vs_hard": 0.9955,
+          "gen_mean": 1.605587,
+          "hard_mean": 6.564899,
+          "weight": 1.4868
+        },
+        {
+          "feature": "check_ratio_std",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 0.242654,
+          "hard_mean": 0.151417,
+          "weight": 1.6918
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 6.362731,
+          "hard_mean": 7.322325,
+          "weight": 1.8869
+        }
+      ]
+    },
+    {
+      "round": 7,
+      "n_candidates": 320,
+      "best_match_distance": 4.948205100878261,
+      "n_probe_chunks": 144,
+      "median_ks": 0.4904,
+      "weighted_median_ks": 0.6225,
+      "mean_ks": 0.5343,
+      "profile_pass": false,
+      "elapsed_sec": 30.6,
+      "worst_3": [
+        {
+          "feature": "mean_norm_bb_p50",
+          "ks_gen_vs_hard": 0.9818,
+          "gen_mean": 1.819196,
+          "hard_mean": 6.564899,
+          "weight": 1.7089
+        },
+        {
+          "feature": "bet_size_mean_mean",
+          "ks_gen_vs_hard": 0.9885,
+          "gen_mean": 7.866656,
+          "hard_mean": 17.628509,
+          "weight": 1.6368
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 6.38287,
+          "hard_mean": 7.322325,
+          "weight": 2.17
+        }
+      ]
+    },
+    {
+      "round": 8,
+      "n_candidates": 360,
+      "best_match_distance": 4.956938680538173,
+      "n_probe_chunks": 144,
+      "median_ks": 0.4971,
+      "weighted_median_ks": 0.6225,
+      "mean_ks": 0.5282,
+      "profile_pass": false,
+      "elapsed_sec": 33.1,
+      "worst_3": [
+        {
+          "feature": "check_ratio_std",
+          "ks_gen_vs_hard": 0.9931,
+          "gen_mean": 0.239051,
+          "hard_mean": 0.151417,
+          "weight": 2.2313
+        },
+        {
+          "feature": "bet_size_mean_mean",
+          "ks_gen_vs_hard": 0.9931,
+          "gen_mean": 7.723303,
+          "hard_mean": 17.628509,
+          "weight": 1.8795
+        },
+        {
+          "feature": "n_actions_mean",
+          "ks_gen_vs_hard": 1.0,
+          "gen_mean": 6.349769,
+          "hard_mean": 7.322325,
+          "weight": 2.4955
+        }
+      ]
+    }
+  ]
+}

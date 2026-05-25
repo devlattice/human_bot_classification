@@ -1,0 +1,16 @@
+{
+  "description": "LGBM-B-V2 params from ssl_embed_v1/lgbm_out_concat/metrics.json (run_ssl_lgbm_ablation / lgbm_2.py defaults used in v1).",
+  "lgbm": {
+    "n_estimators": 4000,
+    "learning_rate": 0.02,
+    "num_leaves": 15,
+    "max_depth": 4,
+    "min_child_samples": 400,
+    "subsample": 0.6,
+    "colsample_bytree": 0.6,
+    "reg_alpha": 4.0,
+    "reg_lambda": 12.0,
+    "min_gain_to_split": 0.05,
+    "early_stopping_rounds": 150
+  }
+}

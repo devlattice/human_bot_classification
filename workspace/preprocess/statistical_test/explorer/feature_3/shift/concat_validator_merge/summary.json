@@ -1,0 +1,21 @@
+{
+  "train_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/data/train/concat/rb_B/train.parquet",
+  "validator_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/data/validator/rb_B/validator.parquet",
+  "n_features_tested": 84,
+  "n_ks_finite": 84,
+  "n_sig_fdr_0_05": 84,
+  "max_rows_per_source": 50000,
+  "stratify_train_label": false,
+  "outputs": {
+    "csv": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/shift/concat_validator_merge/train_vs_validator_shift.csv",
+    "plots_dir": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/shift/concat_validator_merge"
+  },
+  "plot_files": [
+    "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/shift/concat_validator_merge/shift_ks_top_barh.png",
+    "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/shift/concat_validator_merge/shift_neglog10p_top_barh.png",
+    "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/shift/concat_validator_merge/shift_mean_train_vs_validator.png",
+    "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/explorer/feature_3/shift/concat_validator_merge/shift_distribution_overlays.png"
+  ],
+  "plots_skip_reason": null,
+  "note": "KS compares marginal distributions (train vs validator). High KS does not imply bad for human/bot task."
+}

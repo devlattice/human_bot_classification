@@ -1,0 +1,576 @@
+{
+  "pool_x": 15,
+  "pool": [
+    "bet_ratio_std",
+    "bet_size_std_mean",
+    "end_flop_max",
+    "unique_actors_ratio_max",
+    "n_streets_max",
+    "end_river_max",
+    "end_river_mean",
+    "late_minus_early_mean",
+    "bet_ratio_p10",
+    "mean_norm_bb_p10",
+    "end_river_std",
+    "stack_mean_mean",
+    "end_turn_mean",
+    "end_turn_std",
+    "end_turn_max"
+  ],
+  "best_value": 0.9175000000000001,
+  "best_features": [
+    "bet_ratio_std",
+    "bet_size_std_mean",
+    "end_flop_max",
+    "unique_actors_ratio_max",
+    "end_river_mean",
+    "late_minus_early_mean",
+    "bet_ratio_p10",
+    "mean_norm_bb_p10",
+    "end_river_std",
+    "stack_mean_mean",
+    "end_turn_mean"
+  ],
+  "trials": [
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0013333333333333333,
+        "fpr_public": 0.007009345794392523,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.002336448598130841,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.002,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0013333333333333333,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.004672897196261682,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0013333333333333333,
+        "fpr_public": 0.007009345794392523,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.002,
+        "fpr_public": 0.004672897196261682,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.002,
+        "fpr_public": 0.002336448598130841,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.002,
+        "fpr_public": 0.004672897196261682,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.007009345794392523,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.002,
+        "fpr_public": 0.007009345794392523,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0013333333333333333,
+        "fpr_public": 0.007009345794392523,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.007009345794392523,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.004672897196261682,
+        "n_features": 11
+      }
+    },
+    {
+      "value": 0.9175000000000001,
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "metrics": {
+        "valid": true,
+        "score": 0.9475000000000001,
+        "min_recall": 1.0,
+        "mean_recall": 1.0,
+        "acpc_recall": 1.0,
+        "max_fpr_gold": 0.0125,
+        "fpr_zenodo": 0.0026666666666666666,
+        "fpr_public": 0.009345794392523364,
+        "n_features": 11
+      }
+    }
+  ]
+}

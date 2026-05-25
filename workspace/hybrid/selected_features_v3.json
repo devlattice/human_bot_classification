@@ -1,0 +1,466 @@
+{
+  "version": 3,
+  "selected_features": [
+    "bet_ratio_std",
+    "bet_size_std_mean",
+    "end_flop_max",
+    "unique_actors_ratio_max",
+    "end_river_mean",
+    "late_minus_early_mean",
+    "bet_ratio_p10",
+    "mean_norm_bb_p10",
+    "end_river_std",
+    "stack_mean_mean",
+    "end_turn_mean"
+  ],
+  "winner_index": 0,
+  "pool_x": 15,
+  "lockbox": [
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    },
+    {
+      "features": [
+        "bet_ratio_std",
+        "bet_size_std_mean",
+        "end_flop_max",
+        "unique_actors_ratio_max",
+        "end_river_mean",
+        "late_minus_early_mean",
+        "bet_ratio_p10",
+        "mean_norm_bb_p10",
+        "end_river_std",
+        "stack_mean_mean",
+        "end_turn_mean"
+      ],
+      "n_features": 11,
+      "tests": {
+        "may8_gold_test": {
+          "n": 440,
+          "mean_score": 0.3009,
+          "human_fpr_pct": 0.0,
+          "bot_recall_pct": 36.36
+        },
+        "zenodo_test": {
+          "n": 4006,
+          "mean_score": 0.0165,
+          "human_fpr_pct": 0.474
+        },
+        "public_test": {
+          "n": 107,
+          "mean_score": 0.0291,
+          "human_fpr_pct": 0.0
+        },
+        "acpc_bot_test": {
+          "n": 334,
+          "mean_score": 0.9711,
+          "bot_recall_pct": 100.0
+        }
+      }
+    }
+  ],
+  "baseline_robust_54": [
+    "action_entropy_p50",
+    "bet_minus_fold_mean",
+    "bet_ratio_p50",
+    "mean_pot_after_p50",
+    "bet_ratio_mean",
+    "pot_after_over_stack_mean",
+    "mean_pot_after_mean",
+    "aggression_factor_max",
+    "pot_growth_std",
+    "action_entropy_p90",
+    "bet_ratio_p90",
+    "bet_size_mean_std",
+    "std_norm_bb_std",
+    "mean_pot_after_p90",
+    "bet_ratio_std",
+    "mean_pot_after_std",
+    "std_pot_after_std",
+    "aggression_factor_mean",
+    "aggression_factor_std",
+    "bet_size_mean_p90",
+    "bet_ratio_max",
+    "mean_norm_bb_p90",
+    "fold_ratio_p10",
+    "bet_size_max_std",
+    "max_norm_bb_std",
+    "pot_growth_mean",
+    "bet_size_mean_mean",
+    "action_entropy_max",
+    "max_consecutive_max",
+    "preflop_action_density_std",
+    "p6p_std",
+    "aggression_factor_p90",
+    "p5_max",
+    "end_turn_max",
+    "call_ratio_p90",
+    "bet_size_mean_p50",
+    "bet_size_mean_max",
+    "mean_pot_after_p10",
+    "p6p_max",
+    "n_players_max",
+    "fold_position_mean_std",
+    "end_preflop_std",
+    "raise_minus_call_mean",
+    "end_flop_max",
+    "end_turn_std",
+    "bet_size_std_max",
+    "end_river_max",
+    "n_streets_max",
+    "unique_actors_ratio_max",
+    "end_flop_std",
+    "n_streets_std",
+    "end_river_std",
+    "check_ratio_p90",
+    "fold_position_mean_mean"
+  ]
+}

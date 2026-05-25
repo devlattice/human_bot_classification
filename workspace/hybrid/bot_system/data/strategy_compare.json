@@ -1,0 +1,50 @@
+{
+  "thresholds": {
+    "may8_recall_pct_min": 80.0,
+    "may8_human_fpr_pct_max": 2.0,
+    "zenodo_fpr_pct_max": 2.0
+  },
+  "note": "May-8 gold held OUT of training for all strategies. Decision @0.5.",
+  "A_passive_hard": {
+    "may8_recall_pct": 36.364,
+    "may8_human_fpr_pct": 0.0,
+    "zenodo_fpr_pct": 1.498,
+    "pass": false,
+    "passive_hard_n": 4,
+    "extra_bot_rows": 2700
+  },
+  "B_inverse5": {
+    "may8_recall_pct": 36.364,
+    "may8_human_fpr_pct": 0.0,
+    "zenodo_fpr_pct": 1.423,
+    "pass": false,
+    "best_round": 5,
+    "extra_bot_rows": 50540,
+    "note": "All 5 rounds tied at 36.36% recall"
+  },
+  "C_focused_features": {
+    "may8_recall_pct": 37.273,
+    "may8_human_fpr_pct": 0.0,
+    "zenodo_fpr_pct": 2.097,
+    "may8_recall_at_0.25": 39.09,
+    "pass": false,
+    "n_features": 18,
+    "top_features": [
+      "raise_minus_call_mean",
+      "check_ratio_p90",
+      "call_ratio_p90",
+      "bet_minus_fold_mean",
+      "aggression_factor_mean",
+      "aggression_factor_std",
+      "fold_position_mean_mean",
+      "max_consecutive_max"
+    ]
+  },
+  "ranking": [
+    {"strategy": "C_focused_features", "may8_recall_pct": 37.273, "pass": false},
+    {"strategy": "A_passive_hard", "may8_recall_pct": 36.364, "pass": false},
+    {"strategy": "B_inverse5", "may8_recall_pct": 36.364, "pass": false}
+  ],
+  "winner": "C_focused_features",
+  "recommendation": "None reach 80% @0.5. C is marginally best (+0.9pp). Consider threshold 0.25 (~39% recall) or new features beyond tabular RF."
+}

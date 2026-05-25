@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "best_value": 0.9999380156751411,
+  "best_trial": 24,
+  "n_trials": 25,
+  "holdout_date": "2026-05-08",
+  "fpr_cap": 0.02,
+  "fpr_penalty": 8.0,
+  "objective": "ap_holdout - fpr_penalty * max(0, zenodo_fpr@0.5 - fpr_cap)",
+  "best_user_attrs": {
+    "ap_holdout": 0.9999380156751411,
+    "zenodo_fpr_0.5": 0.00375
+  },
+  "rf_params": {
+    "n_estimators": 450,
+    "max_depth": 6,
+    "min_samples_leaf": 35,
+    "min_samples_split": 5,
+    "max_features": 0.25,
+    "class_weight": "balanced",
+    "ccp_alpha": 0.00488665465661176,
+    "max_samples": 0.6583184924996148
+  }
+}

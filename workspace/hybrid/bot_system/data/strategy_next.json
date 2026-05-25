@@ -1,0 +1,310 @@
+{
+  "baseline": "18 focused features, May-8 held out, may8_matched bots if present",
+  "targets": {
+    "may8_recall_pct": 80.0,
+    "may8_human_fpr_pct": 2.0,
+    "zenodo_fpr_pct": 2.0
+  },
+  "D_rf_threshold_sweep": {
+    "best_passing": null,
+    "best_under_fpr_caps": {
+      "threshold": 0.5,
+      "may8_recall_pct": 35.909,
+      "may8_human_fpr_pct": 0.0,
+      "zenodo_fpr_pct": 1.573,
+      "pass": false
+    },
+    "sweep_sample": [
+      {
+        "threshold": 0.05,
+        "may8_recall_pct": 83.636,
+        "may8_human_fpr_pct": 0.909,
+        "zenodo_fpr_pct": 44.833,
+        "pass": false
+      },
+      {
+        "threshold": 0.15,
+        "may8_recall_pct": 40.455,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 11.083,
+        "pass": false
+      },
+      {
+        "threshold": 0.25,
+        "may8_recall_pct": 38.636,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 5.542,
+        "pass": false
+      },
+      {
+        "threshold": 0.35,
+        "may8_recall_pct": 37.273,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 3.595,
+        "pass": false
+      },
+      {
+        "threshold": 0.45,
+        "may8_recall_pct": 35.909,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 2.072,
+        "pass": false
+      },
+      {
+        "threshold": 0.55,
+        "may8_recall_pct": 35.455,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.999,
+        "pass": false
+      },
+      {
+        "threshold": 0.65,
+        "may8_recall_pct": 35.0,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.749,
+        "pass": false
+      },
+      {
+        "threshold": 0.75,
+        "may8_recall_pct": 34.545,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.25,
+        "pass": false
+      },
+      {
+        "threshold": 0.85,
+        "may8_recall_pct": 33.636,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.15,
+        "pass": false
+      },
+      {
+        "threshold": 0.95,
+        "may8_recall_pct": 26.818,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.0,
+        "pass": false
+      }
+    ],
+    "may8_recall_at_0.5": 35.909
+  },
+  "E_calibrated_rf": {
+    "best_passing": null,
+    "best_under_fpr_caps": {
+      "threshold": 0.55,
+      "may8_recall_pct": 36.364,
+      "may8_human_fpr_pct": 0.0,
+      "zenodo_fpr_pct": 1.747,
+      "pass": false
+    },
+    "sweep_sample": [
+      {
+        "threshold": 0.05,
+        "may8_recall_pct": 100.0,
+        "may8_human_fpr_pct": 100.0,
+        "zenodo_fpr_pct": 83.025,
+        "pass": false
+      },
+      {
+        "threshold": 0.15,
+        "may8_recall_pct": 42.273,
+        "may8_human_fpr_pct": 20.0,
+        "zenodo_fpr_pct": 13.879,
+        "pass": false
+      },
+      {
+        "threshold": 0.25,
+        "may8_recall_pct": 38.636,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 7.938,
+        "pass": false
+      },
+      {
+        "threshold": 0.35,
+        "may8_recall_pct": 37.727,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 5.617,
+        "pass": false
+      },
+      {
+        "threshold": 0.45,
+        "may8_recall_pct": 36.818,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 2.821,
+        "pass": false
+      },
+      {
+        "threshold": 0.55,
+        "may8_recall_pct": 36.364,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 1.747,
+        "pass": false
+      },
+      {
+        "threshold": 0.65,
+        "may8_recall_pct": 35.455,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.649,
+        "pass": false
+      },
+      {
+        "threshold": 0.75,
+        "may8_recall_pct": 32.273,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.225,
+        "pass": false
+      },
+      {
+        "threshold": 0.85,
+        "may8_recall_pct": 27.273,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.0,
+        "pass": false
+      },
+      {
+        "threshold": 0.95,
+        "may8_recall_pct": 0.0,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.0,
+        "pass": false
+      }
+    ],
+    "may8_recall_at_0.5": 36.364
+  },
+  "F_hist_gradient_boost": {
+    "best_passing": null,
+    "best_under_fpr_caps": {
+      "threshold": 0.05,
+      "may8_recall_pct": 42.273,
+      "may8_human_fpr_pct": 0.0,
+      "zenodo_fpr_pct": 1.672,
+      "pass": false
+    },
+    "sweep_sample": [
+      {
+        "threshold": 0.05,
+        "may8_recall_pct": 42.273,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 1.672,
+        "pass": false
+      },
+      {
+        "threshold": 0.15,
+        "may8_recall_pct": 40.909,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 1.173,
+        "pass": false
+      },
+      {
+        "threshold": 0.25,
+        "may8_recall_pct": 39.545,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 1.073,
+        "pass": false
+      },
+      {
+        "threshold": 0.35,
+        "may8_recall_pct": 39.545,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.974,
+        "pass": false
+      },
+      {
+        "threshold": 0.45,
+        "may8_recall_pct": 38.636,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.874,
+        "pass": false
+      },
+      {
+        "threshold": 0.55,
+        "may8_recall_pct": 38.182,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.774,
+        "pass": false
+      },
+      {
+        "threshold": 0.65,
+        "may8_recall_pct": 38.182,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.749,
+        "pass": false
+      },
+      {
+        "threshold": 0.75,
+        "may8_recall_pct": 37.273,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.724,
+        "pass": false
+      },
+      {
+        "threshold": 0.85,
+        "may8_recall_pct": 36.818,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.624,
+        "pass": false
+      },
+      {
+        "threshold": 0.95,
+        "may8_recall_pct": 36.818,
+        "may8_human_fpr_pct": 0.0,
+        "zenodo_fpr_pct": 0.474,
+        "pass": false
+      }
+    ],
+    "may8_recall_at_0.5": 38.182
+  },
+  "G_hard_upweight": {
+    "hard_bot_n": 141,
+    "may8_recall_at_0.5": 38.636,
+    "best_under_fpr_caps": {
+      "threshold": 0.65,
+      "may8_recall_pct": 36.364,
+      "may8_human_fpr_pct": 0.0,
+      "zenodo_fpr_pct": 1.722,
+      "pass": false
+    },
+    "note": "141 hard bots under holdout RF; upweight did not beat F"
+  },
+  "ranking": [
+    {
+      "lever": "F_hist_gradient_boost",
+      "may8_recall_pct": 42.273,
+      "threshold": 0.05,
+      "zenodo_fpr_pct": 1.672,
+      "pass": false
+    },
+    {
+      "lever": "G_hard_upweight",
+      "may8_recall_pct": 38.636,
+      "threshold": 0.5,
+      "zenodo_fpr_pct": 1.722,
+      "pass": false
+    },
+    {
+      "lever": "E_calibrated_rf",
+      "may8_recall_pct": 36.364,
+      "threshold": 0.55,
+      "zenodo_fpr_pct": 1.747,
+      "pass": false
+    },
+    {
+      "lever": "D_rf_threshold_sweep",
+      "may8_recall_pct": 35.909,
+      "threshold": 0.5,
+      "zenodo_fpr_pct": 1.573,
+      "pass": false
+    }
+  ],
+  "winner": "F_hist_gradient_boost",
+  "deploy_recommendation": {
+    "model": "HistGradientBoosting",
+    "feature_cols": 18,
+    "threshold": 0.15,
+    "expected_may8_recall_pct": 40.9,
+    "expected_zenodo_fpr_pct": 1.17,
+    "expected_may8_human_fpr_pct": 0.0,
+    "note": "No lever hits 80% recall @0.5 with zenodo FPR<=2%. Lower threshold raises recall but blows zenodo FPR."
+  },
+  "elapsed_s": 27.5
+}

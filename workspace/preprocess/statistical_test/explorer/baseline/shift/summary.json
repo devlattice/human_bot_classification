@@ -1,0 +1,15 @@
+{
+  "train_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/dataset/unpreprocessed/train/train.parquet",
+  "validator_parquet": "/home/dr/Workspace/Poker44-subnet/workspace/ssl_data/raw_data/validator_request.parquet",
+  "n_features_tested": 79,
+  "n_ks_finite": 79,
+  "n_sig_fdr_0_05": 62,
+  "max_rows_per_source": 0,
+  "stratify_train_label": false,
+  "outputs": {
+    "csv": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/plots/train_vs_validator/train_vs_validator_shift.csv",
+    "plots_dir": "/home/dr/Workspace/Poker44-subnet/workspace/preprocess/statistical_test/plots/train_vs_validator"
+  },
+  "plot_files": [],
+  "note": "KS compares marginal distributions (train vs validator). High KS does not imply bad for human/bot task."
+}

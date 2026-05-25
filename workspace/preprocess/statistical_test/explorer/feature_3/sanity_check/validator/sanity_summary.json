@@ -1,0 +1,22 @@
+{
+  "n_rows": 40398,
+  "n_features": 105,
+  "label_col": "label",
+  "n_flag_constant": 9,
+  "n_flag_near_constant": 9,
+  "n_with_coercion_issues": 0,
+  "exact_duplicate_groups": [
+    [
+      "n_actions_slot_max",
+      "n_actions_slot_mean"
+    ],
+    [
+      "check_ratio_p10",
+      "n_actions_slot_std",
+      "other_ratio_max",
+      "other_ratio_mean",
+      "other_ratio_std"
+    ]
+  ],
+  "high_corr_pairs": []
+}

@@ -1,0 +1,38 @@
+{
+  "n_rows": 2000,
+  "n_features": 105,
+  "label_col": "label",
+  "n_flag_constant": 16,
+  "n_flag_near_constant": 16,
+  "n_with_coercion_issues": 0,
+  "exact_duplicate_groups": [
+    [
+      "n_actions_slot_max",
+      "n_actions_slot_mean"
+    ],
+    [
+      "all_in_ratio_max",
+      "all_in_ratio_mean",
+      "all_in_ratio_std",
+      "call_ratio_p10",
+      "check_ratio_p10",
+      "check_ratio_p50",
+      "n_actions_slot_std",
+      "other_ratio_max",
+      "other_ratio_mean",
+      "other_ratio_std",
+      "raise_ratio_p10"
+    ],
+    [
+      "end_preflop_max",
+      "end_river_max"
+    ]
+  ],
+  "high_corr_pairs": [
+    {
+      "a": "n_players_max",
+      "b": "p6p_max",
+      "corr": 1.0
+    }
+  ]
+}

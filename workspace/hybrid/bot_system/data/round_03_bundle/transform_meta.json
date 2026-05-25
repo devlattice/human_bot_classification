@@ -1,0 +1,534 @@
+{
+  "clip": {
+    "enabled": true,
+    "q_low": 0.01,
+    "q_high": 0.99
+  },
+  "clip_bounds": {
+    "action_entropy_p50": {
+      "low": 0.0,
+      "high": 1.8423709931771084
+    },
+    "bet_minus_fold_mean": {
+      "low": -0.8958333333333334,
+      "high": -0.012500000000000004
+    },
+    "bet_ratio_p50": {
+      "low": 0.0,
+      "high": 0.20833333333333331
+    },
+    "mean_pot_after_p50": {
+      "low": 0.030333333333333337,
+      "high": 0.7599667142857144
+    },
+    "bet_ratio_mean": {
+      "low": 0.0,
+      "high": 0.24765873015873016
+    },
+    "pot_after_over_stack_mean": {
+      "low": 0.012750296643239276,
+      "high": 150537.25761904786
+    },
+    "mean_pot_after_mean": {
+      "low": 0.05017281666666666,
+      "high": 0.7919333800680274
+    },
+    "aggression_factor_max": {
+      "low": 1.0,
+      "high": 7.0
+    },
+    "pot_growth_std": {
+      "low": 0.007345508694601868,
+      "high": 0.18732933869880106
+    },
+    "action_entropy_p90": {
+      "low": 0.7219280948873623,
+      "high": 2.321928094887362
+    },
+    "bet_ratio_p90": {
+      "low": 0.0,
+      "high": 0.5
+    },
+    "bet_size_mean_std": {
+      "low": 1.1605033643976108,
+      "high": 29.082645685726973
+    },
+    "std_norm_bb_std": {
+      "low": 0.6030121468326741,
+      "high": 15.643835637085827
+    },
+    "mean_pot_after_p90": {
+      "low": 0.08033333333333333,
+      "high": 1.5490323076923134
+    },
+    "bet_ratio_std": {
+      "low": 0.0,
+      "high": 0.1859479717032171
+    },
+    "mean_pot_after_std": {
+      "low": 0.031209268842570637,
+      "high": 0.6965416080039546
+    },
+    "std_pot_after_std": {
+      "low": 0.017936946651251357,
+      "high": 0.7315454015824268
+    },
+    "aggression_factor_mean": {
+      "low": 0.2188977629513344,
+      "high": 1.6462543589283227
+    },
+    "aggression_factor_std": {
+      "low": 0.2738819922827009,
+      "high": 1.6826588342811248
+    },
+    "bet_size_mean_p90": {
+      "low": 2.2283333333333335,
+      "high": 47.09537666666672
+    },
+    "bet_ratio_max": {
+      "low": 0.0,
+      "high": 0.75
+    },
+    "mean_norm_bb_p90": {
+      "low": 0.6222228571428572,
+      "high": 18.67302964285716
+    },
+    "fold_ratio_p10": {
+      "low": 0.0,
+      "high": 0.8
+    },
+    "bet_size_max_std": {
+      "low": 1.5348069456314168,
+      "high": 52.68309568859828
+    },
+    "max_norm_bb_std": {
+      "low": 1.5348069456314168,
+      "high": 52.68309568859828
+    },
+    "pot_growth_mean": {
+      "low": 0.004205678860028861,
+      "high": 0.188369604631028
+    },
+    "bet_size_mean_mean": {
+      "low": 1.010335,
+      "high": 24.12844716450217
+    },
+    "action_entropy_max": {
+      "low": 1.0,
+      "high": 2.321928094887362
+    },
+    "max_consecutive_max": {
+      "low": 2.0,
+      "high": 12.0
+    },
+    "preflop_action_density_std": {
+      "low": 0.0,
+      "high": 0.3930527029449876
+    },
+    "p6p_std": {
+      "low": 0.0,
+      "high": 0.49972214501883166
+    },
+    "aggression_factor_p90": {
+      "low": 0.5578000000000006,
+      "high": 4.0
+    },
+    "p5_max": {
+      "low": 0.0,
+      "high": 1.0
+    },
+    "end_turn_max": {
+      "low": 0.0,
+      "high": 1.0
+    },
+    "call_ratio_p90": {
+      "low": 0.0,
+      "high": 0.6333333333333334
+    },
+    "bet_size_mean_p50": {
+      "low": 0.0,
+      "high": 21.497400000000006
+    },
+    "bet_size_mean_max": {
+      "low": 3.9,
+      "high": 126.0
+    },
+    "mean_pot_after_p10": {
+      "low": 0.0294,
+      "high": 0.5782201142857143
+    },
+    "p6p_max": {
+      "low": 0.0,
+      "high": 1.0
+    },
+    "n_players_max": {
+      "low": 2.0,
+      "high": 9.0
+    },
+    "fold_position_mean_std": {
+      "low": 0.0,
+      "high": 0.4330127018922193
+    },
+    "end_preflop_std": {
+      "low": 0.0,
+      "high": 0.5
+    },
+    "raise_minus_call_mean": {
+      "low": -0.3384987446197991,
+      "high": 0.2553388888888892
+    },
+    "end_flop_max": {
+      "low": 0.0,
+      "high": 1.0
+    },
+    "end_turn_std": {
+      "low": 0.0,
+      "high": 0.4769696007084729
+    },
+    "bet_size_std_max": {
+      "low": 1.4300000000000002,
+      "high": 93.08688759031264
+    },
+    "end_river_max": {
+      "low": 0.0,
+      "high": 1.0
+    },
+    "n_streets_max": {
+      "low": 0.0,
+      "high": 3.0
+    },
+    "unique_actors_ratio_max": {
+      "low": 0.8333333333333334,
+      "high": 1.0
+    },
+    "end_flop_std": {
+      "low": 0.0,
+      "high": 0.44651427748729383
+    },
+    "n_streets_std": {
+      "low": 0.0,
+      "high": 1.384035966135113
+    },
+    "end_river_std": {
+      "low": 0.0,
+      "high": 0.48989794855663565
+    },
+    "check_ratio_p90": {
+      "low": 0.0,
+      "high": 0.7550000000000001
+    },
+    "fold_position_mean_mean": {
+      "low": 0.28017499999999995,
+      "high": 1.0
+    }
+  },
+  "clip_features_count": 54,
+  "log1p": {
+    "enabled": true
+  },
+  "log1p_selected_features": [
+    "mean_pot_after_p50",
+    "pot_after_over_stack_mean",
+    "mean_pot_after_mean",
+    "pot_growth_std",
+    "bet_size_mean_std",
+    "std_norm_bb_std",
+    "mean_pot_after_p90",
+    "mean_pot_after_std",
+    "std_pot_after_std",
+    "bet_size_mean_p90",
+    "mean_norm_bb_p90",
+    "bet_size_max_std",
+    "max_norm_bb_std",
+    "pot_growth_mean",
+    "bet_size_mean_mean",
+    "bet_size_mean_p50",
+    "bet_size_mean_max",
+    "mean_pot_after_p10",
+    "bet_size_std_max"
+  ],
+  "log1p_selected_count": 19,
+  "robust_scale": {
+    "enabled": true,
+    "scaled_clip_abs": 0.0
+  },
+  "robust_scale_stats": {
+    "action_entropy_p50": {
+      "median": 1.2516291673878228,
+      "iqr": 0.518765549194249
+    },
+    "bet_minus_fold_mean": {
+      "median": -0.5500396825396825,
+      "iqr": 0.23499465575996187
+    },
+    "bet_ratio_p50": {
+      "median": 0.0,
+      "iqr": 0.16666666666666666
+    },
+    "mean_pot_after_p50": {
+      "median": 0.05587611055891781,
+      "iqr": 0.03644686265246509
+    },
+    "bet_ratio_mean": {
+      "median": 0.10638888888888888,
+      "iqr": 0.1106158424908425
+    },
+    "pot_after_over_stack_mean": {
+      "median": 0.05985808699692642,
+      "iqr": 0.05048906659807384
+    },
+    "mean_pot_after_mean": {
+      "median": 0.12019110394885292,
+      "iqr": 0.08682540957265406
+    },
+    "aggression_factor_max": {
+      "median": 3.0,
+      "iqr": 2.0
+    },
+    "pot_growth_std": {
+      "median": 0.06926718455965071,
+      "iqr": 0.0482226818252946
+    },
+    "action_entropy_p90": {
+      "median": 1.8936132420561822,
+      "iqr": 0.137254035038048
+    },
+    "bet_ratio_p90": {
+      "median": 0.25,
+      "iqr": 0.18460317460317455
+    },
+    "bet_size_mean_std": {
+      "median": 1.9178342252891059,
+      "iqr": 0.7826621246000585
+    },
+    "std_norm_bb_std": {
+      "median": 1.6862358158502753,
+      "iqr": 0.8081569169097311
+    },
+    "mean_pot_after_p90": {
+      "median": 0.235965229733682,
+      "iqr": 0.2056209478242363
+    },
+    "bet_ratio_std": {
+      "median": 0.10937454603440325,
+      "iqr": 0.07804903934662169
+    },
+    "mean_pot_after_std": {
+      "median": 0.16961274786039907,
+      "iqr": 0.10688189158897538
+    },
+    "std_pot_after_std": {
+      "median": 0.1570788563577874,
+      "iqr": 0.11334533455023507
+    },
+    "aggression_factor_mean": {
+      "median": 0.6991666666666667,
+      "iqr": 0.38808201058201064
+    },
+    "aggression_factor_std": {
+      "median": 0.7980444849756183,
+      "iqr": 0.4106640341518484
+    },
+    "bet_size_mean_p90": {
+      "median": 2.0076322076833106,
+      "iqr": 0.6780055332283457
+    },
+    "bet_ratio_max": {
+      "median": 0.4,
+      "iqr": 0.34615384615384615
+    },
+    "mean_norm_bb_p90": {
+      "median": 1.402167710276181,
+      "iqr": 0.7163941569925358
+    },
+    "fold_ratio_p10": {
+      "median": 0.26666666666666666,
+      "iqr": 0.1345833333333333
+    },
+    "bet_size_max_std": {
+      "median": 2.5174563394069382,
+      "iqr": 0.8881053270295256
+    },
+    "max_norm_bb_std": {
+      "median": 2.5174563394069382,
+      "iqr": 0.8881053270295256
+    },
+    "pot_growth_mean": {
+      "median": 0.03158254289446949,
+      "iqr": 0.029469057670019352
+    },
+    "bet_size_mean_mean": {
+      "median": 1.4378419634462138,
+      "iqr": 0.4893399415233537
+    },
+    "action_entropy_max": {
+      "median": 2.149397470347699,
+      "iqr": 0.2516291673878226
+    },
+    "max_consecutive_max": {
+      "median": 5.0,
+      "iqr": 2.0
+    },
+    "preflop_action_density_std": {
+      "median": 0.2410053113329724,
+      "iqr": 0.061357431900331716
+    },
+    "p6p_std": {
+      "median": 0.3726779962499649,
+      "iqr": 0.19277281292912388
+    },
+    "aggression_factor_p90": {
+      "median": 2.0,
+      "iqr": 1.0
+    },
+    "p5_max": {
+      "median": 1.0,
+      "iqr": 1.0
+    },
+    "end_turn_max": {
+      "median": 1.0,
+      "iqr": 1.0
+    },
+    "call_ratio_p90": {
+      "median": 0.20500000000000007,
+      "iqr": 0.07999999999999996
+    },
+    "bet_size_mean_p50": {
+      "median": 1.0278321066070624,
+      "iqr": 0.2552970972443984
+    },
+    "bet_size_mean_max": {
+      "median": 3.530030253505124,
+      "iqr": 1.0490253469787683
+    },
+    "mean_pot_after_p10": {
+      "median": 0.0295588022415444,
+      "iqr": 0.010430845974614068
+    },
+    "p6p_max": {
+      "median": 1.0,
+      "iqr": 1.0
+    },
+    "n_players_max": {
+      "median": 6.0,
+      "iqr": 1.0
+    },
+    "fold_position_mean_std": {
+      "median": 0.15402640015414387,
+      "iqr": 0.06245734348750133
+    },
+    "end_preflop_std": {
+      "median": 0.4714045207910317,
+      "iqr": 0.056885246664416356
+    },
+    "raise_minus_call_mean": {
+      "median": 0.02543650793650793,
+      "iqr": 0.044350279350279326
+    },
+    "end_flop_max": {
+      "median": 1.0,
+      "iqr": 1.0
+    },
+    "end_turn_std": {
+      "median": 0.24944382578492943,
+      "iqr": 0.12049450642884993
+    },
+    "bet_size_std_max": {
+      "median": 3.2356288769868486,
+      "iqr": 1.0753829772604284
+    },
+    "end_river_max": {
+      "median": 1.0,
+      "iqr": 1.0
+    },
+    "n_streets_max": {
+      "median": 3.0,
+      "iqr": 1.0
+    },
+    "unique_actors_ratio_max": {
+      "median": 1.0,
+      "iqr": 1.0
+    },
+    "end_flop_std": {
+      "median": 0.3,
+      "iqr": 0.12198968706248539
+    },
+    "n_streets_std": {
+      "median": 1.1327204225030798,
+      "iqr": 0.23492041228563199
+    },
+    "end_river_std": {
+      "median": 0.37267799624996495,
+      "iqr": 0.1107648296153711
+    },
+    "check_ratio_p90": {
+      "median": 0.3461538461538463,
+      "iqr": 0.21181318681318684
+    },
+    "fold_position_mean_mean": {
+      "median": 0.4196240981240981,
+      "iqr": 0.08963818241943244
+    }
+  },
+  "robust_scale_features_count": 54,
+  "fillna": {
+    "method": "train_median_then_zero",
+    "median_features_count": 54,
+    "medians": {
+      "action_entropy_p50": 0.0,
+      "bet_minus_fold_mean": 0.0,
+      "bet_ratio_p50": 0.0,
+      "mean_pot_after_p50": 0.0,
+      "bet_ratio_mean": 0.0,
+      "pot_after_over_stack_mean": 0.0,
+      "mean_pot_after_mean": 0.0,
+      "aggression_factor_max": 0.0,
+      "pot_growth_std": 0.0,
+      "action_entropy_p90": 0.0,
+      "bet_ratio_p90": 0.0,
+      "bet_size_mean_std": 0.0,
+      "std_norm_bb_std": 0.0,
+      "mean_pot_after_p90": 0.0,
+      "bet_ratio_std": 0.0,
+      "mean_pot_after_std": 0.0,
+      "std_pot_after_std": 0.0,
+      "aggression_factor_mean": 0.0,
+      "aggression_factor_std": 0.0,
+      "bet_size_mean_p90": 0.0,
+      "bet_ratio_max": 0.0,
+      "mean_norm_bb_p90": 0.0,
+      "fold_ratio_p10": 0.0,
+      "bet_size_max_std": 0.0,
+      "max_norm_bb_std": 0.0,
+      "pot_growth_mean": 0.0,
+      "bet_size_mean_mean": 0.0,
+      "action_entropy_max": 0.0,
+      "max_consecutive_max": 0.0,
+      "preflop_action_density_std": 0.0,
+      "p6p_std": 0.0,
+      "aggression_factor_p90": 0.0,
+      "p5_max": 0.0,
+      "end_turn_max": 0.0,
+      "call_ratio_p90": 0.0,
+      "bet_size_mean_p50": 0.0,
+      "bet_size_mean_max": 0.0,
+      "mean_pot_after_p10": 0.0,
+      "p6p_max": 0.0,
+      "n_players_max": 0.0,
+      "fold_position_mean_std": 0.0,
+      "end_preflop_std": 0.0,
+      "raise_minus_call_mean": 0.0,
+      "end_flop_max": 0.0,
+      "end_turn_std": 0.0,
+      "bet_size_std_max": 0.0,
+      "end_river_max": 0.0,
+      "n_streets_max": 0.0,
+      "unique_actors_ratio_max": 0.0,
+      "end_flop_std": 0.0,
+      "n_streets_std": 0.0,
+      "end_river_std": 0.0,
+      "check_ratio_p90": 0.0,
+      "fold_position_mean_mean": 0.0
+    }
+  }
+}

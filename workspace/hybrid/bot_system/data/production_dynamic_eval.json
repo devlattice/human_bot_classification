@@ -1,0 +1,273 @@
+{
+  "bundle": "workspace/hybrid/model_bundle_may8_reflect",
+  "batch_size": 20,
+  "static_selected_fallback": 0.18,
+  "policy": {
+    "clamp": [
+      0.1,
+      0.45
+    ],
+    "min_scores": 20
+  },
+  "datasets": {
+    "zenodo_test": {
+      "n_chunks": 4006,
+      "n_requests": 201,
+      "batch_size": 20,
+      "score_mean": 0.03,
+      "score_median": 0.0041,
+      "threshold_mean": 0.1953,
+      "threshold_median": 0.18,
+      "mode_counts": {
+        "gap_batch": 3180,
+        "static": 826
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 0.999
+      },
+      "dynamic": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 4.219
+      }
+    },
+    "public_test": {
+      "n_chunks": 107,
+      "n_requests": 6,
+      "batch_size": 20,
+      "score_mean": 0.0506,
+      "score_median": 0.0334,
+      "threshold_mean": 0.1756,
+      "threshold_median": 0.133,
+      "mode_counts": {
+        "gap_batch": 100,
+        "static": 7
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 0.0
+      },
+      "dynamic": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 2.804
+      }
+    },
+    "acpc_bot_test": {
+      "n_chunks": 334,
+      "n_requests": 17,
+      "batch_size": 20,
+      "score_mean": 0.9806,
+      "score_median": 0.9895,
+      "threshold_mean": 0.4387,
+      "threshold_median": 0.45,
+      "mode_counts": {
+        "gap_batch": 320,
+        "static": 14
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": 100.0,
+        "human_fpr_pct": null
+      },
+      "dynamic": {
+        "bot_recall_pct": 100.0,
+        "human_fpr_pct": null
+      }
+    },
+    "wsop_stress": {
+      "n_chunks": 1,
+      "n_requests": 1,
+      "batch_size": 20,
+      "score_mean": 0.7688,
+      "score_median": 0.7688,
+      "threshold_mean": 0.18,
+      "threshold_median": 0.18,
+      "mode_counts": {
+        "static": 1
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 100.0
+      },
+      "dynamic": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 100.0
+      }
+    },
+    "may8_human": {
+      "n_chunks": 220,
+      "n_requests": 11,
+      "batch_size": 20,
+      "score_mean": 0.0184,
+      "score_median": 0.0154,
+      "threshold_mean": 0.1073,
+      "threshold_median": 0.1,
+      "mode_counts": {
+        "gap_batch": 180,
+        "gap_rolling": 20,
+        "static": 20
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 0.0
+      },
+      "dynamic": {
+        "bot_recall_pct": null,
+        "human_fpr_pct": 0.455
+      }
+    },
+    "may8_bot_all": {
+      "n_chunks": 220,
+      "n_requests": 11,
+      "batch_size": 20,
+      "score_mean": 0.4857,
+      "score_median": 0.2094,
+      "threshold_mean": 0.2635,
+      "threshold_median": 0.2148,
+      "mode_counts": {
+        "gap_batch": 140,
+        "static": 40,
+        "gap_rolling": 40
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": 36.36,
+        "human_fpr_pct": null
+      },
+      "dynamic": {
+        "bot_recall_pct": 64.55,
+        "human_fpr_pct": null
+      }
+    },
+    "may8_hard_bot": {
+      "n_chunks": 140,
+      "n_requests": 7,
+      "batch_size": 20,
+      "score_mean": 0.1973,
+      "score_median": 0.1959,
+      "threshold_mean": 0.1954,
+      "threshold_median": 0.2007,
+      "mode_counts": {
+        "gap_batch": 120,
+        "static": 20
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": 0.0,
+        "human_fpr_pct": null
+      },
+      "dynamic": {
+        "bot_recall_pct": 44.29,
+        "human_fpr_pct": null
+      }
+    },
+    "may8_easy_bot": {
+      "n_chunks": 80,
+      "n_requests": 4,
+      "batch_size": 20,
+      "score_mean": 0.9905,
+      "score_median": 0.9963,
+      "threshold_mean": 0.3825,
+      "threshold_median": 0.45,
+      "mode_counts": {
+        "gap_rolling": 40,
+        "static": 20,
+        "gap_batch": 20
+      },
+      "fixed_0.5": {
+        "bot_recall_pct": 100.0,
+        "human_fpr_pct": null
+      },
+      "dynamic": {
+        "bot_recall_pct": 100.0,
+        "human_fpr_pct": null
+      }
+    }
+  },
+  "real_distribution": {
+    "parse_fail": 0,
+    "overall": {
+      "n_chunks": 1440,
+      "n_requests": 72,
+      "batch_size": 20,
+      "score_mean": 0.193,
+      "score_median": 0.1526,
+      "threshold_mean": 0.2441,
+      "threshold_median": 0.1771,
+      "mode_counts": {
+        "gap_batch": 1440
+      },
+      "fixed_0.5": {
+        "pred_bot_pct": 4.44
+      },
+      "dynamic": {
+        "pred_bot_pct": 21.67
+      }
+    },
+    "per_file_sample": {
+      "3_0.jsonl": {
+        "n": 320,
+        "fixed_pred_bot_pct": 5.0,
+        "dynamic_pred_bot_pct": 21.25,
+        "threshold_median": 0.2068,
+        "mode_counts": {
+          "gap_batch": 320
+        }
+      },
+      "5_0.jsonl": {
+        "n": 200,
+        "fixed_pred_bot_pct": 4.5,
+        "dynamic_pred_bot_pct": 27.0,
+        "threshold_median": 0.1753,
+        "mode_counts": {
+          "gap_batch": 200
+        }
+      },
+      "5_1.jsonl": {
+        "n": 160,
+        "fixed_pred_bot_pct": 4.38,
+        "dynamic_pred_bot_pct": 15.0,
+        "threshold_median": 0.2998,
+        "mode_counts": {
+          "gap_batch": 160
+        }
+      },
+      "6_0.jsonl": {
+        "n": 280,
+        "fixed_pred_bot_pct": 3.21,
+        "dynamic_pred_bot_pct": 20.71,
+        "threshold_median": 0.1771,
+        "mode_counts": {
+          "gap_batch": 280
+        }
+      },
+      "6_1.jsonl": {
+        "n": 80,
+        "fixed_pred_bot_pct": 8.75,
+        "dynamic_pred_bot_pct": 25.0,
+        "threshold_median": 0.2998,
+        "mode_counts": {
+          "gap_batch": 80
+        }
+      },
+      "7_0.jsonl": {
+        "n": 240,
+        "fixed_pred_bot_pct": 3.75,
+        "dynamic_pred_bot_pct": 26.67,
+        "threshold_median": 0.1753,
+        "mode_counts": {
+          "gap_batch": 240
+        }
+      },
+      "7_1.jsonl": {
+        "n": 160,
+        "fixed_pred_bot_pct": 4.38,
+        "dynamic_pred_bot_pct": 15.0,
+        "threshold_median": 0.2998,
+        "mode_counts": {
+          "gap_batch": 160
+        }
+      }
+    },
+    "n_files": 7,
+    "logged_risk_mean": 0.0853,
+    "corr_logged_vs_model": 0.9315
+  }
+}

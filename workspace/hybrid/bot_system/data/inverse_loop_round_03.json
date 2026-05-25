@@ -1,0 +1,88 @@
+{
+  "round": 3,
+  "ts": "2026-05-13T15:53:29.111745Z",
+  "feature_cols_n": 54,
+  "sources": {
+    "gold_human": 1900,
+    "gold_bot": 1900,
+    "zenodo_human": 5000,
+    "public_human": 2996,
+    "full_spectrum_bot": 8000,
+    "gen_bot": 4000,
+    "cal_bot": 4000,
+    "acpc_bot": 1333,
+    "live_matched_bot": 4050,
+    "may8_matched_bot": 8000
+  },
+  "train_auc": 0.999988,
+  "train_acc": 0.999587,
+  "evaluations": {
+    "may8_human": {
+      "name": "may8_human",
+      "n": 220,
+      "mean_score": 0.0189,
+      "median_score": 0.0176,
+      "fpr_pct": 0.0
+    },
+    "may8_bot": {
+      "name": "may8_bot",
+      "n": 220,
+      "mean_score": 0.4162,
+      "median_score": 0.1245,
+      "recall_pct": 36.364
+    },
+    "may7_human": {
+      "name": "may7_human",
+      "n": 220,
+      "mean_score": 0.0252,
+      "median_score": 0.02,
+      "fpr_pct": 0.0
+    },
+    "may7_bot": {
+      "name": "may7_bot",
+      "n": 220,
+      "mean_score": 0.951,
+      "median_score": 0.9716,
+      "recall_pct": 100.0
+    },
+    "zenodo_test": {
+      "name": "zenodo_test",
+      "n": 4006,
+      "mean_score": 0.0281,
+      "median_score": 0.0082,
+      "fpr_pct": 0.774
+    },
+    "public_test": {
+      "name": "public_test",
+      "n": 107,
+      "mean_score": 0.0477,
+      "median_score": 0.0325,
+      "fpr_pct": 0.935
+    },
+    "acpc_bot_test": {
+      "name": "acpc_bot_test",
+      "n": 334,
+      "mean_score": 0.8834,
+      "median_score": 0.8919,
+      "recall_pct": 100.0
+    }
+  },
+  "pass_status": {
+    "may8_recall_pct": 36.364,
+    "may8_human_fpr_pct": 0.0,
+    "may7_human_fpr_pct": 0.0,
+    "zenodo_fpr_pct": 0.774
+  },
+  "checks": {
+    "may8_recall_ok": false,
+    "may8_human_fpr_ok": true,
+    "may7_human_fpr_ok": true,
+    "zenodo_fpr_ok": true
+  },
+  "overall_pass": false,
+  "thresholds": {
+    "min_may8_recall_pct": 80.0,
+    "max_human_fpr_pct": 2.0,
+    "max_zenodo_fpr_pct": 2.0
+  }
+}
