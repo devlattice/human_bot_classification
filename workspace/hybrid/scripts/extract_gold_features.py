@@ -18,6 +18,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from chunk_pipeline import aggregate_chunk_from_raw_hands
+from shell_progress import iter_progress
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 GOLD_DIR = REPO_ROOT / "workspace" / "dataset" / "source" / "gold_dataset"
@@ -33,7 +34,7 @@ def main():
     print()
 
     rows = []
-    for f in files:
+    for f in iter_progress(files, desc="[extract_gold] days"):
         date = f.stem
         with open(f) as fh:
             data = json.load(fh)
